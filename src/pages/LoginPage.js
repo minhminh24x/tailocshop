@@ -1,25 +1,30 @@
 // src/pages/LoginPage.js
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-// [ĐÃ XÓA] Xóa import useAuthStore và shallow
-// import { useAuthStore } from '../store/authStore.js';
+// [KHÔI PHỤC] Import useAuthStore
+import { useAuthStore } from '../store/authStore.js';
+// [XÓA] Xóa 'shallow'
 // import { shallow } from 'zustand/shallow'; 
 
 export default function LoginPage() {
   
-  // [ĐÃ XÓA] Xóa logic gọi useAuthStore
-  // const { login, isLoading, error } = useAuthStore(...)
+  // [ĐÃ SỬA] Tách 3 hook riêng biệt
+  const login = useAuthStore((state) => state.login);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const error = useAuthStore((state) => state.error);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
-  // [ĐÃ XÓA] Xóa useNavigate vì không dùng
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // [ĐÃ SỬA] Vô hiệu hóa logic, chỉ log ra console
-    console.log('Chức năng đăng nhập đã bị tắt (chế độ tĩnh).');
+    
+    const success = await login({ email, password });
+    if (success) {
+      navigate('/');
+    }
   };
 
   return (
@@ -32,7 +37,11 @@ export default function LoginPage() {
           Đăng Nhập
         </h2>
 
-        { /* [ĐÃ XÓA] Xóa hiển thị lỗi */ }
+        {error && (
+          <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded mb-4">
+            <p>{error}</p>
+          </div>
+        )}
 
         <div className="mb-4">
           <label
@@ -48,6 +57,7 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
+            disabled={isLoading}
           />
         </div>
 
@@ -65,16 +75,16 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
+            disabled={isLoading}
           />
         </div>
 
         <button
           type="submit"
-          // [ĐÃ SỬA] Xóa 'disabled'
+          disabled={isLoading}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed"
         >
-          { /* [ĐÃ SỬA] Xóa text 'isLoading' */ }
-          Đăng Nhập
+          {isLoading ? 'Đang xử lý...' : 'Đăng Nhập'}
         </button>
 
         <p className="text-center text-gray-400 text-sm mt-4">

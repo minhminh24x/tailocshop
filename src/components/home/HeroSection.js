@@ -11,7 +11,7 @@ export default function HeroSection() {
 
       {/* Hiệu ứng 2: Chữ mờ dần từ trên xuống */}
       <p className="mt-4 text-xl md:text-2xl text-gray-300 animate-fade-down animate-delay-300">
-        Shop uy tín nhất MegaEarth - KingMC
+        Shop uy tín nhất MegaEarth - KingMC 
       </p>
     </section>
   );

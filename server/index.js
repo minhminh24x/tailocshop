@@ -1,71 +1,84 @@
-// File: server/index.js
+// server/index.js
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import httpStatus from 'http-status';
+
 import authRoutes from './routes/auth.route.js';
 import userRoutes from './routes/user.route.js';
 import categoryRoutes from './routes/category.route.js';
-import itemRoutes from './routes/item.route.js'; 
+import itemRoutes from './routes/item.route.js';
 import deliveryTimeSlotRoutes from './routes/deliveryTimeSlot.route.js';
 import orderRoutes from './routes/order.route.js';
-// 1. Khởi tạo
+
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// 2. Cấu hình Middleware
-app.use(cors());
+// ✅ Danh sách các origin được phép
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://tailocshop.onrender.com',
+];
+
+// ✅ Cấu hình CORS nâng cao
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+
 app.use(express.json());
 app.use(cookieParser());
 
-// 3. API Routes
+// ✅ API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/items', itemRoutes);
 app.use('/api/delivery-slots', deliveryTimeSlotRoutes);
 app.use('/api/orders', orderRoutes);
-// API Test "Hello World"
+
+// ✅ Route test
 app.get('/api', (req, res) => {
   res.status(200).json({ message: 'Chào mừng đến với Tài Lộc Shop API!' });
 });
 
-// [THÊM MỚI] Middleware xử lý lỗi
-// Bạn nên thêm một middleware xử lý lỗi cơ bản
-// để bắt các lỗi ApiError và lỗi Prisma (P2025, P2003)
+// ✅ Middleware xử lý lỗi
 app.use((err, req, res, next) => {
-  console.error(err); // Log lỗi ra console
-
+  console.error(err);
   let statusCode = err.statusCode || 500;
   let message = err.message || 'Lỗi máy chủ nội bộ';
 
-  // Xử lý lỗi Prisma (Ví dụ: P2025 - Record not found)
   if (err.code === 'P2025') {
     statusCode = httpStatus.NOT_FOUND;
     message = 'Không tìm thấy tài nguyên được yêu cầu';
   }
-  // Xử lý lỗi Prisma (Ví dụ: P2003 - Foreign key constraint failed)
   if (err.code === 'P2003') {
     statusCode = httpStatus.BAD_REQUEST;
     message = 'Không thể xóa: Tài nguyên này đang được sử dụng ở nơi khác';
   }
-  // Xử lý lỗi Prisma (Ví dụ: P2002 - Unique constraint failed)
   if (err.code === 'P2002') {
     statusCode = httpStatus.BAD_REQUEST;
     message = 'Lỗi trùng lặp dữ liệu (Unique constraint failed)';
   }
 
   res.status(statusCode).json({
-    status: err.status || 'error',
-    message: message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    status: 'error',
+    message,
   });
 });
 
-
-// 4. Khởi động Server
 app.listen(PORT, () => {
-  console.log(`Backend server đang chạy tại http://localhost:${PORT}`);
+  console.log(`✅ Backend server đang chạy tại http://localhost:${PORT}`);
 });
