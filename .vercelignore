@@ -1,0 +1,11 @@
+# Bỏ qua backend
+server/
+prisma/
+.env
+.env.local
+
+# Các file không cần thiết
+node_modules/
+*.log
+.git/
+.gitignore
