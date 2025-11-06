@@ -11,6 +11,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -21,17 +22,18 @@
     "pg": "^8.16.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.5",
     "react-scripts": "5.0.1",
     "slugify": "^1.6.6",
     "web-vitals": "^2.1.4",
-    "zod": "^4.1.12"
+    "zod": "^4.1.12",
+    "zustand": "^5.0.8"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-
     "server": "node -r dotenv/config server/index.js",
     "dev": "nodemon -r dotenv/config server/index.js"
   },
@@ -60,8 +62,12 @@
   "license": "ISC",
   "devDependencies": {
     "@prisma/client": "^6.19.0",
+    "ajv": "^8.17.1",
+    "autoprefixer": "^10.4.21",
     "nodemon": "^3.1.10",
+    "postcss": "^8.5.6",
     "prisma": "^6.19.0",
+    "tailwindcss": "^3.4.0",
     "typescript": "^5.9.3"
   }
 }
