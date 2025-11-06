@@ -21,6 +21,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'https://tailocshop.onrender.com',
   'https://tailocshop.vercel.app',
+  'https://tailocshop-6qtp-iefejt9eu-minhminh24xs-projects.vercel.app'
 ];
 
 // ✅ Cấu hình CORS nâng cao
