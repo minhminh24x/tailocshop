@@ -1,11 +1,12 @@
 // server/validations/item.validation.js
 import { z } from 'zod';
-import { ItemUnit } from '@prisma/client'; // Import ENUM từ Prisma
+// [SỬA] Import ENUM từ @prisma/client phải dùng dấu {}
+import { ItemUnit } from '@prisma/client';
 
 const createItemSchema = z.object({
   body: z.object({
     name: z.string().min(3, 'Tên vật phẩm phải có ít nhất 3 ký tự'),
-    description: z.string().optional(),
+    description: z.string().optional().nullable(), // Cho phép null
     categoryId: z.string().uuid('ID danh mục không hợp lệ'),
     unit: z.nativeEnum(ItemUnit, {
       errorMap: () => ({ message: 'Đơn vị không hợp lệ (PIECE, STACK, SHULKER)' }),
@@ -33,7 +34,9 @@ const updateItemSchema = z.object({
   params: z.object({
     id: z.string().uuid('ID vật phẩm không hợp lệ'),
   }),
-  body: createItemSchema.body.partial(), // Tất cả các trường đều là optional
+  // [ĐÃ SỬA LỖI]
+  // Phải dùng .shape.body để truy cập schema bên trong
+  body: createItemSchema.shape.body.partial(),
 });
 
 // GET sẽ dùng slug và unit, vì nó là unique
