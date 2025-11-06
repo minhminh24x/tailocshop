@@ -3,8 +3,8 @@ import React from 'react';
 
 // Nhận "item" (dữ liệu) làm prop
 export default function ItemCard({ item }) {
-  // Dùng ảnh placeholder nếu chưa có ảnh thật
-  const imageUrl = item.imageUrl || 'https://via.placeholder.com/300x200.png?text=TaiLocShop';
+  // [SỬA LỖI] Đổi dịch vụ placeholder phòng khi 'via.placeholder.com' bị lỗi
+  const imageUrl = item.imageUrl || 'https://placehold.co/300x200/2D3748/FFFFFF?text=TaiLocShop';
 
   return (
     // Hiệu ứng 3: Thẻ sẽ hơi "nảy" lên khi hover (group-hover)
