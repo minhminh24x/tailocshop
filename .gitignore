@@ -198,3 +198,11 @@ frontend/node_modules/.cache/babel-loader/fe6277cdf7dff1a82ff57ec73caefb67bfed96
 frontend/node_modules/.cache/babel-loader/fff4f0be395ecbbe16262b6d88d372149940e1d9f6d6eb1350a2d85e9a73f316.json
 frontend/node_modules/.cache/default-development/0.pack
 frontend/node_modules/.cache/default-development/index.pack
+frontend/node_modules/.cache/babel-loader/70cae9411a2ee107cc807b0430f826f49f8b81fc7a2646735e95bb90fd5b0edd.json
+frontend/node_modules/.cache/babel-loader/122c6da7202ce57481b6604e0c17852f4f778b8c3bade2970bbeeaf1ccbf181c.json
+frontend/node_modules/.cache/babel-loader/bcf0a287672cfc767f8e156f4fbfdeba616c873b7d58c8c7770332a2396756a4.json
+frontend/node_modules/.cache/default-development/1.pack
+frontend/node_modules/.cache/default-development/2.pack
+frontend/node_modules/.cache/default-development/index.pack.old
+frontend/node_modules/.cache/default-development/3.pack
+frontend/src/services/apiClient.js

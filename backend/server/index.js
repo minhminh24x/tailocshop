@@ -20,6 +20,7 @@ const PORT = process.env.PORT || 8080;
 const allowedOrigins = [
   'http://localhost:3000',
   'https://tailocshop.onrender.com',
+  'https://tailocshop.vercel.app',
 ];
 
 // ✅ Cấu hình CORS nâng cao
