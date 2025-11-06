@@ -3,12 +3,13 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
-
+import httpStatus from 'http-status';
 import authRoutes from './routes/auth.route.js';
 import userRoutes from './routes/user.route.js';
 import categoryRoutes from './routes/category.route.js';
-import itemRoutes from './routes/item.route.js'; // <-- [THÊM DÒNG NÀY]
-
+import itemRoutes from './routes/item.route.js'; 
+import deliveryTimeSlotRoutes from './routes/deliveryTimeSlot.route.js';
+import orderRoutes from './routes/order.route.js';
 // 1. Khởi tạo
 dotenv.config();
 const app = express();
@@ -23,8 +24,9 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
-app.use('/api/items', itemRoutes); // <-- [THÊM DÒNG NÀY]
-
+app.use('/api/items', itemRoutes);
+app.use('/api/delivery-slots', deliveryTimeSlotRoutes);
+app.use('/api/orders', orderRoutes);
 // API Test "Hello World"
 app.get('/api', (req, res) => {
   res.status(200).json({ message: 'Chào mừng đến với Tài Lộc Shop API!' });
