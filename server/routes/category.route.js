@@ -1,18 +1,12 @@
+// server/routes/category.route.js
 import express from 'express';
-
-// === ĐÃ SỬA LỖI ĐƯỜNG DẪN ===
-
-// Import controller trực tiếp từ file, lùi 1 cấp
 import { categoryController } from '../controllers/category.controller.js';
-
-// Import middleware 'validate' trực tiếp, lùi 1 cấp
-// (Giả sử đây là export default)
 import validate from '../middleware/validate.js';
 
-// Import validation từ file 'index.js' trong 'validations', lùi 1 cấp
-import { categoryValidation } from '../index.js';
+// [ĐÃ SỬA LỖI]
+// Đường dẫn import bây giờ trỏ thẳng đến file .js cụ thể
+import { categoryValidation } from '../validations/category.validation.js';
 
-// Import middleware xác thực, lùi 1 cấp
 import { protect, isAdmin } from '../middleware/auth.middleware.js';
 
 const router = express.Router();

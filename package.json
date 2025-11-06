@@ -30,7 +30,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "server": "node server/index.js",
+    "dev": "nodemon server/index.js"
   },
   "eslintConfig": {
     "extends": [
@@ -57,6 +59,7 @@
   "license": "ISC",
   "devDependencies": {
     "@prisma/client": "^6.19.0",
+    "nodemon": "^3.1.10",
     "prisma": "^6.19.0",
     "typescript": "^5.9.3"
   }

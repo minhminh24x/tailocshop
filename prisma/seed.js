@@ -7,12 +7,14 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Bắt đầu seeding (gieo mầm) dữ liệu...');
 
-  // 1. Xóa dữ liệu cũ
+  // 1. Xóa dữ liệu cũ (Lưu ý: nên xóa theo thứ tự ngược lại
+  // nếu có khóa ngoại, ví dụ: Order -> User)
+  // Tạm thời chấp nhận cách xóa này cho seed.
   await prisma.user.deleteMany();
   await prisma.vipLevel.deleteMany();
   console.log('Đã xóa dữ liệu cũ (User, VipLevel).');
 
-  // 2. Tạo 5 cấp VIP (Giữ nguyên logic của bạn)
+  // 2. Tạo 5 cấp VIP
   const vipData = [
     { level: 0, name: 'Tân Thủ', coinThreshold: 0, discountPercent: 0 },
     { level: 1, name: 'Chiến Binh', coinThreshold: 50, discountPercent: 5 },
@@ -26,37 +28,30 @@ async function main() {
   });
   console.log('Đã tạo 5 cấp VIP thành công.');
 
-  // 3. [CODE ĐÃ SỬA] Tạo tài khoản Admin
+  // 3. Tạo tài khoản Admin
   console.log('Đang tạo tài khoản Admin...');
-
-  // 3a. Mã hóa mật khẩu
   const hashedPassword = await bcrypt.hash('admin123', 10);
 
-  // 3b. Tạo Admin
   const adminUser = await prisma.user.create({
     data: {
       email: 'admin@tailocshop.com',
-      passwordHash: hashedPassword, // (Chúng ta đã sửa ở bước trước)
+      passwordHash: hashedPassword,
       role: 'ADMIN',
-      inGameName: 'AdminTaiLoc', // (Chúng ta đã thêm ở bước trước)
-      
-      // [SỬA LỖI 1] Xóa 'name: "..."' vì schema không có
-      
-      // [SỬA LỖI 2] Xóa khối 'vipLevel' vì nó là optional
+      inGameName: 'AdminTaiLoc',
+      // vipLevel sẽ tự động là default (0)
     },
   });
 
   console.log(`Đã tạo Admin thành công: ${adminUser.email}`);
   console.log('Seeding hoàn tất.');
-}
+} // [ĐÃ SỬA] Dấu } kết thúc hàm main() nằm ở đây
 
-// 4. Chạy hàm main và xử lý kết nối
+// [ĐÃ SỬA] Khối lệnh này phải nằm BÊN NGOÀI hàm main()
 main()
   .catch((e) => {
     console.error(e);
     process.exit(1);
   })
   .finally(async () => {
-    // Đóng kết nối Prisma
     await prisma.$disconnect();
   });
