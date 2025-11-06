@@ -2,7 +2,9 @@
 import prisma from '../lib/prisma.js';
 import ApiError from '../utils/ApiError.js';
 import httpStatus from 'http-status';
-import { StockReason, OrderStatus } from '@prisma/client';
+// [ĐÃ SỬA] Import ENUMs theo cách mới
+import pkg from '@prisma/client';
+const { StockReason, OrderStatus } = pkg;
 
 /**
  * Tạo Đơn hàng mới (Logic phức tạp)

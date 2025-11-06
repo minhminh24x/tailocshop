@@ -1,6 +1,8 @@
 // server/validations/order.validation.js
 import { z } from 'zod';
-import { CurrencyType } from '@prisma/client';
+// [ĐÃ SỬA] Import default và sau đó destructure ENUMs
+import pkg from '@prisma/client';
+const { CurrencyType, OrderStatus, PaymentStatus } = pkg;
 
 // Schema cho 1 item trong giỏ hàng
 const cartItemSchema = z.object({
@@ -27,9 +29,6 @@ const getOrderSchema = z.object({
     id: z.string().uuid('ID đơn hàng không hợp lệ'),
   }),
 });
-
-// Import thêm 2 ENUM
-import { OrderStatus, PaymentStatus } from '@prisma/client';
 
 const updateOrderAdminSchema = z.object({
   params: z.object({

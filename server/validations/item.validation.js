@@ -1,7 +1,8 @@
 // server/validations/item.validation.js
 import { z } from 'zod';
-// [SỬA] Import ENUM từ @prisma/client phải dùng dấu {}
-import { ItemUnit } from '@prisma/client';
+// [ĐÃ SỬA] Import default và sau đó destructure ENUM
+import pkg from '@prisma/client';
+const { ItemUnit } = pkg;
 
 const createItemSchema = z.object({
   body: z.object({
@@ -34,8 +35,6 @@ const updateItemSchema = z.object({
   params: z.object({
     id: z.string().uuid('ID vật phẩm không hợp lệ'),
   }),
-  // [ĐÃ SỬA LỖI]
-  // Phải dùng .shape.body để truy cập schema bên trong
   body: createItemSchema.shape.body.partial(),
 });
 
