@@ -5,52 +5,41 @@ import { deliveryTimeSlotService } from '../service/deliveryTimeSlot.service.js'
 
 // === Dành cho Admin ===
 
+// Tạo khung giờ
 const createSlot = asyncHandler(async (req, res) => {
-  const slot = await deliveryTimeSlotService.createSlot(req.body);
+  const slot = await deliveryTimeSlotService.createDeliveryTimeSlot(req.body);
   res.status(httpStatus.CREATED).send(slot);
 });
 
+// Cập nhật khung giờ
 const updateSlot = asyncHandler(async (req, res) => {
-  const slot = await deliveryTimeSlotService.updateSlot(req.params.id, req.body);
+  const slot = await deliveryTimeSlotService.updateDeliveryTimeSlotById(req.params.id, req.body);
   res.status(httpStatus.OK).send(slot);
 });
 
+// Xóa khung giờ
 const deleteSlot = asyncHandler(async (req, res) => {
-  await deliveryTimeSlotService.deleteSlot(req.params.id);
+  await deliveryTimeSlotService.deleteDeliveryTimeSlotById(req.params.id);
   res.status(httpStatus.NO_CONTENT).send();
 });
 
-// Admin: Lấy tất cả
+// Admin: Lấy tất cả khung giờ
 const getAllDeliveryTimeSlots = asyncHandler(async (req, res) => {
   const timeSlots = await deliveryTimeSlotService.getAllDeliveryTimeSlots();
   res.status(httpStatus.OK).send(timeSlots);
 });
 
-// === HÀM MỚI ===
-// Public: Lấy các slot active
+// === Dành cho khách hàng (Public) ===
 const getPublicDeliveryTimeSlots = asyncHandler(async (req, res) => {
   const timeSlots = await deliveryTimeSlotService.getPublicDeliveryTimeSlots();
   res.status(httpStatus.OK).send(timeSlots);
 });
-// === KẾT THÚC HÀM MỚI ===
 
-const getAllSlots = asyncHandler(async (req, res) => {
-  const slots = await deliveryTimeSlotService.getAllSlots();
-  res.status(httpStatus.OK).send(slots);
-});
-
-// === Dành cho Khách hàng (Public) ===
-
-const getActiveSlots = asyncHandler(async (req, res) => {
-  const slots = await deliveryTimeSlotService.getActiveSlots();
-  res.status(httpStatus.OK).send(slots);
-});
-
+// Export các hàm
 export const deliveryTimeSlotController = {
   createSlot,
   updateSlot,
-  getPublicDeliveryTimeSlots,
   deleteSlot,
-  getAllSlots,
-  getActiveSlots,
+  getAllDeliveryTimeSlots,
+  getPublicDeliveryTimeSlots,
 };

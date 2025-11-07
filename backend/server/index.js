@@ -60,7 +60,7 @@ app.use('/api/auth', authSlowDown, authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/items', itemRoutes);
-app.use('/api/delivery-slots', deliveryTimeSlotRoutes);
+app.use('/api/delivery-time-slots', deliveryTimeSlotRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/vip-levels', vipLevelRoutes);
 

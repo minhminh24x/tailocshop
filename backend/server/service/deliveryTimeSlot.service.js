@@ -19,8 +19,7 @@ const createDeliveryTimeSlot = async (timeSlotBody) => {
 const getAllDeliveryTimeSlots = async () => {
   return prisma.deliveryTimeSlot.findMany({
     orderBy: [
-      { dayOfWeek: 'asc' },
-      { startTime: 'asc' },
+      { displayText: 'asc' }
     ],
   });
 };
@@ -37,7 +36,6 @@ const getPublicDeliveryTimeSlots = async () => {
       id: { not: "00000000-0000-0000-0000-000000000000" } 
     },
     orderBy: [
-      { dayOfWeek: 'asc' },
       { startTime: 'asc' },
     ],
   });

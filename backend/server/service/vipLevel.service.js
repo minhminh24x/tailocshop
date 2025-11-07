@@ -10,7 +10,7 @@ import httpStatus from 'http-status';
 const getAllVipLevels = async () => {
   return prisma.vipLevel.findMany({
     orderBy: {
-      minSpent: 'asc',
+      coinThreshold: 'asc',
     },
   });
 };
