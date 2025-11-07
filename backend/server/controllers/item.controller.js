@@ -31,6 +31,11 @@ const updateItem = asyncHandler(async (req, res) => {
   res.status(httpStatus.OK).json(item);
 });
 
+const getFeaturedItems = asyncHandler(async (req, res) => {
+  const items = await itemService.getFeaturedItems();
+  res.status(httpStatus.OK).send(items);
+});
+
 const deleteItem = asyncHandler(async (req, res) => {
   await itemService.deleteItem(req.params.id);
   res.status(httpStatus.NO_CONTENT).send();
@@ -39,6 +44,7 @@ const deleteItem = asyncHandler(async (req, res) => {
 export const itemController = {
   createItem,
   getAllItems,
+  getFeaturedItems,
   getItem,
   updateItem,
   deleteItem,

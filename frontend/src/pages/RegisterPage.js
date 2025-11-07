@@ -95,6 +95,16 @@ export default function RegisterPage() {
 
         <div className="mb-6">
           <label
+            className="block text-red-300 text-sm font-bold mb-2"
+          >
+            Vui lòng không nhập mật khẩu trùng với mật khẩu trong trong Server KingMC
+          </label>
+          <label
+            className="block text-red-300 text-sm font-bold mb-2"
+          >
+            Shop không chịu trách nhiệm về việc mất mật khẩu trong game!
+          </label>
+          <label
             className="block text-gray-300 text-sm font-bold mb-2"
             htmlFor="password"
           >

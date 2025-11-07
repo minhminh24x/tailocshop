@@ -9,6 +9,7 @@ import AdminDashboard from './pages/AdminDashboard.js';
 import { useAuthStore } from './store/authStore.js';
 // [XÓA] Xóa 'shallow' vì chúng ta không dùng nữa
 // import { shallow } from 'zustand/shallow';
+import WarningModal from './components/WarningModal.js';
 
 function App() {
   
@@ -22,12 +23,14 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
+
+      <WarningModal />
+
       <nav className="flex justify-between items-center mb-8">
         <div className="flex gap-4">
           <Link to="/" className="text-blue-400 hover:text-blue-300 transition-colors">Trang chủ</Link>
-          <Link to="/admin/dashboard" className="text-blue-400 hover:text-blue-300 transition-colors">Admin</Link>
         </div>
-        
+          
         <div className="flex gap-4 items-center">
           {user ? (
             <>

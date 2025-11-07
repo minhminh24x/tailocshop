@@ -159,6 +159,24 @@ const updateItem = async (id, updateBody) => {
     },
   });
 };
+/**
+ * [HÀM MỚI] Lấy các vật phẩm nổi bật (top 4 tồn kho cao nhất)
+ * @returns {Promise<Item[]>}
+ */
+const getFeaturedItems = async () => {
+  return prisma.item.findMany({
+    where: { isActive: true }, // Chỉ lấy các item đang được kích hoạt
+    orderBy: {
+      stockQuantity: 'desc', // Sắp xếp theo tồn kho GIẢM DẦN
+    },
+    take: 4, // Chỉ lấy 4 vật phẩm hàng đầu
+    include: {
+      category: {
+        select: { id: true, name: true, slug: true },
+      },
+    },
+  });
+};
 
 /**
  * Xóa vật phẩm bằng ID
@@ -175,6 +193,7 @@ const deleteItem = async (id) => {
 export const itemService = {
   createItem,
   getAllItems,
+  getFeaturedItems,
   getItemBySlugAndUnit,
   updateItem,
   deleteItem,

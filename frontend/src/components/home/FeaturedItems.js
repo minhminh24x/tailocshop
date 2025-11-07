@@ -19,7 +19,7 @@ export default function FeaturedItems() {
         setError(null);
         
         // Gọi API backend (đã được định nghĩa trong server/routes/item.route.js)
-        const response = await apiClient.get('/items');
+        const response = await apiClient.get('/items/featured');
         
         setItems(response.data); // Lưu dữ liệu thật vào state
       } catch (err) {

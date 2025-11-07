@@ -11,6 +11,7 @@ import { protect, isAdmin } from '../middleware/auth.middleware.js';
 const router = express.Router();
 
 // === PUBLIC ROUTES ===
+router.get('/featured', itemController.getFeaturedItems);
 router.get('/', itemController.getAllItems);
 router.get(
   '/:slug/:unit',
