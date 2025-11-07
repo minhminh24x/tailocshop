@@ -57,7 +57,7 @@ export default function AdminManageVipLevels() {
   const handleSaveVipLevel = async (vipLevelData) => {
     try {
       if (vipLevelToEdit) {
-        await updateVipLevelAdmin(vipLevelToEdit.id, vipLevelData);
+        await updateVipLevelAdmin(vipLevelToEdit.level, vipLevelData);
         toast.success('Cập nhật cấp VIP thành công!');
       } else {
         await createVipLevelAdmin(vipLevelData);
@@ -119,8 +119,8 @@ export default function AdminManageVipLevels() {
             {vipLevels.map((level) => (
               <tr key={level.id} className="hover:bg-gray-700">
                 <td className="py-3 px-4 font-medium">{level.name}</td>
-                <td className="py-3 px-4 font-mono">{level.levelInt}</td>
-                <td className="py-3 px-4 text-right font-mono text-green-400">{level.minSpent}</td>
+                <td className="py-3 px-4 font-mono">{level.level}</td>
+                <td className="py-3 px-4 text-right font-mono text-green-400">{level.coinThreshold}</td>
                 <td className="py-3 px-4 text-right font-mono text-pink-400">{level.discountPercent}%</td>
                 <td className="py-3 px-4 text-center">
                   <button

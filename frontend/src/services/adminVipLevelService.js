@@ -15,8 +15,8 @@ export const createVipLevelAdmin = (vipLevelData) => {
 };
 
 // (ADMIN) Cập nhật cấp VIP
-export const updateVipLevelAdmin = (id, updateData) => {
-  return apiClient.patch(`${API_URL}/${id}`, updateData);
+export const updateVipLevelAdmin = (level, updateData) => {
+  return apiClient.patch(`${API_URL}/${level}`, updateData);
 };
 
 // (ADMIN) Xóa cấp VIP
