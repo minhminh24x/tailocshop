@@ -1,76 +1,93 @@
-// server/service/deliveryTimeSlot.service.js
+// File: backend/server/service/deliveryTimeSlot.service.js
 import prisma from '../lib/prisma.js';
 import ApiError from '../utils/ApiError.js';
 import httpStatus from 'http-status';
 
 /**
- * Tạo khung giờ mới
- * @param {Object} slotBody
- * @returns {Promise<DeliveryTimeSlot>}
+ * [GIỮ NGUYÊN] Tạo khung giờ mới (Admin)
  */
-const createSlot = async (slotBody) => {
+const createDeliveryTimeSlot = async (timeSlotBody) => {
   return prisma.deliveryTimeSlot.create({
-    data: slotBody,
+    data: timeSlotBody,
   });
 };
 
 /**
- * Lấy tất cả khung giờ
- * @returns {Promise<DeliveryTimeSlot[]>}
+ * [SỬA] Lấy TẤT CẢ khung giờ (cho Admin)
+ * Sẽ bao gồm cả các slot bị deactivate
  */
-const getAllSlots = async () => {
+const getAllDeliveryTimeSlots = async () => {
   return prisma.deliveryTimeSlot.findMany({
-    orderBy: {
-      displayText: 'asc', // Sắp xếp theo A-Z
-    },
+    orderBy: [
+      { dayOfWeek: 'asc' },
+      { startTime: 'asc' },
+    ],
   });
 };
 
 /**
- * Lấy tất cả khung giờ ĐANG KÍCH HOẠT (cho khách hàng chọn)
- * @returns {Promise<DeliveryTimeSlot[]>}
+ * [MỚI] Lấy các khung giờ CÔNG KHAI (cho Customer)
+ * Chỉ lấy các slot `isActive: true`
  */
-const getActiveSlots = async () => {
+const getPublicDeliveryTimeSlots = async () => {
   return prisma.deliveryTimeSlot.findMany({
-    where: { isActive: true },
-    orderBy: {
-      displayText: 'asc',
+    where: { 
+      isActive: true,
+      // Bỏ qua slot MẶC ĐỊNH (dùng khi không có slot nào)
+      id: { not: "00000000-0000-0000-0000-000000000000" } 
     },
+    orderBy: [
+      { dayOfWeek: 'asc' },
+      { startTime: 'asc' },
+    ],
   });
 };
 
+
 /**
- * Cập nhật khung giờ (Admin)
- * @param {string} id
- * @param {Object} updateBody
- * @returns {Promise<DeliveryTimeSlot>}
+ * [GIỮ NGUYÊN] Lấy chi tiết khung giờ (Admin)
  */
-const updateSlot = async (id, updateBody) => {
-  // Lỗi P2025 (Không tìm thấy) sẽ được middleware lỗi chung xử lý
-  return prisma.deliveryTimeSlot.update({
+const getDeliveryTimeSlotById = async (id) => {
+  const timeSlot = await prisma.deliveryTimeSlot.findUnique({
+    where: { id },
+  });
+  if (!timeSlot) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Không tìm thấy khung giờ');
+  }
+  return timeSlot;
+};
+
+/**
+ * [GIỮ NGUYÊN] Cập nhật khung giờ (Admin)
+ */
+const updateDeliveryTimeSlotById = async (id, updateBody) => {
+  const timeSlot = await getDeliveryTimeSlotById(id); // Kiểm tra tồn tại
+  const updatedTimeSlot = await prisma.deliveryTimeSlot.update({
     where: { id },
     data: updateBody,
   });
+  return updatedTimeSlot;
 };
 
 /**
- * Xóa khung giờ (Admin)
- * @param {string} id
- * @returns {Promise<DeliveryTimeSlot>}
+ * [GIỮ NGUYÊN] Xóa khung giờ (Admin)
  */
-const deleteSlot = async (id) => {
-  // ⭐️ Lưu ý: Nếu một Order đang dùng slot này, Prisma sẽ ném lỗi P2003
-  // (Foreign key constraint failed) và middleware lỗi sẽ bắt
-  // Đây là hành vi TỐT.
-  return prisma.deliveryTimeSlot.delete({
+const deleteDeliveryTimeSlotById = async (id) => {
+  await getDeliveryTimeSlotById(id); // Kiểm tra tồn tại
+  
+  // TODO: Kiểm tra xem có đơn hàng nào đang dùng slot này không
+  
+  await prisma.deliveryTimeSlot.delete({
     where: { id },
   });
+  return { message: 'Xóa khung giờ thành công' };
 };
 
 export const deliveryTimeSlotService = {
-  createSlot,
-  getAllSlots,
-  getActiveSlots,
-  updateSlot,
-  deleteSlot,
+  createDeliveryTimeSlot,
+  getAllDeliveryTimeSlots, // Cho Admin
+  getPublicDeliveryTimeSlots, // Cho Customer
+  getDeliveryTimeSlotById,
+  updateDeliveryTimeSlotById,
+  deleteDeliveryTimeSlotById,
 };

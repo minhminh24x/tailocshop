@@ -62,6 +62,22 @@ export const protect = asyncHandler(async (req, res, next) => {
 });
 
 /**
+ * Middleware để kiểm tra vai trò (role)
+ * @param {string} requiredRole - Vai trò yêu cầu (ví dụ: 'ADMIN')
+ */
+export const authorize = (requiredRole) => {
+  return (req, res, next) => {
+    // Phải dùng sau 'protect', nên req.user đã có
+    if (!req.user || req.user.role !== requiredRole) {
+      throw new ApiError(
+        httpStatus.FORBIDDEN,
+        'Bạn không có quyền truy cập chức năng này'
+      );
+    }
+    next();
+  };
+};
+/**
  * [HÀM MỚI] (Giữ nguyên, đã đúng)
  * Middleware kiểm tra xem user có phải là 'ADMIN' không
  */

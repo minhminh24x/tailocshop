@@ -3,14 +3,47 @@ import prisma from '../lib/prisma.js';
 import ApiError from '../utils/ApiError.js';
 import httpStatus from 'http-status';
 
+
+// === HÀM HELPER MỚI (để trong cùng file) ===
 /**
- * [SỬA ĐỔI] Viết lại hàm createOrder để sử dụng Interactive Transaction
- * * @param {string} userId - ID của user từ req.user
+ * Cập nhật cấp độ VIP cho user dựa trên tổng chi tiêu
+ * @param {object} tx - Prisma transaction client
+ * @param {string} userId - ID của user
+ * @param {number} newTotalSpent - Tổng chi tiêu MỚI
+ */
+const updateUserVipLevel = async (tx, userId, newTotalSpent) => {
+  // 1. Lấy tất cả các cấp VIP, sắp xếp GIẢM DẦN
+  const allVipLevels = await tx.vipLevel.findMany({
+    orderBy: { minSpent: 'desc' },
+  });
+
+  // 2. Tìm cấp VIP cao nhất mà user đạt được
+  let newVipLevelId = null;
+  for (const level of allVipLevels) {
+    if (newTotalSpent >= level.minSpent) {
+      newVipLevelId = level.id;
+      break; // Dừng ngay khi tìm thấy mốc cao nhất
+    }
+  }
+
+  // 3. Cập nhật cho user nếu tìm thấy cấp VIP
+  if (newVipLevelId) {
+    await tx.user.update({
+      where: { id: userId },
+      data: { vipLevelId: newVipLevelId },
+    });
+  }
+};
+// === KẾT THÚC HÀM HELPER ===
+
+/**
+ * [GIỮ NGUYÊN] Tạo đơn hàng mới (cho Customer)
+ * @param {string} userId - ID của user từ req.user
  * @param {object} orderData - Dữ liệu từ req.body (gồm items và inGameName)
  * @returns {Promise<object>} Đơn hàng vừa tạo
  */
 const createOrder = async (userId, orderData) => {
-  const { items, inGameName } = orderData; // items là [{ itemId, quantity }, ...]
+  const { items, inGameName, deliveryTimeSlotId } = orderData;  // items là [{ itemId, quantity }, ...]
 
   // 1. Kiểm tra dữ liệu đầu vào cơ bản
   if (!items || items.length === 0) {
@@ -19,22 +52,19 @@ const createOrder = async (userId, orderData) => {
   if (!inGameName || inGameName.trim() === '') {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Vui lòng nhập tên trong game');
   }
-
+  if (!deliveryTimeSlotId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Vui lòng chọn khung giờ giao hàng');
+  }
   // 2. Bắt đầu một GIAO DỊCH (TRANSACTION)
   try {
     const newOrder = await prisma.$transaction(async (tx) => {
       // 2.1. Lấy thông tin User (để tính VIP) và các Items trong giỏ (để kiểm tra)
-      // Dùng `findFirstOrThrow` để nếu user không tồn tại, nó sẽ tự động báo lỗi
       const user = await tx.user.findFirstOrThrow({
         where: { id: userId },
-        select: { vipLevel: true },
+        include: { vipLevel: true }, // Lấy thông tin vipLevel
       });
 
       const itemIds = items.map((item) => item.itemId);
-      // Lấy TẤT CẢ item trong giỏ từ DB để kiểm tra.
-      // Quan trọng: Prisma tự động thêm "SELECT... FOR UPDATE" khi
-      // chúng ta đọc và sau đó cập nhật trong cùng một interactive transaction,
-      // giúp giải quyết vấn đề Race Condition!
       const dbItems = await tx.item.findMany({
         where: { id: { in: itemIds } },
       });
@@ -47,58 +77,63 @@ const createOrder = async (userId, orderData) => {
       for (const cartItem of items) {
         const dbItem = dbItems.find((item) => item.id === cartItem.itemId);
 
-        // Lỗi 1: Vật phẩm không tồn tại
         if (!dbItem) {
           throw new ApiError(httpStatus.NOT_FOUND, `Vật phẩm với ID ${cartItem.itemId} không tồn tại.`);
         }
-
-        // Lỗi 2: HẾT HÀNG (Đây là bước kiểm tra quan trọng)
         if (dbItem.stockQuantity < cartItem.quantity) {
-          throw new ApiError(httpStatus.BAD_REQUEST, `Vật phẩm "${dbItem.name}" đã hết hàng hoặc không đủ số lượng.`);
+          throw new ApiError(httpStatus.BAD_REQUEST, `Vật phẩm "${dbItem.name}" không đủ số lượng (còn ${dbItem.stockQuantity}).`);
         }
-        
-        const price = parseFloat(dbItem.priceCoin || dbItem.priceUsd || 0); // Ưu tiên Coin
+
+        const price = parseFloat(dbItem.priceCoin || 0); // Chỉ dùng Xu
         const lineTotal = price * cartItem.quantity;
         subTotal += lineTotal;
 
-        // Chuẩn bị data cho 'OrderDetail'
         orderDetailsData.push({
           itemId: dbItem.id,
           quantity: cartItem.quantity,
           priceAtPurchase: price,
+          unitAtPurchase: dbItem.unit, // [THÊM] Lưu lại unit lúc mua
           totalLineAmount: lineTotal,
         });
 
-        // Chuẩn bị lệnh để 'giảm tồn kho'
         itemUpdateOps.push(
           tx.item.update({
             where: { id: dbItem.id },
-            data: {
-              stockQuantity: {
-                decrement: cartItem.quantity,
-              },
-            },
+            data: { stockQuantity: { decrement: cartItem.quantity } },
           })
         );
-      } // Kết thúc vòng lặp kiểm tra giỏ hàng
+      }
 
       // 2.3. Tính toán giảm giá và tổng
-      const vipDiscountRate = (user.vipLevel || 0) * 0.05; // 5% mỗi level VIP
-      const vipDiscountAmount = subTotal * vipDiscountRate;
+      if (deliveryTimeSlotId !== "00000000-0000-0000-0000-000000000000") {
+        const timeSlot = await tx.deliveryTimeSlot.findFirst({
+          where: { id: deliveryTimeSlotId, isActive: true }
+        });
+        if (!timeSlot) {
+          throw new ApiError(httpStatus.BAD_REQUEST, 'Khung giờ bạn chọn không còn hợp lệ. Vui lòng chọn lại.');
+        }
+      }
+      // [SỬA] Tính giảm giá từ vipLevel.discountPercent
+      const vipDiscountPercent = user.vipLevel.discountPercent || 0;
+      const vipDiscountAmount = subTotal * (vipDiscountPercent / 100);
       const totalAmount = subTotal - vipDiscountAmount;
 
-      // 2.4. TẠO ĐƠN HÀNG (Order) và Chi tiết Đơn hàng (OrderDetail)
+      // 2.4. TẠO ĐƠN HÀNG (Order)
       const createdOrder = await tx.order.create({
         data: {
-          userId: userId,
+          customerUserId: userId, // [SỬA] Dùng customerUserId
           inGameName: inGameName,
-          status: 'PENDING', // Mặc định là PENDING
-          paymentStatus: 'UNPAID', // Mặc định là UNPAID
+          status: 'PENDING',
+          paymentStatus: 'UNPAID',
           subTotal: subTotal,
           vipDiscountAmount: vipDiscountAmount,
           totalAmount: totalAmount,
-          currencyUsed: 'Xu', // Giả sử chỉ dùng Xu
-          // Tạo các OrderDetail lồng nhau
+          currencyUsed: 'COIN', // [SỬA] Dùng ENUM
+
+          // [SỬA] Cần deliveryTimeSlotId (Lỗi: Hàm cũ thiếu)
+          // Tạm thời hardcode, vì logic chọn time slot chưa làm
+          deliveryTimeSlotId: deliveryTimeSlotId,// ID MẶC ĐỊNH - SẼ SỬA SAU
+
           orderDetails: {
             createMany: {
               data: orderDetailsData,
@@ -106,33 +141,176 @@ const createOrder = async (userId, orderData) => {
           },
         },
         include: {
-          orderDetails: true, // Trả về chi tiết đơn hàng
+          orderDetails: true,
         },
       });
 
       // 2.5. THỰC THI CẬP NHẬT TỒN KHO
-      // (Chỉ chạy sau khi tạo Order thành công)
       await Promise.all(itemUpdateOps);
 
-      // 2.6. Trả về đơn hàng
+      // 2.6. [THÊM] Cập nhật tổng chi tiêu cho User
+      const updatedUser = await tx.user.update({
+        where: { id: userId },
+        data: {
+          totalSpentCoin: {
+            increment: totalAmount
+          }
+        },
+        select: { totalSpentCoin: true } // Lấy ra tổng chi tiêu mới
+      });
+
+      await updateUserVipLevel(tx, userId, updatedUser.totalSpentCoin);
       return createdOrder;
-    }); // KẾT THÚC TRANSACTION
+    });
 
     return newOrder;
 
   } catch (error) {
-    // Nếu có bất kỳ lỗi nào (ApiError, lỗi Prisma...), transaction sẽ tự động ROLLBACK
     if (error instanceof ApiError) {
-      throw error; // Ném lại lỗi (vd: Hết hàng) để controller bắt
+      throw error;
     }
-    // Các lỗi chung khác
+    // Bắt lỗi Prisma P2025 (Thiếu deliveryTimeSlotId) nếu bạn chưa seed
+    if (error.code === 'P2025'|| error.code === 'P2018' ) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Lỗi hệ thống: Không tìm thấy khung giờ giao hàng mặc định.');
+    }
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, `Không thể tạo đơn hàng: ${error.message}`);
   }
 };
 
-// (Các hàm khác 'getOrders', 'getOrderById', 'updateOrderStatus' giữ nguyên)
-// ...
+// --- CÁC HÀM MỚI BẮT ĐẦU TỪ ĐÂY ---
+
+/**
+ * [MỚI] Lấy danh sách đơn hàng CỦA TÔI (cho Customer)
+ * @param {string} userId - ID của user
+ */
+const getMyOrders = async (userId) => {
+  return prisma.order.findMany({
+    where: { customerUserId: userId },
+    orderBy: { createdAt: 'desc' },
+    select: { // Chỉ lấy thông tin cần thiết cho trang danh sách
+      id: true,
+      status: true,
+      paymentStatus: true,
+      totalAmount: true,
+      currencyUsed: true,
+      createdAt: true,
+    },
+  });
+};
+
+/**
+ * [MỚI] Lấy chi tiết 1 đơn hàng CỦA TÔI (cho Customer)
+ * @param {string} orderId - ID đơn hàng
+ * @param {string} userId - ID của user
+ */
+const getMyOrderById = async (orderId, userId) => {
+  const order = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+      customerUserId: userId, // Đảm bảo user này sở hữu đơn hàng
+    },
+    include: {
+      orderDetails: {
+        include: {
+          item: { // Lấy thông tin vật phẩm lúc mua
+            select: { id: true, name: true, thumbnailImageUrl: true }
+          }
+        }
+      }
+    }
+  });
+
+  if (!order) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Không tìm thấy đơn hàng');
+  }
+  return order;
+};
+
+/**
+ * [MỚI] Lấy TẤT CẢ đơn hàng (cho Admin)
+ */
+const getAllOrdersAdmin = async () => {
+  return prisma.order.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: {
+      customer: { // Lấy thông tin người đặt
+        select: { inGameName: true, email: true }
+      }
+    }
+  });
+};
+
+/**
+ * [MỚI] Lấy chi tiết 1 đơn hàng (cho Admin)
+ * @param {string} orderId - ID đơn hàng
+ */
+const getOrderByIdAdmin = async (orderId) => {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      customer: { // Lấy thông tin người đặt
+        select: { id: true, inGameName: true, email: true, vipLevelInt: true }
+      },
+      staff: { // Lấy thông tin người xử lý
+        select: { id: true, inGameName: true }
+      },
+      deliveryTimeSlot: true,
+      orderDetails: {
+        include: {
+          item: { // Lấy thông tin vật phẩm
+            select: { id: true, name: true, thumbnailImageUrl: true }
+          }
+        }
+      }
+    }
+  });
+
+  if (!order) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Không tìm thấy đơn hàng');
+  }
+  return order;
+};
+
+/**
+ * [MỚI] Cập nhật 1 đơn hàng (cho Admin)
+ * @param {string} orderId - ID đơn hàng
+ * @param {object} updateBody - { status, paymentStatus }
+ * @param {string} adminUserId - ID của admin/staff thực hiện
+ */
+const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
+  const { status, paymentStatus } = updateBody;
+
+  // Lấy đơn hàng gốc để kiểm tra
+  const order = await prisma.order.findUnique({
+    where: { id: orderId }
+  });
+
+  if (!order) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Không tìm thấy đơn hàng');
+  }
+
+  // TODO: Thêm logic nghiệp vụ phức tạp ở đây
+  // Ví dụ: Nếu chuyển status -> COMPLETED, phải kiểm tra paymentStatus == PAID
+  // Ví dụ: Nếu chuyển status -> CANCELLED, phải hoàn lại stock
+  // Tạm thời, chúng ta cho phép cập nhật đơn giản
+
+  return prisma.order.update({
+    where: { id: orderId },
+    data: {
+      status: status, // Cập nhật status nếu có
+      paymentStatus: paymentStatus, // Cập nhật paymentStatus nếu có
+      staffUserId: adminUserId, // Tự động gán admin/staff xử lý đơn này
+    },
+  });
+};
+
+
+// [SỬA] Export tất cả các hàm
 export const orderService = {
   createOrder,
-  // ... các hàm khác
+  getMyOrders,
+  getMyOrderById,
+  getAllOrdersAdmin,
+  getOrderByIdAdmin,
+  updateOrderAdmin,
 };

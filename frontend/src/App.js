@@ -33,6 +33,9 @@ import AdminManageItems from './pages/admin/manager/AdminManageItems.js';
 import AdminManageCategories from './pages/admin/manager/AdminManageCategories.js';
 import AdminManageInventory from './pages/admin/manager/AdminManageInventory.js';
 import AdminManageUsers from './pages/admin/manager/AdminManageUsers.js';
+import AdminOrderDetailPage from './pages/admin/manager/AdminOrderDetailPage.js';
+import AdminManageTimeSlots from './pages/admin/manager/AdminManageTimeSlots.js'; 
+import AdminManageVipLevels from './pages/admin/manager/AdminManageVipLevels.js';
 
 function App() {
   const checkAuthStatus = useAuthStore((state) => state.checkAuthStatus);
@@ -80,8 +83,11 @@ function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="orders" element={<AdminManageOrders />} />
+            <Route path="orders/:id" element={<AdminOrderDetailPage />} />
             <Route path="items" element={<AdminManageItems />} />
             <Route path="categories" element={<AdminManageCategories />} />
+            <Route path="timeslots" element={<AdminManageTimeSlots />} />
+            <Route path="vip-levels" element={<AdminManageVipLevels />} />
             <Route path="inventory" element={<AdminManageInventory />} />
             <Route path="users" element={<AdminManageUsers />} />
             <Route index element={<Navigate to="dashboard" replace />} />

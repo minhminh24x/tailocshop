@@ -17,12 +17,12 @@ export default function AdminSidebar() {
   return (
     <aside className="w-64 bg-gray-900 text-white flex-shrink-0 p-4 shadow-xl">
       <nav className="flex flex-col space-y-2">
-        
+
         {/* [SỬA] Sử dụng NavLink và áp dụng style */}
         <NavLink to="/admin/dashboard" className={getNavLinkClass}>
           🏠 Tổng quan (Dashboard)
         </NavLink>
-        
+
         {/* --- CÁC NÚT CHỨC NĂNG MỚI --- */}
 
         <NavLink to="/admin/orders" className={getNavLinkClass}>
@@ -36,6 +36,11 @@ export default function AdminSidebar() {
         <NavLink to="/admin/categories" className={getNavLinkClass}>
           🗂️ Quản lý Phân loại
         </NavLink>
+        
+        {/* [SỬA] Dùng 'getNavLinkClass' và emoji */}
+        <NavLink to="/admin/timeslots" className={getNavLinkClass}>
+          🕒 Quản lý Khung giờ
+        </NavLink>
 
         <NavLink to="/admin/inventory" className={getNavLinkClass}>
           📊 Quản lý Kho
@@ -45,8 +50,13 @@ export default function AdminSidebar() {
           👥 Quản lý Người dùng
         </NavLink>
 
-        {/* (Bạn có thể thêm các link khác ở đây sau) */}
+        {/* [SỬA] Dùng 'getNavLinkClass' và emoji */}
+        <NavLink to="/admin/vip-levels" className={getNavLinkClass}>
+          ⭐ Quản lý Cấp VIP
+        </NavLink>
         
+        {/* (Bạn có thể thêm các link khác ở đây sau) */}
+
       </nav>
     </aside>
   );

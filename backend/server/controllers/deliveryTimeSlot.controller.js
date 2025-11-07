@@ -20,6 +20,20 @@ const deleteSlot = asyncHandler(async (req, res) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
+// Admin: Lấy tất cả
+const getAllDeliveryTimeSlots = asyncHandler(async (req, res) => {
+  const timeSlots = await deliveryTimeSlotService.getAllDeliveryTimeSlots();
+  res.status(httpStatus.OK).send(timeSlots);
+});
+
+// === HÀM MỚI ===
+// Public: Lấy các slot active
+const getPublicDeliveryTimeSlots = asyncHandler(async (req, res) => {
+  const timeSlots = await deliveryTimeSlotService.getPublicDeliveryTimeSlots();
+  res.status(httpStatus.OK).send(timeSlots);
+});
+// === KẾT THÚC HÀM MỚI ===
+
 const getAllSlots = asyncHandler(async (req, res) => {
   const slots = await deliveryTimeSlotService.getAllSlots();
   res.status(httpStatus.OK).send(slots);
@@ -35,6 +49,7 @@ const getActiveSlots = asyncHandler(async (req, res) => {
 export const deliveryTimeSlotController = {
   createSlot,
   updateSlot,
+  getPublicDeliveryTimeSlots,
   deleteSlot,
   getAllSlots,
   getActiveSlots,
