@@ -5,6 +5,7 @@ import {
   registerUser,
   logoutUser,
 } from '../services/authService.js';
+import toast from 'react-hot-toast';
 
 // create(set => (...)) là cú pháp của Zustand
 export const useAuthStore = create((set) => ({
@@ -24,6 +25,9 @@ export const useAuthStore = create((set) => ({
       
       // Lưu user vào state
       set({ user: data.user, isLoading: false });
+
+      toast.success('Đăng nhập thành công!');
+
       return true; // Báo thành công
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'Lỗi khi đăng nhập';
@@ -40,6 +44,9 @@ export const useAuthStore = create((set) => ({
       await registerUser(userData);
       
       set({ isLoading: false });
+
+      toast.success('Đăng ký tài khoản thành công!');
+
       return true; // Báo thành công
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'Lỗi khi đăng ký';
@@ -54,6 +61,9 @@ export const useAuthStore = create((set) => ({
     try {
       await logoutUser(); // Gọi API backend để xóa cookie
       set({ user: null, isLoading: false }); // Xóa user khỏi state
+      
+      toast.success('Đăng xuất thành công!');
+
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'Lỗi khi đăng xuất';
       set({ error: errorMsg, isLoading: false });

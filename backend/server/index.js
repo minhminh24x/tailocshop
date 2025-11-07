@@ -1,6 +1,7 @@
 // server/index.js
 import express from 'express';
 import cors from 'cors';
+import slowDown from 'express-slow-down';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import httpStatus from 'http-status';
@@ -15,6 +16,13 @@ import orderRoutes from './routes/order.route.js';
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
+
+const authSlowDown = slowDown({
+  windowMs: 15 * 60 * 1000, // 15 phút
+  delayAfter: 5, // Bắt đầu làm chậm sau 5 yêu cầu
+  delayMs: 500,  // Thêm 500ms độ trễ
+  maxDelayMs: 3000 // Độ trễ tối đa là 3 giây
+});
 
 // ✅ Danh sách các origin được phép
 const allowedOrigins = [
@@ -44,7 +52,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // ✅ API Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth',authRoutes,authSlowDown);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/items', itemRoutes);
