@@ -17,11 +17,13 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+// ✅ Cấu hình slowDown (chuẩn cho express-slow-down v2)
 const authSlowDown = slowDown({
   windowMs: 15 * 60 * 1000, // 15 phút
-  delayAfter: 5, // Bắt đầu làm chậm sau 5 yêu cầu
-  delayMs: 500,  // Thêm 500ms độ trễ
-  maxDelayMs: 3000 // Độ trễ tối đa là 3 giây
+  delayAfter: 5,            // Sau 5 request thì bắt đầu chậm lại
+  delayMs: () => 500,       // Mỗi request sau đó thêm 500ms delay
+  maxDelayMs: 3000,         // Delay tối đa là 3 giây
+  validate: { delayMs: false } // Ngăn cảnh báo version (tùy chọn)
 });
 
 // ✅ Danh sách các origin được phép
@@ -52,7 +54,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // ✅ API Routes
-app.use('/api/auth',authRoutes,authSlowDown);
+app.use('/api/auth', authSlowDown, authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/items', itemRoutes);

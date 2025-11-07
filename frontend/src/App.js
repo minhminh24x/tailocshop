@@ -1,74 +1,122 @@
-// src/App.js
-import { Routes, Route } from 'react-router-dom';
+// File: frontend/src/App.js
+
+// [KHẮC PHỤC] Đảm bảo chỉ có MỘT dòng import từ 'react-router-dom'
+import { Routes, Route, Navigate, Link, Outlet } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import React, { useEffect } from 'react'; // <-- THÊM useEffect
+import React, { useEffect } from 'react';
 
 // Import pages
 import HomePage from './pages/HomePage.js';
 import LoginPage from './pages/LoginPage.js';
 import RegisterPage from './pages/RegisterPage.js';
-import AdminDashboard from './pages/admin/AdminDashboard.js';
-// Giả sử bạn đã có các trang này từ bước trước
-import ItemsPage from './pages/ItemsPage.js'; 
+import ItemsPage from './pages/ItemsPage.js';
+import ItemDetailPage from './pages/ItemDetailPage.js';
+import MyOrdersPage from './pages/MyOrdersPage.js';
+import MyOrderDetailPage from './pages/MyOrderDetailPage.js';
+import CartPage from './pages/CartPage.js';
+import CheckoutPage from './pages/CheckoutPage.js'; // <-- Trang mới
 
 // Import components
 import WarningModal from './components/WarningModal.js';
 import Header from './components/layout/Header.js';
 import Footer from './components/layout/Footer.js';
-import AdminProtectedRoute from './components/auth/AdminProtectedRoute.js'; // <-- IMPORT ROUTE BẢO VỆ
-import { useAuthStore } from './store/authStore.js'; // <-- IMPORT STORE
+import AdminProtectedRoute from './components/auth/AdminProtectedRoute.js';
+import UserProtectedRoute from './components/auth/UserProtectedRoute.js';
+import { useAuthStore } from './store/authStore.js';
+
+// Import các component Admin
+import AdminLayout from './pages/admin/AdminLayout.js';
+import AdminDashboard from './pages/admin/AdminDashboard.js';
+// Các trang quản lý trong Admin
+import AdminManageOrders from './pages/admin/manager/AdminManageOrders.js';
+import AdminManageItems from './pages/admin/manager/AdminManageItems.js';
+import AdminManageCategories from './pages/admin/manager/AdminManageCategories.js';
+import AdminManageInventory from './pages/admin/manager/AdminManageInventory.js';
+import AdminManageUsers from './pages/admin/manager/AdminManageUsers.js';
 
 function App() {
-  // --- THÊM PHẦN NÀY ---
-  // Lấy hàm checkAuthStatus từ store
   const checkAuthStatus = useAuthStore((state) => state.checkAuthStatus);
+  const isAuthLoading = useAuthStore((state) => state.isAuthLoading);
 
   useEffect(() => {
-    // Gọi hàm checkAuthStatus() 1 lần duy nhất khi App mount
-    // để kiểm tra xem user đã đăng nhập từ phiên trước chưa
     checkAuthStatus();
-  }, [checkAuthStatus]); // Dependency array
-  // --- KẾT THÚC PHẦN THÊM ---
+  }, [checkAuthStatus]);
+
+  if (isAuthLoading) {
+    return (
+      <div className="bg-gray-900 min-h-screen flex justify-center items-center text-white text-xl">
+        Đang tải Tài Lộc Shop...
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
-      <Toaster position="top-right" /* ... */ />
+      <Toaster position="top-right" />
       <WarningModal />
-      <Header />
 
-      <main className="flex-grow container mx-auto px-4 py-8">
-        
-        {/* --- SỬA LẠI CẤU TRÚC ROUTES --- */}
-        <Routes>
-          {/* === Public Routes (Ai cũng xem được) === */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/items" element={<ItemsPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          {/* (Các route public khác...) */}
+      <Routes>
+        {/* === Public Routes (Layout chung) === */}
+        <Route path="/" element={<PublicLayout />}>
+          <Route index element={<HomePage />} />
+          <Route path="items" element={<ItemsPage />} />
+          <Route path="item/:slug/:unit" element={<ItemDetailPage />} />
+          <Route path="login" element={<LoginPage />} />
+          <Route path="register" element={<RegisterPage />} />
+          <Route path="cart" element={<CartPage />} />
+        </Route>
 
-          {/* === Admin Protected Routes (Chỉ Admin xem được) === */}
-          <Route element={<AdminProtectedRoute />}>
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            {/* Nếu sau này bạn có nhiều trang Admin, cứ đặt hết vào đây */}
-            {/* <Route path="/admin/manage-items" element={<ManageItemsPage />} /> */}
-            {/* <Route path="/admin/manage-users" element={<ManageUsersPage />} /> */}
+        {/* === User Protected Routes (Cần đăng nhập) === */}
+        <Route element={<UserProtectedRoute />}>
+          <Route element={<PublicLayout />}>
+            <Route path="/my-orders" element={<MyOrdersPage />} />
+            <Route path="/my-orders/:id" element={<MyOrderDetailPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
           </Route>
-          
-          {/* === Not Found Route (Nếu gõ sai URL) === */}
-          <Route path="*" element={
-            <div className='text-center py-20'>
-              <h1 className='text-5xl font-bold text-red-500'>404</h1>
-              <p className='text-2xl mt-4'>Không tìm thấy trang</p>
-            </div>
-          } />
-        </Routes>
-        
-      </main>
+        </Route>
 
-      <Footer />
+        {/* === Admin Protected Routes (Layout riêng) === */}
+        <Route element={<AdminProtectedRoute />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="orders" element={<AdminManageOrders />} />
+            <Route path="items" element={<AdminManageItems />} />
+            <Route path="categories" element={<AdminManageCategories />} />
+            <Route path="inventory" element={<AdminManageInventory />} />
+            <Route path="users" element={<AdminManageUsers />} />
+            <Route index element={<Navigate to="dashboard" replace />} />
+          </Route>
+        </Route>
+
+        {/* === Not Found Route === */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
     </div>
   );
 }
+
+// (Các component PublicLayout và NotFoundPage giữ nguyên như cũ)
+const PublicLayout = () => (
+  <>
+    <Header />
+    <main className="flex-grow container mx-auto px-4 py-8">
+      <Outlet />
+    </main>
+    <Footer />
+  </>
+);
+
+const NotFoundPage = () => (
+  <div className="text-center py-40">
+    <h1 className="text-5xl font-bold text-red-500">404</h1>
+    <p className="text-2xl mt-4">Không tìm thấy trang</p>
+    <Link
+      to="/"
+      className="mt-8 inline-block text-pink-400 hover:text-pink-300 text-lg"
+    >
+      &larr; Quay về Trang chủ
+    </Link>
+  </div>
+);
 
 export default App;

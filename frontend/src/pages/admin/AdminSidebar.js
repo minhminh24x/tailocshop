@@ -1,18 +1,52 @@
-import { Link } from 'react-router-dom';
+// File: frontend/src/pages/admin/AdminSidebar.js
+import React from 'react';
+// [SỬA] Dùng NavLink thay vì Link để có style active
+import { NavLink } from 'react-router-dom';
+
+// Hàm helper để tạo className cho NavLink
+// Nó sẽ thêm class 'active-link' nếu route đang được chọn
+const getNavLinkClass = ({ isActive }) => {
+  const baseClasses = "block w-full text-left p-3 rounded-md transition-colors duration-200 hover:bg-gray-700";
+  const activeClasses = "bg-pink-600 text-white font-bold shadow-lg"; // Class khi được chọn
+  const inactiveClasses = "text-gray-300 hover:text-white"; // Class khi không được chọn
+
+  return `${baseClasses} ${isActive ? activeClasses : inactiveClasses}`;
+};
 
 export default function AdminSidebar() {
   return (
-    <aside className="w-64 bg-gray-900 text-white flex-shrink-0">
-      <nav className="flex flex-col p-4 space-y-2">
-        <Link to="/admin/dashboard" className="hover:bg-gray-700 p-2 rounded">
-          🏠 Dashboard
-        </Link>
-        <Link to="/admin/manage-users" className="hover:bg-gray-700 p-2 rounded">
-          👥 Quản lý người dùng
-        </Link>
-        <Link to="/admin/manage-items" className="hover:bg-gray-700 p-2 rounded">
-          📦 Quản lý sản phẩm
-        </Link>
+    <aside className="w-64 bg-gray-900 text-white flex-shrink-0 p-4 shadow-xl">
+      <nav className="flex flex-col space-y-2">
+        
+        {/* [SỬA] Sử dụng NavLink và áp dụng style */}
+        <NavLink to="/admin/dashboard" className={getNavLinkClass}>
+          🏠 Tổng quan (Dashboard)
+        </NavLink>
+        
+        {/* --- CÁC NÚT CHỨC NĂNG MỚI --- */}
+
+        <NavLink to="/admin/orders" className={getNavLinkClass}>
+          🛒 Quản lý Đơn hàng
+        </NavLink>
+
+        <NavLink to="/admin/items" className={getNavLinkClass}>
+          📦 Quản lý Vật phẩm
+        </NavLink>
+
+        <NavLink to="/admin/categories" className={getNavLinkClass}>
+          🗂️ Quản lý Phân loại
+        </NavLink>
+
+        <NavLink to="/admin/inventory" className={getNavLinkClass}>
+          📊 Quản lý Kho
+        </NavLink>
+
+        <NavLink to="/admin/users" className={getNavLinkClass}>
+          👥 Quản lý Người dùng
+        </NavLink>
+
+        {/* (Bạn có thể thêm các link khác ở đây sau) */}
+        
       </nav>
     </aside>
   );
