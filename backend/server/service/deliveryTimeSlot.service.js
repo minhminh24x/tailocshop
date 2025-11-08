@@ -25,7 +25,7 @@ const getAllDeliveryTimeSlots = async () => {
 };
 
 /**
- * [MỚI] Lấy các khung giờ CÔNG KHAI (cho Customer)
+ * [ĐÃ FIX] Lấy các khung giờ CÔNG KHAI (cho Customer)
  * Chỉ lấy các slot `isActive: true`
  */
 const getPublicDeliveryTimeSlots = async () => {
@@ -36,11 +36,10 @@ const getPublicDeliveryTimeSlots = async () => {
       id: { not: "00000000-0000-0000-0000-000000000000" } 
     },
     orderBy: [
-      { startTime: 'asc' },
+      { displayText: 'asc' }, // ✅ Đổi từ startTime → displayText
     ],
   });
 };
-
 
 /**
  * [GIỮ NGUYÊN] Lấy chi tiết khung giờ (Admin)

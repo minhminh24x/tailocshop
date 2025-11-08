@@ -14,7 +14,7 @@ export default function CheckoutPage() {
 
   // State cho form
   const [inGameName, setInGameName] = useState(user?.inGameName || '');
-  
+
   // === STATE MỚI CHO KHUNG GIỜ ===
   const [timeSlots, setTimeSlots] = useState([]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
@@ -28,7 +28,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     setIsLoadingTimeSlots(true);
     // Gọi API public mà chúng ta vừa tạo
-    apiClient.get('/delivery-time-slots/public')
+    apiClient.get('/delivery-time-slots/active')
       .then(response => {
         setTimeSlots(response.data);
         if (response.data.length > 0) {
@@ -46,7 +46,7 @@ export default function CheckoutPage() {
       .finally(() => {
         setIsLoadingTimeSlots(false);
       });
-    
+
   }, []);
   // === KẾT THÚC HÀM MỚI ===
 
@@ -83,7 +83,7 @@ export default function CheckoutPage() {
     };
 
     try {
-      await createOrder(orderData);
+      await createOrder(items, inGameName, selectedTimeSlot);
       toast.success('Đặt hàng thành công!');
       clearCart();
       navigate('/my-orders');
@@ -100,13 +100,13 @@ export default function CheckoutPage() {
     <div className="bg-gray-900 text-white min-h-screen">
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         <h1 className="text-4xl font-bold text-center mb-8 text-pink-500">Thanh toán</h1>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          
+
           {/* Cột 1: Thông tin & Form */}
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
             <h2 className="text-2xl font-semibold mb-6">Thông tin Giao hàng</h2>
-            
+
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
                 <label htmlFor="inGameName" className="block text-sm font-medium text-gray-300 mb-2">
@@ -142,7 +142,7 @@ export default function CheckoutPage() {
                     timeSlots.length > 0 ? (
                       timeSlots.map(slot => (
                         <option key={slot.id} value={slot.id}>
-                          {`${slot.startTime} - ${slot.endTime} (Ngày: ${slot.dayOfWeek})`}
+                          {slot.displayText}
                         </option>
                       ))
                     ) : (
@@ -177,15 +177,17 @@ export default function CheckoutPage() {
           {/* Cột 2: Tóm tắt Đơn hàng (Giữ nguyên) */}
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg h-fit">
             <h2 className="text-2xl font-semibold mb-6">Tóm tắt Đơn hàng</h2>
-            
+
             <div className="space-y-3 mb-4 max-h-60 overflow-y-auto pr-2">
-              {items.map(item => (
-                <div key={item.id} className="flex justify-between items-center text-sm">
+              {items.map(entry => (
+                <div key={entry.itemData.id} className="flex justify-between items-center text-sm">
                   <div className="text-gray-300">
-                    <p className="font-medium text-white">{item.name}</p>
-                    <p>SL: {item.quantity} x {item.priceCoin} Xu</p>
+                    <p className="font-medium text-white">{entry.itemData.name}</p>
+                    <p>SL: {entry.quantity} x {entry.itemData.priceCoin} Xu</p>
                   </div>
-                  <p className="font-semibold text-white">{(item.quantity * item.priceCoin).toFixed(2)} Xu</p>
+                  <p className="font-semibold text-white">
+                    {(entry.quantity * entry.itemData.priceCoin).toFixed(2)} Xu
+                  </p>
                 </div>
               ))}
             </div>

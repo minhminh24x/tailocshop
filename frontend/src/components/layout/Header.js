@@ -1,57 +1,79 @@
 // File: frontend/src/components/layout/Header.js
-import React, { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react'; // Thêm useState, useRef, useEffect
+import { Link, NavLink, useNavigate } from 'react-router-dom'; // Thêm useNavigate
 import { useAuthStore } from '../../store/authStore.js';
-import { useCartStore } from '../../store/cartStore.js'; 
+import { useCartStore } from '../../store/cartStore.js';
+// Thêm icon cho dropdown
+import { User, LifeBuoy, LogOut, ChevronDown } from 'lucide-react';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+  // Thêm state và ref cho dropdown
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
-  const cartItems = useCartStore((state) => state.items); 
+  const cartItems = useCartStore((state) => state.items);
   const clearCart = useCartStore((state) => state.clearCart);
+  const navigate = useNavigate(); // Dùng để điều hướng sau khi logout
 
   const totalItemCount = cartItems.reduce((total, entry) => total + entry.quantity, 0);
 
   const handleLogout = () => {
     logout();
-    clearCart(); 
-    setIsMobileMenuOpen(false); 
+    clearCart();
+    setIsMobileMenuOpen(false);
+    setIsDropdownOpen(false); // Đóng dropdown khi logout
+    navigate('/login'); // Chuyển về trang login
   };
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
+  // Thêm useEffect để đóng dropdown khi click ra ngoài
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownRef]);
+
   const renderNavLinks = (isMobile = false) => (
     <>
-      <NavLink 
-        to="/" 
-        className={isMobile ? getMobileNavLinkClass : getDesktopNavLinkClass} 
+      <NavLink
+        to="/"
+        className={isMobile ? getMobileNavLinkClass : getDesktopNavLinkClass}
         onClick={closeMobileMenu}
       >
         Trang chủ
       </NavLink>
-      <NavLink 
-        to="/items" 
-        className={isMobile ? getMobileNavLinkClass : getDesktopNavLinkClass} 
+      <NavLink
+        to="/items"
+        className={isMobile ? getMobileNavLinkClass : getDesktopNavLinkClass}
         onClick={closeMobileMenu}
       >
         Sản phẩm
       </NavLink>
       {user && (
-        <NavLink 
-          to="/my-orders" 
-          className={isMobile ? getMobileNavLinkClass : getDesktopNavLinkClass} 
+        <NavLink
+          to="/my-orders"
+          className={isMobile ? getMobileNavLinkClass : getDesktopNavLinkClass}
           onClick={closeMobileMenu}
         >
           Đơn hàng
         </NavLink>
       )}
       {user && user.role === 'ADMIN' && (
-        <NavLink 
-          to="/admin/dashboard" 
-          className={isMobile ? getMobileNavLinkClass : getDesktopNavLinkClass} 
+        <NavLink
+          // [SỬA] Đổi link admin cho đúng với App.js của bạn
+          to="/admin" 
+          className={isMobile ? getMobileNavLinkClass : getDesktopNavLinkClass}
           onClick={closeMobileMenu}
         >
           Admin
@@ -87,21 +109,52 @@ export default function Header() {
         <nav className="hidden md:flex items-center space-x-6">
           {renderNavLinks(false)}
           
-          {/* --- [SỬA ĐỔI] --- */}
-          {/* 1. Đưa Icon Cart ra TRƯỚC khối đăng nhập/user */}
           <CartIconLink totalItemCount={totalItemCount} onClick={closeMobileMenu} />
-          {/* --- KẾT THÚC SỬA ĐỔI --- */}
 
           {user ? (
-            <div className="flex items-center space-x-4 ml-4">
-              <span className="text-green-400 font-medium">Xin chào, {user.inGameName}!</span>
+            // --- [THAY ĐỔI] Thay thế phần "Xin chào" và "Đăng xuất" bằng Dropdown ---
+            <div className="relative ml-4" ref={dropdownRef}>
               <button
-                onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full text-sm"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center space-x-1 text-green-400 font-medium hover:text-green-300 focus:outline-none"
+                title="Tài khoản"
               >
-                Đăng xuất
+                <User size={18} />
+                <span className="hidden sm:inline">Xin chào, {user.inGameName}!</span>
+                <ChevronDown size={16} className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
+
+              {/* Menu Dropdown */}
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-gray-900 rounded-md shadow-lg py-1 z-50 ring-1 ring-black ring-opacity-20">
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsDropdownOpen(false)}
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                  >
+                    <User size={16} className="mr-2" />
+                    Hồ Sơ
+                  </Link>
+                  <Link
+                    to="/support"
+                    onClick={() => setIsDropdownOpen(false)}
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                  >
+                    <LifeBuoy size={16} className="mr-2" />
+                    Hỗ trợ
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center w-full px-4 py-2 text-sm text-red-500 hover:bg-gray-700"
+                  >
+                    <LogOut size={16} className="mr-2" />
+                    Đăng Xuất
+                  </button>
+                </div>
+              )}
             </div>
+            // --- [KẾT THÚC THAY ĐỔI] ---
+
           ) : (
             <div className="flex items-center space-x-3 ml-4">
               <NavLink to="/login" className={getDesktopAuthLinkClass} onClick={closeMobileMenu}>Đăng nhập</NavLink>
@@ -109,12 +162,10 @@ export default function Header() {
             </div>
           )}
           
-          {/* [XÓA] Xóa CartIconLink ở vị trí cũ (cuối cùng) */}
         </nav>
       </div>
 
       {/* Mobile Menu (Ẩn/Hiện) */}
-      {/* (Phần code mobile menu giữ nguyên) */}
       {isMobileMenuOpen && (
         <div className="md:hidden bg-gray-900 pb-4 animate-fade-in-down">
           <nav className="flex flex-col items-center space-y-3 px-4">
@@ -123,10 +174,32 @@ export default function Header() {
             {user ? (
               <>
                 <span className="text-green-400 font-medium text-lg pt-2">Xin chào, {user.inGameName}!</span>
+                
+                {/* --- [THÊM MỚI] Links cho Profile và Support trên Mobile --- */}
+                {/* Trên mobile, chúng ta hiển thị link trực tiếp thay vì dropdown lồng nhau */}
+                <NavLink 
+                  to="/profile" 
+                  className={getMobileNavLinkClass} 
+                  onClick={closeMobileMenu}
+                >
+                  <User size={16} className="inline mr-2" />
+                  Hồ Sơ
+                </NavLink>
+                <NavLink 
+                  to="/support" 
+                  className={getMobileNavLinkClass} 
+                  onClick={closeMobileMenu}
+                >
+                  <LifeBuoy size={16} className="inline mr-2" />
+                  Hỗ Trợ
+                </NavLink>
+                {/* --- [KẾT THÚC THÊM MỚI] --- */}
+
                 <button
                   onClick={handleLogout}
-                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full w-full"
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full w-full mt-2" // Thêm mt-2
                 >
+                  <LogOut size={16} className="inline mr-2" />
                   Đăng xuất
                 </button>
               </>
@@ -147,10 +220,10 @@ export default function Header() {
 // ...
 // Component Icon Cart (Req 4)
 const CartIconLink = ({ totalItemCount, onClick }) => (
-  <NavLink 
-    to="/cart" 
+  <NavLink
+    to="/cart"
     // [SỬA ĐỔI] Thêm `ml-4` để tạo khoảng cách với nav links
-    className={({isActive}) => `relative text-gray-300 hover:text-white transition-colors ml-4 ${isActive ? 'text-pink-500' : ''}`}
+    className={({ isActive }) => `relative text-gray-300 hover:text-white transition-colors md:ml-4 ${isActive ? 'text-pink-500' : ''}`} // Thêm md:ml-4
     onClick={onClick}
     title="Giỏ hàng"
   >
@@ -166,7 +239,7 @@ const CartIconLink = ({ totalItemCount, onClick }) => (
 );
 
 // Style cho NavLink (Desktop)
-const getDesktopNavLinkClass = ({ isActive }) => 
+const getDesktopNavLinkClass = ({ isActive }) =>
   `nav-link text-gray-300 hover:text-white transition-colors ${isActive ? 'text-pink-500 font-bold' : ''}`;
 
 // Style cho NavLink (Mobile)
@@ -174,7 +247,7 @@ const getMobileNavLinkClass = ({ isActive }) =>
   `text-lg w-full text-center py-2 border-b border-gray-700 ${isActive ? 'text-pink-500 font-bold' : 'text-gray-300 hover:text-white'}`;
 
 // Style cho Nút Đăng nhập/Đăng ký (Desktop)
-const getDesktopAuthLinkClass = ({ isActive }) => 
+const getDesktopAuthLinkClass = ({ isActive }) =>
   `bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-full text-sm font-bold text-white transition-all ${isActive ? 'ring-2 ring-blue-400' : ''}`;
 
 // Style cho Nút Đăng nhập/Đăng ký (Mobile)

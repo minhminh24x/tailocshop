@@ -20,14 +20,16 @@ export const getMyOrderById = (orderId) => {
  * [THÊM MỚI] Gửi yêu cầu tạo đơn hàng mới
  * @param {Array} items - [{ itemId, quantity }, ...]
  * @param {string} inGameName - Tên trong game của user
+ * @param {string} deliveryTimeSlotId - ID khung giờ nhận hàng
  */
-export const createOrder = (items, inGameName) => {
+export const createOrder = (items, inGameName, deliveryTimeSlotId) => {
   const payload = {
     items: items.map(entry => ({
       itemId: entry.itemData.id,
       quantity: entry.quantity
     })),
-    inGameName: inGameName
+    inGameName,
+    deliveryTimeSlotId,
   };
   
   // Gọi đến route `POST /orders/create` (được bảo vệ)

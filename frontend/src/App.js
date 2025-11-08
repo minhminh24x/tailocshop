@@ -14,7 +14,11 @@ import ItemDetailPage from './pages/ItemDetailPage.js';
 import MyOrdersPage from './pages/MyOrdersPage.js';
 import MyOrderDetailPage from './pages/MyOrderDetailPage.js';
 import CartPage from './pages/CartPage.js';
-import CheckoutPage from './pages/CheckoutPage.js'; // <-- Trang mới
+import CheckoutPage from './pages/CheckoutPage.js'; 
+// --- THÊM MỚI ---
+import UserProfilePage from './pages/UserProfilePage.js'; // Trang hồ sơ
+import SupportPage from './pages/SupportPage.js'; // Trang hỗ trợ
+// --- KẾT THÚC THÊM MỚI ---
 
 // Import components
 import WarningModal from './components/WarningModal.js';
@@ -67,6 +71,11 @@ function App() {
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
           <Route path="cart" element={<CartPage />} />
+          
+          {/* --- THÊM MỚI --- */}
+          <Route path="support" element={<SupportPage />} />
+          {/* --- KẾT THÚC THÊM MỚI --- */}
+
         </Route>
 
         {/* === User Protected Routes (Cần đăng nhập) === */}
@@ -75,6 +84,11 @@ function App() {
             <Route path="/my-orders" element={<MyOrdersPage />} />
             <Route path="/my-orders/:id" element={<MyOrderDetailPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
+            
+            {/* --- THÊM MỚI --- */}
+            <Route path="/profile" element={<UserProfilePage />} />
+            {/* --- KẾT THÚC THÊM MỚI --- */}
+
           </Route>
         </Route>
 
