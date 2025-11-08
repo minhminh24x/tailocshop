@@ -28,7 +28,10 @@ const getAllExchangeRates = async () => {
     orderBy: { rateType: 'asc' },
     include: {
       updatedBy: {
-        select: { id: true, username: true },
+        select: {
+          id: true,
+          inGameName: true, // [SỬA] Đổi từ 'username' thành 'inGameName'
+        },
       },
     },
   });

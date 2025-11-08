@@ -1,17 +1,24 @@
 // File: frontend/src/pages/ItemDetailPage.js
-// [CODE ĐÃ CẬP NHẬT LAYOUT VÀ LOGIC GIÁ]
+// [CODE ĐẦY ĐỦ]
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getSingleItem } from '../services/itemService.js';
 import { useCartStore } from '../store/cartStore.js';
-import { formatNumber } from '../utils/formatNumber.js'; // <-- Đã import
+import { formatNumber } from '../utils/formatNumber.js';
+import { useCurrencyStore } from '../store/currencyStore.js'; // 1. IMPORT STORE
+
+// Ngưỡng tối thiểu
+const MIN_USD_DISPLAY_THRESHOLD = 1.00;
 
 export default function ItemDetailPage() {
+  // 2. LẤY TỶ GIÁ TỪ STORE
+  const USD_PER_XU = useCurrencyStore((state) => state.rate);
+  const isRateLoading = useCurrencyStore((state) => state.isLoading);
+
   const { slug, unit } = useParams(); 
   const [item, setItem] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  
   const [quantity, setQuantity] = useState(1);
   const addItemToCart = useCartStore((state) => state.addItem);
 
@@ -34,22 +41,17 @@ export default function ItemDetailPage() {
     }
   }, [slug, unit]);
 
-  // Hàm xử lý thêm vào giỏ
   const handleAddToCart = () => {
     if (!item) return;
-    
     let qtyToAdd = Number(quantity);
     if (isNaN(qtyToAdd) || qtyToAdd <= 0) {
       qtyToAdd = 1;
     }
-    
     addItemToCart(item, qtyToAdd);
   };
   
-  // Hàm xử lý nhập số lượng
   const handleQuantityChange = (e) => {
     let newQty = parseInt(e.target.value, 10);
-    
     if (isNaN(newQty) || newQty < 1) {
       newQty = 1;
     }
@@ -59,8 +61,8 @@ export default function ItemDetailPage() {
     setQuantity(newQty);
   };
 
-  // (Phần render loading, error, !item giữ nguyên...)
-  if (isLoading) {
+  // 3. SỬA LẠI TRẠNG THÁI LOADING
+  if (isLoading || isRateLoading) {
     return <p className="text-center text-xl text-gray-400">Đang tải chi tiết...</p>;
   }
   if (error) {
@@ -72,15 +74,15 @@ export default function ItemDetailPage() {
 
   const imageUrl = item.thumbnailImageUrl || 'https://placehold.co/600x400/2D3748/FFFFFF?text=TaiLocShop';
 
-  // [SỬA] Thêm logic xử lý giá (giống ItemCard)
+  // 4. LOGIC GIÁ MỚI
   const priceCoinNum = parseFloat(item.priceCoin) || 0;
-  const priceUsdNum = parseFloat(item.priceUsd) || 0;
-  const isCoinOnly = priceCoinNum > 0 && priceUsdNum <= 0;
-  const isUsdOnly = priceUsdNum > 0 && priceCoinNum <= 0;
-  const hasBothPrices = priceCoinNum > 0 && priceUsdNum > 0;
+  const calculatedUsd = priceCoinNum * USD_PER_XU;
+  const isUsdAvailable = calculatedUsd >= MIN_USD_DISPLAY_THRESHOLD;
+  const isCoinOnly = priceCoinNum > 0 && !isUsdAvailable;
+  const hasBothPrices = priceCoinNum > 0 && isUsdAvailable;
 
   return (
-    // [SỬA] Thay đổi max-w-4xl thành max-w-7xl để rộng hơn
+    // 5. MỞ RỘNG LAYOUT
     <div className="bg-gray-800 rounded-lg shadow-xl overflow-hidden max-w-7xl mx-auto">
       <div className="md:flex">
         {/* Cột ảnh */}
@@ -103,9 +105,8 @@ export default function ItemDetailPage() {
             {item.description || "Vật phẩm này chưa có mô tả."}
           </p>
 
-          {/* [SỬA] Logic hiển thị giá mới */}
+          {/* 6. KHỐI GIÁ MỚI */}
           <div className="my-6">
-            {/* TRƯỜNG HỢP 1: CHỈ BÁN BẰNG XU */}
             {isCoinOnly && (
               <>
                 <span className="inline-block bg-yellow-600 text-yellow-100 text-xs font-semibold px-2 py-0.5 rounded-full mb-1">
@@ -117,23 +118,10 @@ export default function ItemDetailPage() {
               </>
             )}
 
-            {/* TRƯỜNG HỢP 2: CHỈ BÁN BẰNG USD */}
-            {isUsdOnly && (
-              <>
-                <span className="inline-block bg-green-600 text-green-100 text-xs font-semibold px-2 py-0.5 rounded-full mb-1">
-                  Có thể mua bằng USD
-                </span>
-                <span className="block text-4xl font-bold text-green-400">
-                  ${formatNumber(priceUsdNum)}
-                </span>
-              </>
-            )}
-
-            {/* TRƯỜNG HỢP 3: CÓ CẢ 2 GIÁ */}
             {hasBothPrices && (
               <>
                 <span className="block text-4xl font-bold text-green-400">
-                  ${formatNumber(priceUsdNum)}
+                  ${formatNumber(calculatedUsd)}
                 </span>
                 <span className="block text-3xl font-bold text-yellow-400">
                   {formatNumber(priceCoinNum)} Xu
@@ -143,11 +131,10 @@ export default function ItemDetailPage() {
           </div>
 
           <p className="text-lg text-yellow-400 mb-4">
-            {/* [SỬA] Chuẩn hóa số lượng tồn kho */}
             Số lượng tồn kho: {formatNumber(item.stockQuantity)}
           </p>
 
-          {/* Khu vực thêm vào giỏ hàng (Giữ nguyên logic) */}
+          {/* Khu vực thêm vào giỏ hàng */}
           <div className="mt-auto"> {/* Đẩy xuống dưới cùng */}
             {item.stockQuantity > 0 ? (
               <div className="flex items-center space-x-4">

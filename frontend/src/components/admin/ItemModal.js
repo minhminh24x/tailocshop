@@ -1,8 +1,10 @@
 // File: frontend/src/components/admin/ItemModal.js
-// [CODE ĐÃ SỬA]
+// [CODE ĐẦY ĐỦ - ĐÃ SỬA LỖI NHẬP SỐ THẬP PHÂN]
 import React, { useState, useEffect } from 'react';
 import { getAllCategoriesAdmin } from '../../services/adminCategoryService.js';
 import toast from 'react-hot-toast';
+import { formatNumber } from '../../utils/formatNumber.js';
+import { useCurrencyStore } from '../../store/currencyStore.js';
 
 // Lấy từ schema.prisma
 const ITEM_UNITS = ['PIECE', 'STACK', 'SHULKER'];
@@ -13,8 +15,7 @@ const initialState = {
   thumbnailImageUrl: '',
   categoryId: '',
   unit: 'PIECE',
-  priceUsd: 0,
-  priceCoin: 0,
+  priceCoin: '', // [SỬA] Bắt đầu bằng chuỗi rỗng để cho phép gõ tự do
   stockQuantity: 0,
   isActive: true,
 };
@@ -25,10 +26,13 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   
-  // [THÊM MỚI] State để quản lý checkbox "Chỉ bán bằng Xu"
-  const [isCoinOnly, setIsCoinOnly] = useState(false);
+  // Lấy tỷ giá từ store
+  const USD_PER_XU = useCurrencyStore((state) => state.rate);
+  const isRateLoading = useCurrencyStore((state) => state.isLoading);
+  
+  const [calculatedUsd, setCalculatedUsd] = useState(0);
 
-  // 1. Tải danh sách phân loại
+  // Tải danh sách phân loại
   useEffect(() => {
     if (isOpen) {
       setIsLoadingCategories(true);
@@ -42,29 +46,23 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
         .catch(() => toast.error('Không thể tải danh sách phân loại'))
         .finally(() => setIsLoadingCategories(false));
     }
-  }, [isOpen]); // [SỬA] Bỏ dependencies không cần thiết để tránh gọi lại
+  }, [isOpen]);
 
-  // 2. Cập nhật form khi "itemToEdit" thay đổi (khi mở modal edit)
+  // Cập nhật form khi "itemToEdit" thay đổi
   useEffect(() => {
     if (isOpen && itemToEdit) {
-      // [SỬA] Tự động kiểm tra checkbox dựa trên dữ liệu cũ
-      const coinOnly = !itemToEdit.priceUsd || itemToEdit.priceUsd <= 0;
-      setIsCoinOnly(coinOnly);
-      
+      const priceCoin = parseFloat(itemToEdit.priceCoin) || 0;
       setFormData({
         name: itemToEdit.name || '',
         description: itemToEdit.description || '',
         thumbnailImageUrl: itemToEdit.thumbnailImageUrl || '',
         categoryId: itemToEdit.categoryId || '',
         unit: itemToEdit.unit || 'PIECE',
-        priceUsd: itemToEdit.priceUsd || 0,
-        priceCoin: itemToEdit.priceCoin || 0,
+        priceCoin: priceCoin.toString(), // Chuyển về chuỗi
         stockQuantity: itemToEdit.stockQuantity || 0,
         isActive: itemToEdit.isActive,
       });
     } else if (isOpen && !itemToEdit) {
-      // [SỬA] Reset form và checkbox khi tạo mới
-      setIsCoinOnly(false); // Mặc định cho phép bán USD
       setFormData({
         ...initialState,
         categoryId: categories.length > 0 ? categories[0].id : '',
@@ -72,69 +70,70 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
     }
   }, [isOpen, itemToEdit, categories]);
 
-  // [THÊM MỚI] Effect tự động set priceUsd = 0 khi check "Chỉ bán bằng Xu"
+  // Tự động tính toán giá USD khi giá Xu hoặc tỷ giá thay đổi
   useEffect(() => {
-    if (isCoinOnly) {
-      setFormData(prev => ({ ...prev, priceUsd: 0 }));
+    // Dùng parseFloat vì formData.priceCoin giờ là string
+    const priceCoin = parseFloat(formData.priceCoin) || 0; 
+    if (priceCoin > 0 && USD_PER_XU > 0) {
+      setCalculatedUsd(priceCoin * USD_PER_XU);
+    } else {
+      setCalculatedUsd(0);
     }
-  }, [isCoinOnly]);
+  }, [formData.priceCoin, USD_PER_XU]);
 
+  // Hàm xử lý chung (cho Tên, Mô tả, v.v.)
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
-    // [SỬA] Tách logic cho checkbox 'isCoinOnly'
-    if (name === 'isCoinOnly') {
-      setIsCoinOnly(checked);
-    } else {
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  // [SỬA] Hàm xử lý nhập số đã được sửa
+  const handleNumericChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === 'stockQuantity') {
+      // Tồn kho phải là số nguyên
+      const numValue = parseInt(value, 10);
       setFormData(prev => ({
         ...prev,
-        [name]: type === 'checkbox' ? checked : value,
+        [name]: isNaN(numValue) || numValue < 0 ? 0 : numValue,
+      }));
+    } else if (name === 'priceCoin') {
+      // Giá Xu: Cho phép gõ chuỗi (ví dụ: "1.5", "0.", "0.2")
+      // Chỉ lọc các ký tự không phải là số hoặc dấu chấm
+      const sanitizedValue = value.replace(/[^0-9.]/g, '');
+      setFormData(prev => ({
+        ...prev,
+        [name]: sanitizedValue,
       }));
     }
   };
 
-  const handleNumericChange = (e) => {
-    const { name, value } = e.target;
-    const parser = (name === 'stockQuantity') ? parseInt : parseFloat;
-    const numValue = parser(value);
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: isNaN(numValue) ? 0 : numValue,
-    }));
-  };
-
+  // Submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Logic này đã đúng: nếu priceUsd là 0, nó sẽ gửi null
-    const itemData = {
-      ...formData,
-      priceUsd: parseFloat(formData.priceUsd) || null,
-      priceCoin: parseFloat(formData.priceCoin) || null,
-      stockQuantity: parseInt(formData.stockQuantity) || 0,
-    };
-    
-    // Yêu cầu của validation là priceCoin phải có (hoặc priceUsd)
-    // Chúng ta nên đảm bảo ít nhất 1 giá trị được gửi
-    if (!itemData.priceCoin && !itemData.priceUsd) {
-        toast.error('Vật phẩm phải có giá (Xu hoặc USD)');
-        setIsLoading(false);
-        return;
-    }
-    if (!itemData.priceCoin && itemData.priceUsd) {
-        // Nếu admin chỉ nhập giá USD, ta tự set giá Xu = 0 (hoặc null)
-        itemData.priceCoin = null;
-    }
-    if (!itemData.priceCoin && isCoinOnly) {
-        toast.error('Nếu chỉ bán bằng Xu, vui lòng nhập giá Xu');
+    // Dùng parseFloat vì formData.priceCoin là string
+    const priceCoinNum = parseFloat(formData.priceCoin) || 0;
+    const priceUsdNum = priceCoinNum * USD_PER_XU;
+
+    if (priceCoinNum <= 0) {
+        toast.error('Vật phẩm phải có giá Xu > 0');
         setIsLoading(false);
         return;
     }
 
-    if (!itemData.priceUsd) delete itemData.priceUsd;
-    if (!itemData.priceCoin) delete itemData.priceCoin;
+    const itemData = {
+      ...formData,
+      priceCoin: priceCoinNum,
+      priceUsd: priceUsdNum,
+      stockQuantity: parseInt(formData.stockQuantity) || 0,
+    };
+    
     if (!itemData.description) delete itemData.description;
     if (!itemData.thumbnailImageUrl) delete itemData.thumbnailImageUrl;
 
@@ -160,7 +159,7 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
               <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">Tên Vật phẩm</label>
               <input type="text" id="name" name="name" value={formData.name} onChange={handleChange}
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
-                required disabled={isLoading} />
+                required disabled={isLoading || isRateLoading} />
             </div>
 
             {/* Phân loại */}
@@ -168,7 +167,7 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
               <label htmlFor="categoryId" className="block text-sm font-medium text-gray-300 mb-2">Phân loại</label>
               <select id="categoryId" name="categoryId" value={formData.categoryId} onChange={handleChange}
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
-                disabled={isLoading || isLoadingCategories} required>
+                disabled={isLoading || isLoadingCategories || isRateLoading} required>
                 <option value="">{isLoadingCategories ? 'Đang tải...' : '-- Chọn --'}</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -181,7 +180,7 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
               <label htmlFor="unit" className="block text-sm font-medium text-gray-300 mb-2">Đơn vị</label>
               <select id="unit" name="unit" value={formData.unit} onChange={handleChange}
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
-                disabled={isLoading} required>
+                disabled={isLoading || isRateLoading} required>
                 {ITEM_UNITS.map(unit => (
                   <option key={unit} value={unit}>{unit}</option>
                 ))}
@@ -191,38 +190,41 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
             {/* Giá Coin */}
             <div>
               <label htmlFor="priceCoin" className="block text-sm font-medium text-gray-300 mb-2">Giá (Xu)</label>
-              <input type="number" step="0.01" min="0" id="priceCoin" name="priceCoin" value={formData.priceCoin} onChange={handleNumericChange}
+              {/* [SỬA] Đổi type="number" thành type="text" để cho phép gõ "0." */}
+              <input 
+                type="text" 
+                inputMode="decimal"
+                id="priceCoin" 
+                name="priceCoin" 
+                value={formData.priceCoin} 
+                onChange={handleNumericChange}
+                placeholder="Ví dụ: 0.2 hoặc 1.5"
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
-                disabled={isLoading} />
-            </div>
-            
-            {/* [SỬA] Nhóm Giá USD và Checkbox */}
-            <div>
-              <label htmlFor="priceUsd" className="block text-sm font-medium text-gray-300 mb-2">Giá (USD)</label>
-              <input type="number" step="0.01" min="0" id="priceUsd" name="priceUsd" value={formData.priceUsd} onChange={handleNumericChange}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500
-                          disabled:bg-gray-600 disabled:cursor-not-allowed"
-                disabled={isLoading || isCoinOnly} // Vô hiệu hóa khi check
+                disabled={isLoading || isRateLoading} 
               />
             </div>
-            
-            {/* [THÊM MỚI] Checkbox "Chỉ bán bằng Xu" */}
-            <div className="md:col-span-2">
-              <label className="flex items-center space-x-2 text-gray-300">
-                <input type="checkbox" id="isCoinOnly" name="isCoinOnly" checked={isCoinOnly} onChange={handleChange}
-                  className="w-5 h-5 bg-gray-700 border-gray-600 rounded text-pink-500 focus:ring-pink-500"
-                  disabled={isLoading} />
-                <span>Chỉ bán bằng Xu (Tự động set giá USD về 0)</span>
-              </label>
-            </div>
 
+            {/* Giá USD (Tự động) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Giá (USD) (Tự động)</label>
+              <div className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-green-400">
+                {isRateLoading ? 'Đang tải tỷ giá...' : `$${formatNumber(calculatedUsd)}`}
+              </div>
+            </div>
 
             {/* Tồn kho */}
             <div>
               <label htmlFor="stockQuantity" className="block text-sm font-medium text-gray-300 mb-2">Tồn kho</label>
-              <input type="number" min="0" id="stockQuantity" name="stockQuantity" value={formData.stockQuantity} onChange={handleNumericChange}
+              <input 
+                type="number" 
+                min="0" 
+                id="stockQuantity" 
+                name="stockQuantity" 
+                value={formData.stockQuantity} 
+                onChange={handleNumericChange}
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
-                disabled={isLoading} />
+                disabled={isLoading || isRateLoading} 
+              />
             </div>
             
             {/* Ảnh thumbnail */}
@@ -231,15 +233,15 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
               <input type="text" id="thumbnailImageUrl" name="thumbnailImageUrl" value={formData.thumbnailImageUrl} onChange={handleChange}
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
                 placeholder="https://..."
-                disabled={isLoading} />
+                disabled={isLoading || isRateLoading} />
             </div>
 
             {/* Mô tả */}
             <div className="md:col-span-2">
-              <label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-2">Mô tả (Tùv chọn)</label>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-2">Mô tả (Tùy chọn)</label>
               <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows="3"
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
-                disabled={isLoading}></textarea>
+                disabled={isLoading || isRateLoading}></textarea>
             </div>
 
             {/* Kích hoạt */}
@@ -247,7 +249,7 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
               <label className="flex items-center space-x-2 text-gray-300">
                 <input type="checkbox" id="isActive" name="isActive" checked={formData.isActive} onChange={handleChange}
                   className="w-5 h-5 bg-gray-700 border-gray-600 rounded text-pink-500 focus:ring-pink-500"
-                  disabled={isLoading} />
+                  disabled={isLoading || isRateLoading} />
                 <span>Kích hoạt (Hiển thị vật phẩm này cho khách)</span>
               </label>
             </div>
@@ -265,7 +267,7 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
             </button>
             <button
               type="submit"
-              disabled={isLoading || isLoadingCategories}
+              disabled={isLoading || isLoadingCategories || isRateLoading}
               className="px-5 py-2 rounded-lg bg-pink-600 text-white hover:bg-pink-700 transition duration-200 disabled:bg-gray-500"
             >
               {isLoading ? 'Đang lưu...' : 'Lưu lại'}
