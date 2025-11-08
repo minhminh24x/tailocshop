@@ -7,12 +7,11 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Bắt đầu seeding (gieo mầm) dữ liệu...');
 
-  // 1. Xóa dữ liệu cũ (Lưu ý: nên xóa theo thứ tự ngược lại
-  // nếu có khóa ngoại, ví dụ: Order -> User)
-  // Tạm thời chấp nhận cách xóa này cho seed.
+  // 1. Xóa dữ liệu cũ
   await prisma.user.deleteMany();
   await prisma.vipLevel.deleteMany();
-  console.log('Đã xóa dữ liệu cũ (User, VipLevel).');
+  await prisma.currencyExchangeRate.deleteMany(); // [THÊM DÒNG NÀY]
+  console.log('Đã xóa dữ liệu cũ (User, VipLevel, Rates).'); // [SỬA]
 
   // 2. Tạo 5 cấp VIP
   const vipData = [
@@ -38,15 +37,25 @@ async function main() {
       passwordHash: hashedPassword,
       role: 'ADMIN',
       inGameName: 'AdminTaiLoc',
-      // vipLevel sẽ tự động là default (0)
     },
   });
 
   console.log(`Đã tạo Admin thành công: ${adminUser.email}`);
-  console.log('Seeding hoàn tất.');
-} // [ĐÃ SỬA] Dấu } kết thúc hàm main() nằm ở đây
 
-// [ĐÃ SỬA] Khối lệnh này phải nằm BÊN NGOÀI hàm main()
+  // 4. [THÊM MỚI] Tạo tỷ giá XU_TO_USD
+  console.log('Đang tạo tỷ giá XU_TO_USD...');
+  await prisma.currencyExchangeRate.create({
+    data: {
+      rate: 100000, // Tỷ giá 1 Xu = 100,000 $
+      rateType: 'XU_TO_USD',
+      updatedById: adminUser.id, // Liên kết với Admin vừa tạo
+    },
+  });
+  console.log('Đã tạo tỷ giá XU_TO_USD (100000).');
+  
+  console.log('Seeding hoàn tất.');
+} 
+
 main()
   .catch((e) => {
     console.error(e);

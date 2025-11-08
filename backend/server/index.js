@@ -13,7 +13,7 @@ import itemRoutes from './routes/item.route.js';
 import deliveryTimeSlotRoutes from './routes/deliveryTimeSlot.route.js';
 import orderRoutes from './routes/order.route.js';
 import vipLevelRoutes from './routes/vipLevel.route.js';
-
+import currencyRoutes from './routes/currency.route.js';
 
 dotenv.config();
 const app = express();
@@ -63,6 +63,7 @@ app.use('/api/items', itemRoutes);
 app.use('/api/delivery-time-slots', deliveryTimeSlotRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/vip-levels', vipLevelRoutes);
+app.use('/api/rates', currencyRoutes);
 
 // ✅ Route test
 app.get('/api', (req, res) => {

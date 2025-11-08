@@ -3,6 +3,8 @@ import React, { useState, useRef, useEffect } from 'react'; // Thêm useState, u
 import { Link, NavLink, useNavigate } from 'react-router-dom'; // Thêm useNavigate
 import { useAuthStore } from '../../store/authStore.js';
 import { useCartStore } from '../../store/cartStore.js';
+import { formatNumber } from '../../utils/formatNumber.js';
+
 // Thêm icon cho dropdown
 import { User, LifeBuoy, LogOut, ChevronDown } from 'lucide-react';
 

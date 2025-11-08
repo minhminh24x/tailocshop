@@ -45,7 +45,11 @@ export default function AdminSidebar() {
         <NavLink to="/admin/inventory" className={getNavLinkClass}>
           📊 Quản lý Kho
         </NavLink>
-
+        
+        <NavLink to="/admin/rates" className={getNavLinkClass}>
+          💱 Quản lý Tỷ giá
+        </NavLink>
+        
         <NavLink to="/admin/users" className={getNavLinkClass}>
           👥 Quản lý Người dùng
         </NavLink>

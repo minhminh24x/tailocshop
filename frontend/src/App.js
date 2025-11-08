@@ -40,14 +40,18 @@ import AdminManageUsers from './pages/admin/manager/AdminManageUsers.js';
 import AdminOrderDetailPage from './pages/admin/manager/AdminOrderDetailPage.js';
 import AdminManageTimeSlots from './pages/admin/manager/AdminManageTimeSlots.js'; 
 import AdminManageVipLevels from './pages/admin/manager/AdminManageVipLevels.js';
+import AdminManageRates from './pages/admin/manager/AdminManageRates.js';
+import { useCurrencyStore } from './store/currencyStore.js';
 
 function App() {
   const checkAuthStatus = useAuthStore((state) => state.checkAuthStatus);
   const isAuthLoading = useAuthStore((state) => state.isAuthLoading);
+  const fetchRate = useCurrencyStore((state) => state.fetchRate);
 
   useEffect(() => {
     checkAuthStatus();
-  }, [checkAuthStatus]);
+    fetchRate();
+  }, [checkAuthStatus, fetchRate]);
 
   if (isAuthLoading) {
     return (
@@ -103,6 +107,7 @@ function App() {
             <Route path="timeslots" element={<AdminManageTimeSlots />} />
             <Route path="vip-levels" element={<AdminManageVipLevels />} />
             <Route path="inventory" element={<AdminManageInventory />} />
+            <Route path="rates" element={<AdminManageRates />} />
             <Route path="users" element={<AdminManageUsers />} />
             <Route index element={<Navigate to="dashboard" replace />} />
           </Route>

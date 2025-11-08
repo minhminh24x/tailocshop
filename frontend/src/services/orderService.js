@@ -15,9 +15,8 @@ export const getMyOrders = () => {
 export const getMyOrderById = (orderId) => {
   return apiClient.get(`/orders/my-orders/${orderId}`);
 };
-
 /**
- * [THÊM MỚI] Gửi yêu cầu tạo đơn hàng mới
+ * [SỬA] Gửi yêu cầu tạo đơn hàng mới
  * @param {Array} items - [{ itemId, quantity }, ...]
  * @param {string} inGameName - Tên trong game của user
  * @param {string} deliveryTimeSlotId - ID khung giờ nhận hàng
@@ -30,8 +29,12 @@ export const createOrder = (items, inGameName, deliveryTimeSlotId) => {
     })),
     inGameName,
     deliveryTimeSlotId,
+    // [FIX 1] Thêm trường currencyUsed mà backend yêu cầu
+    currencyUsed: 'COIN', 
   };
   
-  // Gọi đến route `POST /orders/create` (được bảo vệ)
-  return apiClient.post('/orders/create', payload); 
+  // [FIX 2] Đổi route từ /orders/create thành /orders
+  // (Log của bạn cho thấy bạn đã gọi /orders, nhưng tệp bạn gửi
+  // vẫn là /orders/create. Tôi sửa lại ở đây cho chắc chắn.)
+  return apiClient.post('/orders', payload); 
 };

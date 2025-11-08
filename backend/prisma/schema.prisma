@@ -157,7 +157,7 @@ model CurrencyExchangeRate {
   id          String   @id @default(uuid()) @db.Uuid
   rate        Decimal  @db.Decimal(15, 2)
   rateType    String   @unique @map("rate_type") @db.VarChar(50)
-  
+      
   // Quan hệ với User (Admin cập nhật)
   updatedById String?  @db.Uuid @map("updated_by")
   updatedBy   User?    @relation(fields: [updatedById], references: [id])

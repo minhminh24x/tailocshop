@@ -12,34 +12,46 @@ import toast from 'react-hot-toast';
 export const useAuthStore = create((set) => ({
   // 1. STATE (Dữ liệu)
   user: null,
-  isLoading: false,
+  isLoading: false, // <-- Nên bắt đầu là false, vì nó chỉ true KHI bấm login/register
   error: null,
-  // --- THÊM STATE MỚI ---
-  // isAuthLoading: Dùng để kiểm tra phiên đăng nhập khi tải trang.
-  // Bắt đầu là 'true' để báo cho App biết "đang kiểm tra"
-  isAuthLoading: true,
+  isAuthLoading: true, // <-- Bắt đầu là true, chính xác!
 
   // 2. ACTIONS (Hàm cập nhật state)
 
-  // --- HÀM KIỂM TRA PHIÊN ĐĂNG NHẬP (MỚI) ---
+  // --- HÀM KIỂM TRA PHIÊN ĐĂNG NHẬP (ĐÃ SỬA) ---
   checkAuthStatus: async () => {
-    // Không set isLoading = true, vì đây là tiến trình nền
-    set({ isAuthLoading: true }); 
+    const token = localStorage.getItem('token');
+
+    // Không cần set isAuthLoading: true, vì nó đã là true ngay từ đầu
+    // set({ isAuthLoading: true }); // Dòng này có thể bỏ
+
+    if (!token) {
+      // === 💡 SỬA LỖI TẠI ĐÂY ===
+      // Khi không có token (khách), set user: null và
+      // quan trọng nhất là set isAuthLoading: false
+      set({ user: null, isAuthLoading: false });
+      // ========================
+      return; 
+    }
+    
     try {
-      // Gọi API /api/users/profile
+      // Gọi API /api/users/profile (tên hàm là getMyProfile theo code của bạn)
       const { data } = await getMyProfile();
-      // Nếu thành công (cookie hợp lệ), server trả về user
+      // Nếu thành công, server trả về user
       set({ user: data.user, isAuthLoading: false });
     } catch (err) {
-      // Nếu lỗi 401 (cookie hết hạn hoặc không có)
+      // Nếu lỗi 401 (token hết hạn hoặc không có)
       set({ user: null, isAuthLoading: false });
+      // Xóa token hỏng nếu có
+      localStorage.removeItem('token'); 
     }
   },
 
   // --- HÀM ĐĂNG NHẬP ---
   login: async (credentials) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null }); // Dùng isLoading
     try {
+      // ... (logic của bạn đã chuẩn)
       const { data } = await loginUser(credentials);
       set({ user: data.user, isLoading: false });
       toast.success('Đăng nhập thành công!');
@@ -54,11 +66,11 @@ export const useAuthStore = create((set) => ({
 
   // --- HÀM ĐĂNG KÝ ---
   register: async (userData) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null }); // Dùng isLoading
     try {
+      // ... (logic của bạn đã chuẩn)
       await registerUser(userData);
       set({ isLoading: false });
-      // Sửa lại thông báo cho rõ ràng hơn
       toast.success('Đăng ký thành công! Vui lòng đăng nhập.'); 
       return true;
     } catch (err) {
@@ -71,10 +83,11 @@ export const useAuthStore = create((set) => ({
 
   // --- HÀM ĐĂNG XUẤT ---
   logout: async () => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null }); // Dùng isLoading
     try {
+      // ... (logic của bạn đã chuẩn)
       await logoutUser();
-      set({ user: null, isLoading: false }); // Xóa user khỏi state
+      set({ user: null, isLoading: false }); 
       toast.success('Đăng xuất thành công!');
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'Lỗi khi đăng xuất';
