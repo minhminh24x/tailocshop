@@ -1,27 +1,27 @@
 // src/components/items/ItemCard.js
-// [CODE ĐẦY ĐỦ]
+// [CODE ĐẦY ĐỦ - SỬA LOGIC TỶ GIÁ]
 import React from 'react';
 import { formatNumber } from '../../utils/formatNumber.js';
-import { useCurrencyStore } from '../../store/currencyStore.js';
+// [XÓA] Xóa import currencyStore
 
 // Ngưỡng tối thiểu để hiển thị giá USD
 const MIN_USD_DISPLAY_THRESHOLD = 1.00; 
 
 export default function ItemCard({ item }) {
-  // Lấy tỷ giá từ store (dùng getState() để tối ưu hiệu năng trong danh sách)
-  const USD_PER_XU = useCurrencyStore.getState().rate;
-
+  // [XÓA] Xóa lấy tỷ giá từ store
+  
   const imageUrl = item.thumbnailImageUrl || 'https://placehold.co/300x200/2D3748/FFFFFF?text=TaiLocShop';
 
-  // Nguồn chân lý LUÔN LÀ priceCoin
+  // [SỬA] Đọc cả 2 giá từ DB
   const priceCoinNum = parseFloat(item.priceCoin) || 0;
-  // Tự tính toán giá USD, lờ đi giá USD trong DB
-  const calculatedUsd = priceCoinNum * USD_PER_XU;
+  const priceUsdNum = parseFloat(item.priceUsd) || 0; // Đọc từ DB
 
-  // Quyết định hiển thị dựa trên giá đã TÍNH TOÁN
-  const isUsdAvailable = calculatedUsd >= MIN_USD_DISPLAY_THRESHOLD;
+  // Quyết định hiển thị dựa trên giá đã LƯU
+  const isUsdAvailable = priceUsdNum >= MIN_USD_DISPLAY_THRESHOLD;
 
   const isCoinOnly = priceCoinNum > 0 && !isUsdAvailable;
+  // [SỬA] isUsdOnly có thể xảy ra nếu admin set giá Xu = 0
+  const isUsdOnly = isUsdAvailable && priceCoinNum <= 0; 
   const hasBothPrices = priceCoinNum > 0 && isUsdAvailable;
 
   return (
@@ -38,7 +38,7 @@ export default function ItemCard({ item }) {
         <p className="text-sm text-gray-400">{item.unit} (Đơn vị)</p>
         
         <div className="mt-3">
-          {/* TRƯỜNG HỢP 1: CHỈ BÁN BẰNG XU (Vì USD < 1.00) */}
+          {/* TRƯỜNG HỢP 1: CHỈ BÁN BẰNG XU (Vì USD < 1.00 hoặc null) */}
           {isCoinOnly && (
             <>
               <span className="inline-block bg-yellow-600 text-yellow-100 text-xs font-semibold px-2 py-0.5 rounded-full mb-1">
@@ -50,11 +50,23 @@ export default function ItemCard({ item }) {
             </>
           )}
 
-          {/* TRƯỜNG HỢP 3: CÓ CẢ 2 GIÁ (Vì USD >= 1.00) */}
+          {/* TRƯỜNG HỢP 2: CHỈ BÁN BẰNG USD */}
+          {isUsdOnly && (
+             <>
+              <span className="inline-block bg-green-600 text-green-100 text-xs font-semibold px-2 py-0.5 rounded-full mb-1">
+                Có thể mua bằng USD
+              </span>
+              <span className="block text-xl font-bold text-green-400">
+                ${formatNumber(priceUsdNum)}
+              </span>
+            </>
+          )}
+
+          {/* TRƯỜG HỢP 3: CÓ CẢ 2 GIÁ */}
           {hasBothPrices && (
             <>
               <span className="block text-xl font-bold text-green-400">
-                ${formatNumber(calculatedUsd)}
+                ${formatNumber(priceUsdNum)}
               </span>
               <span className="block text-lg font-bold text-yellow-400">
                 {formatNumber(priceCoinNum)} Xu

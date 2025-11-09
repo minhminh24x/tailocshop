@@ -1,6 +1,3 @@
-// File: frontend/src/pages/CheckoutPage.js
-// [CODE ĐÃ SỬA]
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useCartStore } from '../store/cartStore.js';
 import { useAuthStore } from '../store/authStore.js';
@@ -10,7 +7,7 @@ import toast from 'react-hot-toast';
 import apiClient from '../services/apiClient.js';
 import { FaCoins } from 'react-icons/fa';
 import { FaDollarSign } from 'react-icons/fa';
-import { formatNumber } from '../utils/formatNumber.js'; // <-- Bạn đã import đúng
+import { formatNumber } from '../utils/formatNumber.js';
   
 export default function CheckoutPage() {
   const { items, totalItems, clearCart } = useCartStore();
@@ -47,15 +44,15 @@ export default function CheckoutPage() {
       });
   }, []);
 
-  // === Logic tính toán (Giữ nguyên) ===
+  // === Logic tính toán (Làm tròn Xu & Hiển thị giảm giá) ===
   const orderSummary = useMemo(() => {
-    // ... (Toàn bộ logic useMemo của bạn giữ nguyên) ...
     const coinOnlyItems = items.filter(
       (entry) => !entry.itemData.priceUsd || entry.itemData.priceUsd <= 0
     );
     const usdPayableItems = items.filter(
       (entry) => entry.itemData.priceUsd && entry.itemData.priceUsd > 0
     );
+    
     const coinOnlySubtotalXu = coinOnlyItems.reduce(
       (acc, entry) => acc + entry.itemData.priceCoin * entry.quantity,
       0
@@ -68,19 +65,42 @@ export default function CheckoutPage() {
       (acc, entry) => acc + entry.itemData.priceUsd * entry.quantity,
       0
     );
+    
+    // Luôn tính tổng Xu (chưa giảm giá) và % giảm giá
     const totalXuEquivalent = coinOnlySubtotalXu + payableSubtotalXu;
     const discountPercent = vipLevel?.discountPercent || 0;
+    
+    // Luôn tính số Xu giảm giá (để hiển thị)
     const discountAmountXu = totalXuEquivalent * (discountPercent / 100);
+    
     let finalTotalXu = 0;
     let finalTotalUsd = 0;
+    let appliedCoinRounding = false;
+    let originalCoinTotal = 0;
+
     if (paymentMethod === 'COIN') {
-      finalTotalXu = totalXuEquivalent - discountAmountXu;
+      // Thanh toán = COIN: Giảm giá trên TỔNG XU
+      originalCoinTotal = totalXuEquivalent - discountAmountXu;
+      
+      const roundedXu = Math.ceil(originalCoinTotal);
+      appliedCoinRounding = roundedXu !== originalCoinTotal;
+      finalTotalXu = roundedXu;
+      
       finalTotalUsd = 0;
-    } else {
-      finalTotalXu = coinOnlySubtotalXu;
-      const discountPercentOnPayable = payableSubtotalUsd * (discountPercent / 100);
-      finalTotalUsd = payableSubtotalUsd - discountPercentOnPayable;
+
+    } else { // paymentMethod === 'USD'
+      // Thanh toán = USD:
+      // 1. Phần Xu (coin-only) KHÔNG giảm giá
+      originalCoinTotal = coinOnlySubtotalXu;
+
+      const roundedXu = Math.ceil(originalCoinTotal);
+      appliedCoinRounding = roundedXu !== originalCoinTotal;
+      finalTotalXu = roundedXu;
+      
+      // 2. Phần USD (payable) KHÔNG giảm giá
+      finalTotalUsd = payableSubtotalUsd;
     }
+
     return {
       coinOnlyItems,
       usdPayableItems,
@@ -88,18 +108,20 @@ export default function CheckoutPage() {
       payableSubtotalUsd,
       totalXuEquivalent,
       discountPercent,
-      discountAmountXu, 
+      discountAmountXu,
       finalTotalXu,
       finalTotalUsd,
       showCoinOnlyWarning: paymentMethod === 'USD' && coinOnlyItems.length > 0,
-      coinOnlyItemCount: coinOnlyItems.reduce((acc, item) => acc + item.quantity, 0)
+      coinOnlyItemCount: coinOnlyItems.reduce((acc, item) => acc + item.quantity, 0),
+      appliedCoinRounding: appliedCoinRounding,
+      originalCoinTotal: originalCoinTotal
     };
   }, [items, paymentMethod, vipLevel]);
 
-  // === Xử lý submit (Giữ nguyên) ===
+  // === [SỬA] Xử lý submit (Gửi currencyAtPurchase cho từng item) ===
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // ... (Toàn bộ logic handleSubmit của bạn giữ nguyên) ...
+
     if (totalItems === 0) {
       toast.error('Giỏ hàng của bạn đang rỗng!');
       return;
@@ -112,52 +134,56 @@ export default function CheckoutPage() {
       toast.error('Vui lòng chọn một khung giờ giao hàng');
       return;
     }
+
     setIsLoading(true);
     setError(null);
-    const orderData = {
-      inGameName,
-      deliveryTimeSlotId: selectedTimeSlot,
-      paymentMethod: paymentMethod, 
-      items: items.map(item => ({ 
-        itemId: item.itemData.id, 
-        quantity: item.quantity 
-      })),
-      clientCalculations: {
-        finalTotalXu: orderSummary.finalTotalXu,
-        finalTotalUsd: orderSummary.finalTotalUsd,
-        totalXuEquivalent: orderSummary.totalXuEquivalent
-      }
-    };
-    if (paymentMethod === 'USD') {
-        toast.error('Chức năng thanh toán bằng USD đang được phát triển.');
-        setError('Hiện tại hệ thống chỉ hỗ trợ thanh toán bằng Xu.');
-        setIsLoading(false);
-        return;
-    }
+
     try {
-      await createOrder(items, inGameName, selectedTimeSlot);
-      toast.success('Đặt hàng (Xu) thành công!');
+      // [SỬA 1] Gói dữ liệu chính xác cho backend (theo yêu cầu mới)
+      const orderData = {
+        inGameName: inGameName,
+        deliveryTimeSlotId: selectedTimeSlot,
+        // [BỎ] Không gửi currencyUsed ở cấp cao nhất
+        items: items.map(item => {
+          // [THÊM] Kiểm tra ID hợp lệ
+          if (!item.itemData?.id) {
+            // Lỗi này sẽ được bắt ở khối catch bên ngoài
+            throw new Error('Một vật phẩm trong giỏ hàng không có ID hợp lệ.');
+          }
+          return { 
+            itemId: item.itemData.id, 
+            quantity: item.quantity,
+            currencyAtPurchase: paymentMethod.toUpperCase() // [SỬA] Viết hoa
+          };
+        }),
+      };
+
+      // [SỬA 2] Gửi object orderData duy nhất
+      await createOrder(orderData); 
+      
+      toast.success('Đặt hàng thành công!');
       clearCart();
       navigate('/my-orders');
+
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Đặt hàng thất bại';
+      // Bắt lỗi từ logic map hoặc từ API
+      const errorMsg = err.message || err.response?.data?.message || 'Đặt hàng thất bại';
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
   };
+  // === KẾT THÚC SỬA handleSubmit ===
 
   return (
     <div className="bg-gray-900 text-white min-h-screen">
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         <h1 className="text-4xl font-bold text-center mb-8 text-pink-500">Thanh toán</h1>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-          {/* Cột 1: Thông tin & Form (Giữ nguyên) */}
+          {/* Cột 1: Thông tin & Form */}
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
-            {/* ... (Toàn bộ form của bạn giữ nguyên) ... */}
             <h2 className="text-2xl font-semibold mb-6">Thông tin Giao hàng</h2>
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
@@ -253,10 +279,20 @@ export default function CheckoutPage() {
                   </label>
                 </div>
               </div>
+
+              {/* Cảnh báo làm tròn Xu */}
+              {orderSummary.appliedCoinRounding && (
+                <div className="mb-4 text-center text-yellow-400 bg-yellow-900/50 p-3 rounded-lg">
+                  Tổng Xu ban đầu là {formatNumber(orderSummary.originalCoinTotal)} Xu, được làm tròn lên 
+                  <strong> {formatNumber(orderSummary.finalTotalXu)} Xu</strong>.
+                  <br />Bạn có thể mất khoảng 
+                  <strong> {formatNumber(orderSummary.finalTotalXu - orderSummary.originalCoinTotal)} Xu</strong> nếu tiếp tục đặt hàng.
+                </div>
+              )}
+              
               {orderSummary.showCoinOnlyWarning && (
                 <div className="mb-4 text-center text-yellow-400 bg-yellow-900/50 p-3 rounded-lg">
                   Bạn đang có <strong>{formatNumber(orderSummary.coinOnlyItemCount)} vật phẩm</strong> bắt buộc phải trả bằng Xu.
-                  Các vật phẩm này sẽ được giữ nguyên thanh toán bằng Xu.
                 </div>
               )}
               {error && (
@@ -274,7 +310,7 @@ export default function CheckoutPage() {
             </form>
           </div>
 
-          {/* Cột 2: Tóm tắt Đơn hàng (ĐÃ SỬA) */}
+          {/* Cột 2: Tóm tắt Đơn hàng */}
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg h-fit">
             <h2 className="text-2xl font-semibold mb-6">Tóm tắt Đơn hàng</h2>
 
@@ -284,14 +320,12 @@ export default function CheckoutPage() {
                 <div key={entry.itemData.id} className="flex justify-between items-center text-sm">
                   <div className="text-gray-300">
                     <p className="font-medium text-white">{entry.itemData.name}</p>
-                    {/* [SỬA] Dùng formatNumber */}
                     <p>SL: {formatNumber(entry.quantity)} x {formatNumber(entry.itemData.priceCoin)} Xu
                       {entry.itemData.priceUsd && (
                         <span className="text-gray-400"> / ${formatNumber(entry.itemData.priceUsd)}</span>
                       )}
                     </p>
                   </div>
-                  {/* [SỬA] Dùng formatNumber */}
                   <p className="font-semibold text-white">
                     {formatNumber(entry.quantity * entry.itemData.priceCoin)} Xu
                   </p>
@@ -302,48 +336,55 @@ export default function CheckoutPage() {
             {/* Tính toán */}
             <div className="border-t border-gray-700 pt-4 space-y-2">
               
-              {paymentMethod === 'USD' && orderSummary.coinOnlySubtotalXu > 0 && (
+              {/* === HIỂN THỊ KHI CHỌN USD === */}
+              {paymentMethod === 'USD' && (
                 <>
                   <div className="flex justify-between text-gray-300">
-                    <span>Tạm tính (Hàng trả bằng Xu):</span>
-                    {/* [SỬA] Dùng formatNumber */}
-                    <span className="text-white">{formatNumber(orderSummary.coinOnlySubtotalXu)} Xu</span>
-                  </div>
-                  <div className="flex justify-between text-gray-300">
                     <span>Tạm tính (Hàng trả bằng $):</span>
-                    {/* [SỬA] Dùng formatNumber */}
                     <span className="text-white">${formatNumber(orderSummary.payableSubtotalUsd)}</span>
                   </div>
+                  {orderSummary.coinOnlySubtotalXu > 0 && (
+                    <div className="flex justify-between text-gray-300">
+                      <span>Tạm tính (Hàng trả bằng Xu):</span>
+                      <span className="text-white">{formatNumber(orderSummary.coinOnlySubtotalXu)} Xu</span>
+                    </div>
+                  )}
                 </>
               )}
               
+              {/* === HIỂN THỊ KHI CHỌN COIN === */}
               {paymentMethod === 'COIN' && (
                   <div className="flex justify-between text-gray-300">
                     <span>Tạm tính (Xu):</span>
-                    {/* [SỬA] Dùng formatNumber */}
                     <span className="text-white">{formatNumber(orderSummary.totalXuEquivalent)} Xu</span>
                   </div>
               )}
 
-              {/* Giảm giá VIP */}
+              {/* Cảnh báo “Shop không hỗ trợ giảm giá” */}
+              {paymentMethod === 'USD' && (
+                <div className="mb-3 text-center text-yellow-400 bg-yellow-900/50 p-2 rounded-lg">
+                  Hiện shop không hỗ trợ giảm giá cho Tiền ($)
+                </div>
+              )}
+
+              {/* Hiển thị giảm giá */}
               <div className="flex justify-between">
                 <span className="text-gray-300">Giảm giá VIP ({orderSummary.discountPercent}%):</span>
-                {paymentMethod === 'COIN' ? (
-                  // [SỬA] Dùng formatNumber
-                  <span className="text-pink-400">-{formatNumber(orderSummary.discountAmountXu)} Xu</span>
-                ) : (
-                  // [SỬA] Dùng formatNumber
-                  <span className="text-pink-400">
-                    -${formatNumber(orderSummary.payableSubtotalUsd * (orderSummary.discountPercent / 100))}
-                  </span>
-                )}
+                <span className="text-pink-400">-{formatNumber(orderSummary.discountAmountXu)} Xu</span>
               </div>
+              {paymentMethod === 'USD' && orderSummary.discountAmountXu > 0 && (
+                <p className="text-right text-xs text-pink-400 -mt-2">
+                  (Giảm giá không hỗ trợ cho trả bằng Tiền ($))
+                </p>
+              )}
+
+
+              {/* === HIỂN THỊ TỔNG CỘNG === */}
 
               {/* Tổng cộng COIN */}
               {paymentMethod === 'COIN' && (
                 <div className="flex justify-between text-xl font-bold border-t border-gray-700 pt-2 mt-2">
                   <span className="text-white">Tổng cộng (Xu):</span>
-                  {/* [SỬA] Dùng formatNumber */}
                   <span className="text-yellow-400">{formatNumber(orderSummary.finalTotalXu)} Xu</span>
                 </div>
               )}
@@ -351,15 +392,15 @@ export default function CheckoutPage() {
               {/* Tổng cộng USD (Mixed) */}
               {paymentMethod === 'USD' && (
                 <div className="border-t border-gray-700 pt-2 mt-2 space-y-2">
+                  {/* Tổng USD */}
                   <div className="flex justify-between text-xl font-bold">
                     <span className="text-white">Tổng cộng ($):</span>
-                    {/* [SỬA] Dùng formatNumber */}
                     <span className="text-green-400">${formatNumber(orderSummary.finalTotalUsd)}</span>
                   </div>
+                  {/* Tổng Xu (nếu có) */}
                   {orderSummary.finalTotalXu > 0 && (
                     <div className="flex justify-between text-lg font-semibold">
                       <span className="text-white">Tổng cộng (Xu):</span>
-                      {/* [SỬA] Dùng formatNumber */}
                       <span className="text-yellow-400">{formatNumber(orderSummary.finalTotalXu)} Xu</span>
                     </div>
                   )}

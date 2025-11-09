@@ -17,24 +17,28 @@ export const getMyOrderById = (orderId) => {
 };
 /**
  * [SỬA] Gửi yêu cầu tạo đơn hàng mới
- * @param {Array} items - [{ itemId, quantity }, ...]
- * @param {string} inGameName - Tên trong game của user
- * @param {string} deliveryTimeSlotId - ID khung giờ nhận hàng
+ * @param {object} orderData - { items, inGameName, deliveryTimeSlotId, preferredCurrency }
  */
-export const createOrder = (items, inGameName, deliveryTimeSlotId) => {
-  const payload = {
-    items: items.map(entry => ({
-      itemId: entry.itemData.id,
-      quantity: entry.quantity
-    })),
-    inGameName,
-    deliveryTimeSlotId,
-    // [FIX 1] Thêm trường currencyUsed mà backend yêu cầu
-    currencyUsed: 'COIN', 
-  };
-  
-  // [FIX 2] Đổi route từ /orders/create thành /orders
-  // (Log của bạn cho thấy bạn đã gọi /orders, nhưng tệp bạn gửi
-  // vẫn là /orders/create. Tôi sửa lại ở đây cho chắc chắn.)
-  return apiClient.post('/orders', payload); 
+export const createOrder = async (orderData) => {
+  try {
+    // [SỬA] Đảm bảo gửi đủ 4 trường
+    const { items, inGameName, deliveryTimeSlotId, preferredCurrency } = orderData;
+    
+    // Ánh xạ items trong giỏ hàng (từ cartStore) sang định dạng API cần
+    const mappedItems = items.map(item => ({
+      itemId: item.id,
+      quantity: item.quantity,
+    }));
+
+    const response = await apiClient.post('/orders', {
+      items: mappedItems,
+      inGameName,
+      deliveryTimeSlotId,
+      preferredCurrency // [SỬA] Gửi tiền tệ ưu tiên
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tạo đơn hàng:", error.response?.data || error.message);
+    throw error.response?.data || error;
+  }
 };

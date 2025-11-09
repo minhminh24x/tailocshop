@@ -1,12 +1,11 @@
 // File: frontend/src/components/admin/ItemModal.js
-// [CODE ĐẦY ĐỦ - ĐÃ SỬA LỖI NHẬP SỐ THẬP PHÂN]
+// [CODE ĐẦY ĐỦ - SỬA LỖI LOGIC]
 import React, { useState, useEffect } from 'react';
 import { getAllCategoriesAdmin } from '../../services/adminCategoryService.js';
 import toast from 'react-hot-toast';
 import { formatNumber } from '../../utils/formatNumber.js';
 import { useCurrencyStore } from '../../store/currencyStore.js';
 
-// Lấy từ schema.prisma
 const ITEM_UNITS = ['PIECE', 'STACK', 'SHULKER'];
 
 const initialState = {
@@ -15,7 +14,7 @@ const initialState = {
   thumbnailImageUrl: '',
   categoryId: '',
   unit: 'PIECE',
-  priceCoin: '', // [SỬA] Bắt đầu bằng chuỗi rỗng để cho phép gõ tự do
+  priceCoin: '', // Bắt đầu bằng chuỗi rỗng
   stockQuantity: 0,
   isActive: true,
 };
@@ -29,6 +28,9 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
   // Lấy tỷ giá từ store
   const USD_PER_XU = useCurrencyStore((state) => state.rate);
   const isRateLoading = useCurrencyStore((state) => state.isLoading);
+  
+  // [MỚI] State cho checkbox
+  const [allowUsdPayment, setAllowUsdPayment] = useState(true);
   
   const [calculatedUsd, setCalculatedUsd] = useState(0);
 
@@ -52,58 +54,66 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
   useEffect(() => {
     if (isOpen && itemToEdit) {
       const priceCoin = parseFloat(itemToEdit.priceCoin) || 0;
+      // [SỬA] Kiểm tra xem item cũ có cho phép USD không
+      const isUsdAllowed = !!itemToEdit.priceUsd && parseFloat(itemToEdit.priceUsd) > 0;
+      
       setFormData({
         name: itemToEdit.name || '',
         description: itemToEdit.description || '',
         thumbnailImageUrl: itemToEdit.thumbnailImageUrl || '',
         categoryId: itemToEdit.categoryId || '',
         unit: itemToEdit.unit || 'PIECE',
-        priceCoin: priceCoin.toString(), // Chuyển về chuỗi
+        priceCoin: priceCoin.toString(),
         stockQuantity: itemToEdit.stockQuantity || 0,
         isActive: itemToEdit.isActive,
       });
+      setAllowUsdPayment(isUsdAllowed); // Set checkbox
+      
     } else if (isOpen && !itemToEdit) {
       setFormData({
         ...initialState,
         categoryId: categories.length > 0 ? categories[0].id : '',
       });
+      setAllowUsdPayment(true); // Mặc định là cho phép
     }
   }, [isOpen, itemToEdit, categories]);
 
-  // Tự động tính toán giá USD khi giá Xu hoặc tỷ giá thay đổi
+  // Tự động tính toán giá USD khi (Giá Xu) hoặc (Tỷ giá) hoặc (Checkbox) thay đổi
   useEffect(() => {
-    // Dùng parseFloat vì formData.priceCoin giờ là string
-    const priceCoin = parseFloat(formData.priceCoin) || 0; 
-    if (priceCoin > 0 && USD_PER_XU > 0) {
+    const priceCoin = parseFloat(formData.priceCoin) || 0;
+    
+    if (allowUsdPayment && priceCoin > 0 && USD_PER_XU > 0) {
       setCalculatedUsd(priceCoin * USD_PER_XU);
     } else {
-      setCalculatedUsd(0);
+      setCalculatedUsd(0); // Nếu không check, USD = 0
     }
-  }, [formData.priceCoin, USD_PER_XU]);
+  }, [formData.priceCoin, USD_PER_XU, allowUsdPayment]);
 
-  // Hàm xử lý chung (cho Tên, Mô tả, v.v.)
+  // Hàm xử lý chung (Tên, Mô tả, v.v.)
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+    
+    // [SỬA] Xử lý checkbox
+    if (name === 'allowUsdPayment') {
+      setAllowUsdPayment(checked);
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value,
+      }));
+    }
   };
 
-  // [SỬA] Hàm xử lý nhập số đã được sửa
+  // Hàm xử lý nhập số (Đã sửa, giữ nguyên)
   const handleNumericChange = (e) => {
     const { name, value } = e.target;
-
     if (name === 'stockQuantity') {
-      // Tồn kho phải là số nguyên
       const numValue = parseInt(value, 10);
       setFormData(prev => ({
         ...prev,
         [name]: isNaN(numValue) || numValue < 0 ? 0 : numValue,
       }));
     } else if (name === 'priceCoin') {
-      // Giá Xu: Cho phép gõ chuỗi (ví dụ: "1.5", "0.", "0.2")
-      // Chỉ lọc các ký tự không phải là số hoặc dấu chấm
       const sanitizedValue = value.replace(/[^0-9.]/g, '');
       setFormData(prev => ({
         ...prev,
@@ -117,9 +127,10 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
     e.preventDefault();
     setIsLoading(true);
     
-    // Dùng parseFloat vì formData.priceCoin là string
     const priceCoinNum = parseFloat(formData.priceCoin) || 0;
-    const priceUsdNum = priceCoinNum * USD_PER_XU;
+    
+    // [SỬA] Quyết định giá USD dựa trên checkbox
+    const priceUsdNum = allowUsdPayment ? (priceCoinNum * USD_PER_XU) : null; // Lưu NULL nếu không check
 
     if (priceCoinNum <= 0) {
         toast.error('Vật phẩm phải có giá Xu > 0');
@@ -130,7 +141,7 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
     const itemData = {
       ...formData,
       priceCoin: priceCoinNum,
-      priceUsd: priceUsdNum,
+      priceUsd: priceUsdNum, // Gửi giá USD (hoặc null)
       stockQuantity: parseInt(formData.stockQuantity) || 0,
     };
     
@@ -154,19 +165,17 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Tên Vật phẩm */}
+            {/* ... (Tên, Phân loại, Đơn vị giữ nguyên) ... */}
             <div className="md:col-span-2">
               <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">Tên Vật phẩm</label>
               <input type="text" id="name" name="name" value={formData.name} onChange={handleChange}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                 required disabled={isLoading || isRateLoading} />
             </div>
-
-            {/* Phân loại */}
             <div>
               <label htmlFor="categoryId" className="block text-sm font-medium text-gray-300 mb-2">Phân loại</label>
               <select id="categoryId" name="categoryId" value={formData.categoryId} onChange={handleChange}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                 disabled={isLoading || isLoadingCategories || isRateLoading} required>
                 <option value="">{isLoadingCategories ? 'Đang tải...' : '-- Chọn --'}</option>
                 {categories.map((cat) => (
@@ -174,12 +183,10 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
                 ))}
               </select>
             </div>
-
-            {/* Đơn vị */}
             <div>
               <label htmlFor="unit" className="block text-sm font-medium text-gray-300 mb-2">Đơn vị</label>
               <select id="unit" name="unit" value={formData.unit} onChange={handleChange}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                 disabled={isLoading || isRateLoading} required>
                 {ITEM_UNITS.map(unit => (
                   <option key={unit} value={unit}>{unit}</option>
@@ -190,7 +197,6 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
             {/* Giá Coin */}
             <div>
               <label htmlFor="priceCoin" className="block text-sm font-medium text-gray-300 mb-2">Giá (Xu)</label>
-              {/* [SỬA] Đổi type="number" thành type="text" để cho phép gõ "0." */}
               <input 
                 type="text" 
                 inputMode="decimal"
@@ -199,7 +205,7 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
                 value={formData.priceCoin} 
                 onChange={handleNumericChange}
                 placeholder="Ví dụ: 0.2 hoặc 1.5"
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                 disabled={isLoading || isRateLoading} 
               />
             </div>
@@ -211,8 +217,23 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
                 {isRateLoading ? 'Đang tải tỷ giá...' : `$${formatNumber(calculatedUsd)}`}
               </div>
             </div>
+            
+            {/* [MỚI] Checkbox Cho phép USD */}
+            <div className="md:col-span-2">
+              <label className="flex items-center space-x-2 text-gray-300">
+                <input 
+                  type="checkbox" 
+                  id="allowUsdPayment" 
+                  name="allowUsdPayment" 
+                  checked={allowUsdPayment} 
+                  onChange={handleChange}
+                  className="w-5 h-5 bg-gray-700 border-gray-600 rounded text-pink-500 focus:ring-pink-500"
+                  disabled={isLoading || isRateLoading} />
+                <span>Cho phép thanh toán bằng USD (Tự động tính giá USD theo tỷ giá)</span>
+              </label>
+            </div>
 
-            {/* Tồn kho */}
+            {/* ... (Tồn kho, Ảnh, Mô tả, Kích hoạt giữ nguyên) ... */}
             <div>
               <label htmlFor="stockQuantity" className="block text-sm font-medium text-gray-300 mb-2">Tồn kho</label>
               <input 
@@ -222,33 +243,27 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
                 name="stockQuantity" 
                 value={formData.stockQuantity} 
                 onChange={handleNumericChange}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                 disabled={isLoading || isRateLoading} 
               />
             </div>
-            
-            {/* Ảnh thumbnail */}
             <div className="md:col-span-2">
               <label htmlFor="thumbnailImageUrl" className="block text-sm font-medium text-gray-300 mb-2">Link ảnh (Tùy chọn)</label>
               <input type="text" id="thumbnailImageUrl" name="thumbnailImageUrl" value={formData.thumbnailImageUrl} onChange={handleChange}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                 placeholder="https://..."
                 disabled={isLoading || isRateLoading} />
             </div>
-
-            {/* Mô tả */}
             <div className="md:col-span-2">
               <label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-2">Mô tả (Tùy chọn)</label>
               <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows="3"
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                 disabled={isLoading || isRateLoading}></textarea>
             </div>
-
-            {/* Kích hoạt */}
             <div className="md:col-span-2">
               <label className="flex items-center space-x-2 text-gray-300">
                 <input type="checkbox" id="isActive" name="isActive" checked={formData.isActive} onChange={handleChange}
-                  className="w-5 h-5 bg-gray-700 border-gray-600 rounded text-pink-500 focus:ring-pink-500"
+                  className="w-5 h-5 bg-gray-700 border-gray-600 rounded text-pink-500"
                   disabled={isLoading || isRateLoading} />
                 <span>Kích hoạt (Hiển thị vật phẩm này cho khách)</span>
               </label>

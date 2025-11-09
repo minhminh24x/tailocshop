@@ -1,20 +1,18 @@
 // File: frontend/src/pages/ItemDetailPage.js
-// [CODE ĐẦY ĐỦ]
+// [CODE ĐẦY ĐỦ - SỬA LOGIC TỶ GIÁ]
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getSingleItem } from '../services/itemService.js';
 import { useCartStore } from '../store/cartStore.js';
 import { formatNumber } from '../utils/formatNumber.js';
-import { useCurrencyStore } from '../store/currencyStore.js'; // 1. IMPORT STORE
+// [XÓA] Xóa import currencyStore
 
 // Ngưỡng tối thiểu
 const MIN_USD_DISPLAY_THRESHOLD = 1.00;
 
 export default function ItemDetailPage() {
-  // 2. LẤY TỶ GIÁ TỪ STORE
-  const USD_PER_XU = useCurrencyStore((state) => state.rate);
-  const isRateLoading = useCurrencyStore((state) => state.isLoading);
-
+  // [XÓA] Xóa lấy tỷ giá từ store
+  
   const { slug, unit } = useParams(); 
   const [item, setItem] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -22,6 +20,7 @@ export default function ItemDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const addItemToCart = useCartStore((state) => state.addItem);
 
+  // ... (useEffect, handleAddToCart, handleQuantityChange giữ nguyên) ...
   useEffect(() => {
     const fetchItem = async () => {
       try {
@@ -35,12 +34,10 @@ export default function ItemDetailPage() {
         setIsLoading(false);
       }
     };
-    
     if (slug && unit) {
       fetchItem();
     }
   }, [slug, unit]);
-
   const handleAddToCart = () => {
     if (!item) return;
     let qtyToAdd = Number(quantity);
@@ -49,7 +46,6 @@ export default function ItemDetailPage() {
     }
     addItemToCart(item, qtyToAdd);
   };
-  
   const handleQuantityChange = (e) => {
     let newQty = parseInt(e.target.value, 10);
     if (isNaN(newQty) || newQty < 1) {
@@ -60,9 +56,9 @@ export default function ItemDetailPage() {
     }
     setQuantity(newQty);
   };
-
-  // 3. SỬA LẠI TRẠNG THÁI LOADING
-  if (isLoading || isRateLoading) {
+  
+  // [SỬA] Xóa isRateLoading
+  if (isLoading) {
     return <p className="text-center text-xl text-gray-400">Đang tải chi tiết...</p>;
   }
   if (error) {
@@ -74,15 +70,16 @@ export default function ItemDetailPage() {
 
   const imageUrl = item.thumbnailImageUrl || 'https://placehold.co/600x400/2D3748/FFFFFF?text=TaiLocShop';
 
-  // 4. LOGIC GIÁ MỚI
+  // [SỬA] Đọc cả 2 giá từ DB
   const priceCoinNum = parseFloat(item.priceCoin) || 0;
-  const calculatedUsd = priceCoinNum * USD_PER_XU;
-  const isUsdAvailable = calculatedUsd >= MIN_USD_DISPLAY_THRESHOLD;
+  const priceUsdNum = parseFloat(item.priceUsd) || 0;
+  
+  const isUsdAvailable = priceUsdNum >= MIN_USD_DISPLAY_THRESHOLD;
   const isCoinOnly = priceCoinNum > 0 && !isUsdAvailable;
+  const isUsdOnly = isUsdAvailable && priceCoinNum <= 0;
   const hasBothPrices = priceCoinNum > 0 && isUsdAvailable;
 
   return (
-    // 5. MỞ RỘNG LAYOUT
     <div className="bg-gray-800 rounded-lg shadow-xl overflow-hidden max-w-7xl mx-auto">
       <div className="md:flex">
         {/* Cột ảnh */}
@@ -105,7 +102,7 @@ export default function ItemDetailPage() {
             {item.description || "Vật phẩm này chưa có mô tả."}
           </p>
 
-          {/* 6. KHỐI GIÁ MỚI */}
+          {/* KHỐI GIÁ MỚI */}
           <div className="my-6">
             {isCoinOnly && (
               <>
@@ -118,10 +115,21 @@ export default function ItemDetailPage() {
               </>
             )}
 
+            {isUsdOnly && (
+               <>
+                <span className="inline-block bg-green-600 text-green-100 text-xs font-semibold px-2 py-0.5 rounded-full mb-1">
+                  Có thể mua bằng USD
+                </span>
+                <span className="block text-4xl font-bold text-green-400">
+                  ${formatNumber(priceUsdNum)}
+                </span>
+              </>
+            )}
+
             {hasBothPrices && (
               <>
                 <span className="block text-4xl font-bold text-green-400">
-                  ${formatNumber(calculatedUsd)}
+                  ${formatNumber(priceUsdNum)}
                 </span>
                 <span className="block text-3xl font-bold text-yellow-400">
                   {formatNumber(priceCoinNum)} Xu
@@ -135,7 +143,7 @@ export default function ItemDetailPage() {
           </p>
 
           {/* Khu vực thêm vào giỏ hàng */}
-          <div className="mt-auto"> {/* Đẩy xuống dưới cùng */}
+          <div className="mt-auto"> 
             {item.stockQuantity > 0 ? (
               <div className="flex items-center space-x-4">
                 <input

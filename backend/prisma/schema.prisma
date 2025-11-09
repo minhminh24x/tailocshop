@@ -185,30 +185,36 @@ model DeliveryTimeSlot {
 model Order {
   id                 String     @id @default(uuid()) @db.Uuid
   
-  // Quan hệ với User (Customer)
   customerUserId     String?    @db.Uuid @map("customer_user_id")
   customer           User?      @relation("CustomerOrders", fields: [customerUserId], references: [id], onDelete: SetNull)
   
   inGameName         String     @map("in_game_name") @db.VarChar(100)
   
-  // Quan hệ với User (Staff)
   staffUserId        String?    @db.Uuid @map("staff_user_id")
   staff              User?      @relation("StaffHandledOrders", fields: [staffUserId], references: [id], onDelete: SetNull)
   
-  // Quan hệ với DeliveryTimeSlot
   deliveryTimeSlotId String     @db.Uuid @map("delivery_time_slot_id")
   deliveryTimeSlot   DeliveryTimeSlot @relation(fields: [deliveryTimeSlotId], references: [id], onDelete: Restrict)
   
   status             OrderStatus    @default(PENDING)
   paymentStatus      PaymentStatus  @default(UNPAID) @map("payment_status")
-  currencyUsed       CurrencyType   @map("currency_used")
-  subTotal           Decimal    @map("sub_total") @db.Decimal(12, 2)
-  vipDiscountAmount  Decimal    @default(0) @map("vip_discount_amount") @db.Decimal(12, 2)
-  totalAmount        Decimal    @map("total_amount") @db.Decimal(12, 2)
-  notes              String?
   
-  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz // <-- ĐÃ SỬA
-  updatedAt          DateTime   @updatedAt @map("updated_at") @db.Timestamptz // <-- ĐÃ SỬA
+  // [BỎ] Không dùng trường này nữa vì đơn hàng có thể có 2 loại tiền
+  // currencyUsed       CurrencyType   @map("currency_used") 
+  
+  // [SỬA] Tách riêng các giá trị COIN
+  subTotalCoin       Decimal    @default(0) @map("sub_total_coin") @db.Decimal(12, 2)
+  vipDiscountAmountCoin Decimal @default(0) @map("vip_discount_amount_coin") @db.Decimal(12, 2)
+  totalAmountCoin    Decimal    @default(0) @map("total_amount_coin") @db.Decimal(12, 2)
+  
+  // [THÊM] Tách riêng các giá trị USD
+  subTotalUsd        Decimal    @default(0) @map("sub_total_usd") @db.Decimal(12, 2)
+  // (Chúng ta giả định VIP discount chỉ áp dụng cho COIN)
+  totalAmountUsd     Decimal    @default(0) @map("total_amount_usd") @db.Decimal(12, 2)
+
+  notes              String?
+  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime   @updatedAt @map("updated_at") @db.Timestamptz
 
   // Quan hệ ngược
   orderDetails       OrderDetail[]
@@ -222,16 +228,18 @@ model Order {
 model OrderDetail {
   id              String   @id @default(uuid()) @db.Uuid
   
-  // Quan hệ với Order
   orderId         String   @db.Uuid @map("order_id")
   order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   
-  // Quan hệ với Item
   itemId          String   @db.Uuid @map("item_id")
   item            Item     @relation(fields: [itemId], references: [id], onDelete: Restrict)
   
   quantity        Int
   unitAtPurchase  ItemUnit @map("unit_at_purchase")
+  
+  // [SỬA] Thêm trường tiền tệ cho từng dòng
+  currencyAtPurchase CurrencyType @default(COIN) @map("currency_at_purchase")
+  
   priceAtPurchase Decimal  @map("price_at_purchase") @db.Decimal(12, 2)
   totalLineAmount Decimal  @map("total_line_amount") @db.Decimal(12, 2)
 
