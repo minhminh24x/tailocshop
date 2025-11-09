@@ -41,10 +41,9 @@ const updateUserVipLevel = async (tx, userId, newTotalSpent) => {
  * @returns {Promise<object>} Đơn hàng vừa tạo
  */
 const createOrder = async (userId, orderData) => {
-  // [SỬA] preferredCurrency là 'COIN' hoặc 'USD'
   const { items, inGameName, deliveryTimeSlotId, preferredCurrency } = orderData;
 
-  // 1. Kiểm tra dữ liệu đầu vào cơ bản
+  // 1. Kiểm tra dữ liệu đầu vào cơ bản (Giữ nguyên)
   if (!items || items.length === 0) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Giỏ hàng không được rỗng');
   }
@@ -61,20 +60,61 @@ const createOrder = async (userId, orderData) => {
   // 2. Bắt đầu một GIAO DỊCH (TRANSACTION)
   try {
     const newOrder = await prisma.$transaction(async (tx) => {
+      
+      // [BẮT ĐẦU SỬA] LOGIC TẠO MÃ ĐƠN HÀNG (ORDER NUMBER)
+      // 1. Lấy ngày giờ Việt Nam (UTC+7)
+      const now = new Date();
+      // Đảm bảo múi giờ đúng
+      const vietnamTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
+
+      const year = vietnamTime.getFullYear().toString().slice(-2); // "25"
+      const month = (vietnamTime.getMonth() + 1).toString().padStart(2, '0'); // "11"
+      const day = vietnamTime.getDate().toString().padStart(2, '0'); // "10"
+      
+      const datePrefix = `${year}${month}${day}`; // "251110"
+
+      // 2. Tìm đơn hàng cuối cùng trong ngày
+      const lastOrderToday = await tx.order.findFirst({
+        where: {
+          orderNumber: {
+            startsWith: datePrefix,
+          },
+        },
+        orderBy: {
+          orderNumber: 'desc', // Lấy số lớn nhất, vd: "2511100012"
+        },
+        select: {
+          orderNumber: true,
+        },
+      });
+
+      // 3. Tính toán số thứ tự mới
+      let newSequence = 1;
+      if (lastOrderToday && lastOrderToday.orderNumber) {
+        // Tách 4 số cuối (an toàn hơn 3)
+        const lastSequenceStr = lastOrderToday.orderNumber.slice(-4); // Lấy "0012"
+        newSequence = parseInt(lastSequenceStr, 10) + 1;
+      }
+
+      // 4. Tạo mã mới (với 4 chữ số, cho phép 9999 đơn/ngày)
+      const newOrderNumber = `${datePrefix}${newSequence.toString().padStart(4, '0')}`;
+      // [KẾT THÚC SỬA] LOGIC TẠO MÃ ĐƠN HÀNG
+
+      
       // 2.1. Lấy thông tin User (để tính VIP)
       const user = await tx.user.findFirstOrThrow({
         where: { id: userId },
         include: { vipLevel: true },
       });
 
+      // ... (Tất cả logic: lấy itemIds, dbItems, tỷ giá, kiểm tra kho... giữ nguyên) ...
       const itemIds = items.map((item) => item.itemId);
       const dbItems = await tx.item.findMany({
         where: { id: { in: itemIds } },
       });
 
-      // [MỚI] 2.1b. Lấy tỷ giá hối đoái (Theo yêu cầu: XU_TO_USD)
       const xuToUsdRateEntry = await tx.currencyExchangeRate.findUnique({
-        where: { rateType: 'XU_TO_USD' }, // [SỬA] Lấy rate XU_TO_USD
+        where: { rateType: 'XU_TO_USD' }, 
       });
 
       if (!xuToUsdRateEntry || !xuToUsdRateEntry.rate) {
@@ -85,7 +125,6 @@ const createOrder = async (userId, orderData) => {
         throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Lỗi hệ thống: Tỷ giá XU sang USD không hợp lệ.');
       }
 
-      // 2.2. Kiểm tra và Tính toán 2 TỔNG TIỀN
       let subTotalCoin = 0;
       let subTotalUsd = 0;
       const orderDetailsData = [];
@@ -105,22 +144,19 @@ const createOrder = async (userId, orderData) => {
         const hasUsdPrice = dbItem.priceUsd !== null;
         
         let price = 0;
-        let currencyForThisItem = 'COIN'; // Mặc định
+        let currencyForThisItem = 'COIN'; 
 
         if (preferredCurrency === 'USD' && hasUsdPrice) {
-          // Ưu tiên 1: User muốn USD và vật phẩm CÓ giá USD
           price = parseFloat(dbItem.priceUsd);
           currencyForThisItem = 'USD';
           subTotalUsd += (price * cartItem.quantity);
 
         } else if (hasCoinPrice) {
-          // Ưu tiên 2: User muốn COIN, HOẶC user muốn USD nhưng vật phẩm CHỈ CÓ giá COIN
           price = parseFloat(dbItem.priceCoin);
           currencyForThisItem = 'COIN';
           subTotalCoin += (price * cartItem.quantity);
           
         } else {
-          // Lỗi: Vật phẩm không có giá COIN (và user cũng không thể mua bằng USD)
           throw new ApiError(httpStatus.BAD_REQUEST, `Vật phẩm "${dbItem.name}" không có thông tin giá XU. Vui lòng liên hệ Admin.`);
         }
 
@@ -131,7 +167,7 @@ const createOrder = async (userId, orderData) => {
           quantity: cartItem.quantity,
           priceAtPurchase: price,
           unitAtPurchase: dbItem.unit,
-          currencyAtPurchase: currencyForThisItem, // [MỚI] Ghi lại tiền tệ
+          currencyAtPurchase: currencyForThisItem, 
           totalLineAmount: lineTotal,
         });
 
@@ -142,8 +178,7 @@ const createOrder = async (userId, orderData) => {
           })
         );
       }
-
-      // 2.3. Tính toán giảm giá và tổng
+      
       if (deliveryTimeSlotId !== "00000000-0000-0000-0000-000000000000") {
         const timeSlot = await tx.deliveryTimeSlot.findFirst({
           where: { id: deliveryTimeSlotId, isActive: true }
@@ -153,24 +188,23 @@ const createOrder = async (userId, orderData) => {
         }
       }
       
-      // Tính toán giảm giá VIP (Chỉ áp dụng cho COIN)
       const vipDiscountPercent = user.vipLevel.discountPercent || 0;
       const vipDiscountAmountCoin = subTotalCoin * (vipDiscountPercent / 100);
       const totalAmountCoin = subTotalCoin - vipDiscountAmountCoin;
-      
-      // USD không được giảm giá
       const totalAmountUsd = subTotalUsd;
 
       // 2.4. TẠO ĐƠN HÀNG (Order)
       const createdOrder = await tx.order.create({
         data: {
+          // [THÊM DÒNG NÀY]
+          orderNumber: newOrderNumber,
+          
           customerUserId: userId,
           inGameName: inGameName,
           status: 'PENDING',
           paymentStatus: 'UNPAID',
           deliveryTimeSlotId: deliveryTimeSlotId,
 
-          // [SỬA] Lưu 2 loại tiền tệ
           subTotalCoin: subTotalCoin,
           vipDiscountAmountCoin: vipDiscountAmountCoin,
           totalAmountCoin: totalAmountCoin,
@@ -193,11 +227,7 @@ const createOrder = async (userId, orderData) => {
       await Promise.all(itemUpdateOps);
 
       // 2.6. [SỬA ĐỔI LỚN] Cập nhật tổng chi tiêu (quy đổi USD sang COIN)
-      
-      // [SỬA] Quy đổi giá trị USD đã chi tiêu sang XU (DÙNG PHÉP CHIA)
       const usdSpentInCoinValue = totalAmountUsd / conversionRate;
-
-      // Tổng chi tiêu (đã quy đổi) để tính VIP
       const totalEquivalentSpent = totalAmountCoin + usdSpentInCoinValue;
 
       if (totalEquivalentSpent > 0) {
@@ -205,13 +235,11 @@ const createOrder = async (userId, orderData) => {
           where: { id: userId },
           data: {
             totalSpentCoin: { 
-              increment: totalEquivalentSpent // Dùng tổng đã quy đổi
+              increment: totalEquivalentSpent 
             }
           },
           select: { totalSpentCoin: true } 
         });
-
-        // Cập nhật VIP level dựa trên tổng chi tiêu mới (đã quy đổi)
         await updateUserVipLevel(tx, userId, updatedUser.totalSpentCoin);
       }
       
@@ -240,12 +268,16 @@ const getMyOrders = async (userId) => {
   return prisma.order.findMany({
     where: { customerUserId: userId },
     orderBy: { createdAt: 'desc' },
-    select: { // [SỬA] Cập nhật các trường theo schema mới
+    select: { 
       id: true,
+      
+      // [THÊM DÒNG NÀY]
+      orderNumber: true, 
+
       status: true,
       paymentStatus: true,
-      totalAmountCoin: true, // [SỬA]
-      totalAmountUsd: true,  // [SỬA]
+      totalAmountCoin: true, 
+      totalAmountUsd: true,  
       createdAt: true,
     },
   });
@@ -260,13 +292,14 @@ const getMyOrderById = async (orderId, userId) => {
   const order = await prisma.order.findUnique({
     where: {
       id: orderId,
-      customerUserId: userId, // Đảm bảo user này sở hữu đơn hàng
+      customerUserId: userId, 
     },
+    // [SỬA] Dùng 'include' sẽ tự động lấy 'orderNumber'
     include: {
-      deliveryTimeSlot: true, // Thêm dòng này để xem khung giờ
+      deliveryTimeSlot: true, 
       orderDetails: {
         include: {
-          item: { // Lấy thông tin vật phẩm lúc mua
+          item: { 
             select: { id: true, name: true, thumbnailImageUrl: true }
           }
         }
@@ -286,8 +319,9 @@ const getMyOrderById = async (orderId, userId) => {
 const getAllOrdersAdmin = async () => {
   return prisma.order.findMany({
     orderBy: { createdAt: 'desc' },
+    // [SỬA] Dùng 'include' sẽ tự động lấy 'orderNumber'
     include: {
-      customer: { // Lấy thông tin người đặt
+      customer: { 
         select: { inGameName: true, email: true }
       }
     }
@@ -301,6 +335,7 @@ const getAllOrdersAdmin = async () => {
 const getOrderByIdAdmin = async (orderId) => {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
+    // [SỬA] Dùng 'include' sẽ tự động lấy 'orderNumber'
     include: {
       customer: { 
         select: { id: true, inGameName: true, email: true, vipLevelInt: true }
@@ -351,7 +386,7 @@ const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
     data: {
       status: status, 
       paymentStatus: paymentStatus, 
-      staffUserId: adminUserId, // Gán admin/staff xử lý đơn này
+      staffUserId: adminUserId, 
     },
   });
 };

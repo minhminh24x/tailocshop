@@ -1,24 +1,9 @@
 // File: frontend/src/pages/admin/manager/AdminManageOrders.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
 import { getAllOrdersAdmin } from '../../../services/adminOrderService.js';
-
-// Hàm helper định dạng tiền tệ
-const formatCurrency = (amount, currency) => {
-  return `${parseFloat(amount).toFixed(2)} ${currency}`;
-};
-
-// Hàm helper cho màu sắc status
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'PENDING': return 'bg-yellow-600 text-yellow-100';
-    case 'PREPARING': return 'bg-blue-600 text-blue-100';
-    case 'COMPLETED': return 'bg-green-600 text-green-100';
-    case 'CANCELLED': return 'bg-red-600 text-red-100';
-    default: return 'bg-gray-600 text-gray-100';
-  }
-};
+import { formatNumber } from '../../../utils/formatNumber.js';
+import { FaCoins, FaDollarSign } from 'react-icons/fa';
 
 export default function AdminManageOrders() {
   const [orders, setOrders] = useState([]);
@@ -26,95 +11,101 @@ export default function AdminManageOrders() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const fetchOrders = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const { data } = await getAllOrdersAdmin();
-      setOrders(data);
-    } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Không thể tải danh sách đơn hàng';
-      setError(errorMsg);
-      toast.error(errorMsg);
-    } finally {
-      setIsLoading(false);
-    }
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setIsLoading(true);
+        const { data } = await getAllOrdersAdmin();
+        setOrders(data);
+      } catch (err) {
+        setError(err.response?.data?.message || 'Không thể tải danh sách đơn hàng');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchOrders();
   }, []);
 
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
-
-  const handleViewDetails = (orderId) => {
-    // Chuyển hướng đến trang chi tiết (sẽ tạo ở Bước 4)
-    navigate(`/admin/orders/${orderId}`);
+  const getStatusClass = (status) => {
+    switch (status) {
+      case 'PENDING': return 'bg-yellow-600 text-yellow-100';
+      case 'COMPLETED': return 'bg-green-600 text-green-100';
+      case 'CANCELLED': return 'bg-red-600 text-red-100';
+      case 'PREPARING': return 'bg-blue-600 text-blue-100';
+      case 'READY_FOR_DELIVERY': return 'bg-cyan-600 text-cyan-100';
+      default: return 'bg-gray-600 text-gray-100';
+    }
   };
 
-  if (isLoading) {
-    return <p className="text-center text-lg text-gray-300">Đang tải đơn hàng...</p>;
-  }
+  const getPaymentStatusClass = (status) => {
+    return status === 'PAID' ? 'text-green-400' : 'text-red-400';
+  };
 
-  if (error) {
-    return <p className="text-center text-lg text-red-400">Lỗi: {error}</p>;
-  }
+  if (isLoading) return <p className="text-center text-lg text-gray-300">Đang tải đơn hàng...</p>;
+  if (error) return <p className="text-center text-lg text-red-400">Lỗi: {error}</p>;
 
   return (
-    <div>
+    <div className="bg-gray-900 shadow-xl rounded-lg p-6">
       <h1 className="text-3xl font-bold text-white mb-6">Quản lý Đơn hàng</h1>
-
-      <div className="bg-gray-900 shadow-xl rounded-lg overflow-hidden">
-        <table className="min-w-full text-white">
-          <thead className="bg-gray-800">
+      
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-700">
+          <thead>
             <tr>
-              <th className="py-3 px-4 text-left">Ngày Đặt</th>
-              <th className="py-3 px-4 text-left">Khách hàng (IGN)</th>
-              <th className="py-3 px-4 text-left">Email</th>
-              <th className="py-3 px-4 text-right">Tổng Tiền</th>
-              <th className="py-3 px-4 text-center">Thanh toán</th>
-              <th className="py-3 px-4 text-center">Trạng thái ĐH</th>
-              <th className="py-3 px-4 text-center">Hành động</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Mã ĐH</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Khách hàng</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ngày đặt</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Tổng cộng</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Thanh toán</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Trạng thái</th>
             </tr>
           </thead>
-          <tbody className="bg-gray-800 divide-y divide-gray-700">
-            {orders.map((order) => (
-              <tr key={order.id} className="hover:bg-gray-700">
-                <td className="py-3 px-4 text-sm text-gray-400">
-                  {new Date(order.createdAt).toLocaleString('vi-VN')}
-                </td>
-                <td className="py-3 px-4 font-medium">{order.customer?.inGameName || order.inGameName}</td>
-                <td className="py-3 px-4 text-gray-400">{order.customer?.email || 'N/A'}</td>
-                <td className="py-3 px-4 text-right font-mono text-green-400">
-                  {formatCurrency(order.totalAmount, order.currencyUsed)}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                    order.paymentStatus === 'PAID' ? 'bg-green-600 text-green-100' : 'bg-red-600 text-red-100'
-                  }`}>
+          <tbody className="divide-y divide-gray-800">
+            {orders.map(order => {
+              const totalCoin = parseFloat(order.totalAmountCoin) || 0;
+              const totalUsd = parseFloat(order.totalAmountUsd) || 0;
+              
+              return (
+                <tr 
+                  key={order.id} 
+                  onClick={() => navigate(`/admin/orders/${order.id}`)}
+                  className="hover:bg-gray-800 cursor-pointer"
+                >
+                  {/* [BẮT ĐẦU SỬA] Ưu tiên hiển thị orderNumber */}
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-pink-400">
+                    {order.orderNumber || order.id.substring(0, 8)}
+                  </td>
+                  {/* [KẾT THÚC SỬA] */}
+                  
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {order.customer?.inGameName || order.inGameName || 'N/A'}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-400">
+                    {new Date(order.createdAt).toLocaleString('vi-VN')}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-right">
+                    {totalUsd > 0 && (
+                      <span className="flex items-center justify-end text-green-400">
+                        <FaDollarSign size={14} className="mr-1" /> {formatNumber(totalUsd)}
+                      </span>
+                    )}
+                    {totalCoin > 0 && (
+                      <span className="flex items-center justify-end text-yellow-400">
+                        <FaCoins size={14} className="mr-1" /> {formatNumber(totalCoin)}
+                      </span>
+                    )}
+                  </td>
+                  <td className={`px-4 py-4 whitespace-nowrap text-sm font-medium ${getPaymentStatusClass(order.paymentStatus)}`}>
                     {order.paymentStatus}
-                  </span>
-                </td>
-                <td className="py-3 px-4 text-center">
-                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                    {order.status}
-                  </span>
-                </td>
-                <td className="py-3 px-4 text-center">
-                  <button
-                    onClick={() => handleViewDetails(order.id)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm py-1 px-3 rounded-md"
-                  >
-                    Xem / Sửa
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {orders.length === 0 && (
-              <tr>
-                <td colSpan="7" className="py-4 px-4 text-center text-gray-400">
-                  Chưa có đơn hàng nào.
-                </td>
-              </tr>
-            )}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.status)}`}>
+                      {order.status}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

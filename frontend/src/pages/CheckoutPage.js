@@ -8,7 +8,7 @@ import apiClient from '../services/apiClient.js';
 import { FaCoins } from 'react-icons/fa';
 import { FaDollarSign } from 'react-icons/fa';
 import { formatNumber } from '../utils/formatNumber.js';
-  
+
 export default function CheckoutPage() {
   const { items, totalItems, clearCart } = useCartStore();
   const { user, vipLevel } = useAuthStore();
@@ -52,7 +52,7 @@ export default function CheckoutPage() {
     const usdPayableItems = items.filter(
       (entry) => entry.itemData.priceUsd && entry.itemData.priceUsd > 0
     );
-    
+
     const coinOnlySubtotalXu = coinOnlyItems.reduce(
       (acc, entry) => acc + entry.itemData.priceCoin * entry.quantity,
       0
@@ -65,14 +65,14 @@ export default function CheckoutPage() {
       (acc, entry) => acc + entry.itemData.priceUsd * entry.quantity,
       0
     );
-    
+
     // Luôn tính tổng Xu (chưa giảm giá) và % giảm giá
     const totalXuEquivalent = coinOnlySubtotalXu + payableSubtotalXu;
     const discountPercent = vipLevel?.discountPercent || 0;
-    
+
     // Luôn tính số Xu giảm giá (để hiển thị)
     const discountAmountXu = totalXuEquivalent * (discountPercent / 100);
-    
+
     let finalTotalXu = 0;
     let finalTotalUsd = 0;
     let appliedCoinRounding = false;
@@ -81,11 +81,11 @@ export default function CheckoutPage() {
     if (paymentMethod === 'COIN') {
       // Thanh toán = COIN: Giảm giá trên TỔNG XU
       originalCoinTotal = totalXuEquivalent - discountAmountXu;
-      
+
       const roundedXu = Math.ceil(originalCoinTotal);
       appliedCoinRounding = roundedXu !== originalCoinTotal;
       finalTotalXu = roundedXu;
-      
+
       finalTotalUsd = 0;
 
     } else { // paymentMethod === 'USD'
@@ -96,7 +96,7 @@ export default function CheckoutPage() {
       const roundedXu = Math.ceil(originalCoinTotal);
       appliedCoinRounding = roundedXu !== originalCoinTotal;
       finalTotalXu = roundedXu;
-      
+
       // 2. Phần USD (payable) KHÔNG giảm giá
       finalTotalUsd = payableSubtotalUsd;
     }
@@ -134,7 +134,7 @@ export default function CheckoutPage() {
       toast.error('Vui lòng chọn một khung giờ giao hàng');
       return;
     }
-
+    const currency = paymentMethod.toUpperCase();
     setIsLoading(true);
     setError(null);
 
@@ -143,6 +143,7 @@ export default function CheckoutPage() {
       const orderData = {
         inGameName: inGameName,
         deliveryTimeSlotId: selectedTimeSlot,
+        preferredCurrency: currency,
         // [BỎ] Không gửi currencyUsed ở cấp cao nhất
         items: items.map(item => {
           // [THÊM] Kiểm tra ID hợp lệ
@@ -150,8 +151,8 @@ export default function CheckoutPage() {
             // Lỗi này sẽ được bắt ở khối catch bên ngoài
             throw new Error('Một vật phẩm trong giỏ hàng không có ID hợp lệ.');
           }
-          return { 
-            itemId: item.itemData.id, 
+          return {
+            itemId: item.itemData.id,
             quantity: item.quantity,
             currencyAtPurchase: paymentMethod.toUpperCase() // [SỬA] Viết hoa
           };
@@ -159,8 +160,8 @@ export default function CheckoutPage() {
       };
 
       // [SỬA 2] Gửi object orderData duy nhất
-      await createOrder(orderData); 
-      
+      await createOrder(orderData);
+
       toast.success('Đặt hàng thành công!');
       clearCart();
       navigate('/my-orders');
@@ -238,11 +239,10 @@ export default function CheckoutPage() {
                 </label>
                 <div className="flex flex-col space-y-3">
                   <label
-                    className={`flex items-center p-4 rounded-lg cursor-pointer transition-all ${
-                      paymentMethod === 'COIN'
+                    className={`flex items-center p-4 rounded-lg cursor-pointer transition-all ${paymentMethod === 'COIN'
                         ? 'bg-yellow-500/20 border-yellow-500 border-2'
                         : 'bg-gray-700 border border-gray-600 hover:bg-gray-600'
-                    }`}
+                      }`}
                   >
                     <input
                       type="radio"
@@ -258,11 +258,10 @@ export default function CheckoutPage() {
                     </span>
                   </label>
                   <label
-                    className={`flex items-center p-4 rounded-lg cursor-pointer transition-all ${
-                      paymentMethod === 'USD'
+                    className={`flex items-center p-4 rounded-lg cursor-pointer transition-all ${paymentMethod === 'USD'
                         ? 'bg-green-500/20 border-green-500 border-2'
                         : 'bg-gray-700 border border-gray-600 hover:bg-gray-600'
-                    }`}
+                      }`}
                   >
                     <input
                       type="radio"
@@ -283,13 +282,13 @@ export default function CheckoutPage() {
               {/* Cảnh báo làm tròn Xu */}
               {orderSummary.appliedCoinRounding && (
                 <div className="mb-4 text-center text-yellow-400 bg-yellow-900/50 p-3 rounded-lg">
-                  Tổng Xu ban đầu là {formatNumber(orderSummary.originalCoinTotal)} Xu, được làm tròn lên 
+                  Tổng Xu ban đầu là {formatNumber(orderSummary.originalCoinTotal)} Xu, được làm tròn lên
                   <strong> {formatNumber(orderSummary.finalTotalXu)} Xu</strong>.
-                  <br />Bạn có thể mất khoảng 
+                  <br />Bạn có thể mất khoảng
                   <strong> {formatNumber(orderSummary.finalTotalXu - orderSummary.originalCoinTotal)} Xu</strong> nếu tiếp tục đặt hàng.
                 </div>
               )}
-              
+
               {orderSummary.showCoinOnlyWarning && (
                 <div className="mb-4 text-center text-yellow-400 bg-yellow-900/50 p-3 rounded-lg">
                   Bạn đang có <strong>{formatNumber(orderSummary.coinOnlyItemCount)} vật phẩm</strong> bắt buộc phải trả bằng Xu.
@@ -335,7 +334,7 @@ export default function CheckoutPage() {
 
             {/* Tính toán */}
             <div className="border-t border-gray-700 pt-4 space-y-2">
-              
+
               {/* === HIỂN THỊ KHI CHỌN USD === */}
               {paymentMethod === 'USD' && (
                 <>
@@ -351,13 +350,13 @@ export default function CheckoutPage() {
                   )}
                 </>
               )}
-              
+
               {/* === HIỂN THỊ KHI CHỌN COIN === */}
               {paymentMethod === 'COIN' && (
-                  <div className="flex justify-between text-gray-300">
-                    <span>Tạm tính (Xu):</span>
-                    <span className="text-white">{formatNumber(orderSummary.totalXuEquivalent)} Xu</span>
-                  </div>
+                <div className="flex justify-between text-gray-300">
+                  <span>Tạm tính (Xu):</span>
+                  <span className="text-white">{formatNumber(orderSummary.totalXuEquivalent)} Xu</span>
+                </div>
               )}
 
               {/* Cảnh báo “Shop không hỗ trợ giảm giá” */}
@@ -388,7 +387,7 @@ export default function CheckoutPage() {
                   <span className="text-yellow-400">{formatNumber(orderSummary.finalTotalXu)} Xu</span>
                 </div>
               )}
-              
+
               {/* Tổng cộng USD (Mixed) */}
               {paymentMethod === 'USD' && (
                 <div className="border-t border-gray-700 pt-2 mt-2 space-y-2">

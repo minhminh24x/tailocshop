@@ -184,7 +184,9 @@ model DeliveryTimeSlot {
 
 model Order {
   id                 String     @id @default(uuid()) @db.Uuid
-  
+
+  orderNumber        String?  @unique @map("order_number")
+
   customerUserId     String?    @db.Uuid @map("customer_user_id")
   customer           User?      @relation("CustomerOrders", fields: [customerUserId], references: [id], onDelete: SetNull)
   
@@ -230,6 +232,7 @@ model OrderDetail {
   
   orderId         String   @db.Uuid @map("order_id")
   order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
   
   itemId          String   @db.Uuid @map("item_id")
   item            Item     @relation(fields: [itemId], references: [id], onDelete: Restrict)

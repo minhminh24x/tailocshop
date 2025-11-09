@@ -4,8 +4,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { getOrderByIdAdmin, updateOrderAdmin } from '../../../services/adminOrderService.js';
 import { useAuthStore } from '../../../store/authStore.js';
+import { formatNumber } from '../../../utils/formatNumber.js';
+import { FaCoins } from 'react-icons/fa';
+import { FaDollarSign } from 'react-icons/fa';
 
-// Lấy từ schema.prisma
 const ORDER_STATUSES = ['PENDING', 'PREPARING', 'READY_FOR_DELIVERY', 'COMPLETED', 'CANCELLED'];
 const PAYMENT_STATUSES = ['UNPAID', 'PAID'];
 
@@ -18,19 +20,16 @@ export default function AdminOrderDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // State cho việc cập nhật
   const [currentStatus, setCurrentStatus] = useState('');
   const [currentPaymentStatus, setCurrentPaymentStatus] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Hàm tải dữ liệu chi tiết
   const fetchOrderDetails = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
       const { data } = await getOrderByIdAdmin(id);
       setOrder(data);
-      // Set state ban đầu cho dropdown
       setCurrentStatus(data.status);
       setCurrentPaymentStatus(data.paymentStatus);
     } catch (err) {
@@ -46,7 +45,6 @@ export default function AdminOrderDetailPage() {
     fetchOrderDetails();
   }, [fetchOrderDetails]);
 
-  // Hàm xử lý cập nhật
   const handleUpdateOrder = async () => {
     if (currentStatus === order.status && currentPaymentStatus === order.paymentStatus) {
       toast.error('Bạn chưa thay đổi trạng thái nào.');
@@ -61,7 +59,7 @@ export default function AdminOrderDetailPage() {
       };
       await updateOrderAdmin(id, updateData);
       toast.success('Cập nhật đơn hàng thành công!');
-      fetchOrderDetails(); // Tải lại dữ liệu mới
+      fetchOrderDetails(); 
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'Cập nhật thất bại';
       toast.error(errorMsg);
@@ -81,6 +79,13 @@ export default function AdminOrderDetailPage() {
   if (!order) {
     return null;
   }
+  
+  const totalAmountCoin = parseFloat(order.totalAmountCoin) || 0;
+  const totalAmountUsd = parseFloat(order.totalAmountUsd) || 0;
+  const subTotalCoin = parseFloat(order.subTotalCoin) || 0;
+  const subTotalUsd = parseFloat(order.subTotalUsd) || 0;
+  const vipDiscountAmountCoin = parseFloat(order.vipDiscountAmountCoin) || 0;
+
 
   return (
     <div>
@@ -90,10 +95,16 @@ export default function AdminOrderDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Cột 1: Chi tiết & Cập nhật */}
         <div className="lg:col-span-2 bg-gray-900 shadow-xl rounded-lg p-6">
-          <h1 className="text-3xl font-bold text-white mb-4">Chi tiết Đơn hàng</h1>
-          <p className="font-mono text-sm text-gray-400 mb-6">{order.id}</p>
+          <h1 className="text-3xl font-bold text-white mb-4">Chi tiết Đơn hàng (Admin)</h1>
+          
+          {/* [BẮT ĐẦU SỬA] Hiển thị cả orderNumber và id */}
+          <p className="font-mono text-xl font-bold text-pink-400 mb-2">
+            Mã ĐH: {order.orderNumber || 'N/A'}
+          </p>
+          <p className="font-mono text-xs text-gray-500 mb-6">UUID: {order.id}</p>
+          {/* [KẾT THÚC SỬA] */}
+
 
           {/* Thông tin Khách hàng */}
           <div className="mb-6">
@@ -101,6 +112,7 @@ export default function AdminOrderDetailPage() {
             <p><strong>In-Game Name:</strong> {order.inGameName}</p>
             <p><strong>Email:</strong> {order.customer?.email || 'N/A'}</p>
             <p><strong>VIP Cấp:</strong> {order.customer?.vipLevelInt || 0}</p>
+            <p><strong>Khung giờ:</strong> {order.deliveryTimeSlot?.displayText || 'Giao sớm nhất'}</p>
           </div>
 
           {/* Chi tiết vật phẩm */}
@@ -117,11 +129,14 @@ export default function AdminOrderDetailPage() {
                     />
                     <div>
                       <p className="text-white font-medium">{detail.item?.name || '(Vật phẩm đã bị xóa)'}</p>
-                      <p className="text-gray-400 text-sm">SL: {detail.quantity} ({detail.unitAtPurchase})</p>
+                      <p className="text-gray-400 text-sm">
+                        SL: {formatNumber(detail.quantity)} ({detail.unitAtPurchase})
+                        @ {formatNumber(detail.priceAtPurchase)} {detail.currencyAtPurchase}
+                      </p>
                     </div>
                   </div>
-                  <p className="text-white font-medium">
-                    {(detail.priceAtPurchase * detail.quantity).toFixed(2)} {order.currencyUsed}
+                  <p className={`text-white font-medium ${detail.currencyAtPurchase === 'USD' ? 'text-green-400' : 'text-yellow-400'}`}>
+                    {formatNumber(detail.totalLineAmount)} {detail.currencyAtPurchase}
                   </p>
                 </div>
               ))}
@@ -130,9 +145,34 @@ export default function AdminOrderDetailPage() {
           
           {/* Tổng kết */}
           <div className="text-right space-y-2">
-            <p className="text-lg text-gray-300">Tạm tính: <span className="font-semibold text-white">{order.subTotal} {order.currencyUsed}</span></p>
-            <p className="text-lg text-gray-300">Giảm giá VIP: <span className="font-semibold text-pink-400">-{order.vipDiscountAmount} {order.currencyUsed}</span></p>
-            <p className="text-2xl font-bold text-white">Tổng cộng: <span className="text-green-400">{order.totalAmount} {order.currencyUsed}</span></p>
+            {subTotalUsd > 0 && (
+              <p className="text-lg text-gray-300">Tạm tính ($): <span className="font-semibold text-white">{formatNumber(subTotalUsd)} $</span></p>
+            )}
+            {subTotalCoin > 0 && (
+              <p className="text-lg text-gray-300">Tạm tính (Xu): <span className="font-semibold text-white">{formatNumber(subTotalCoin)} Xu</span></p>
+            )}
+            {vipDiscountAmountCoin > 0 && (
+              <p className="text-lg text-gray-300">Giảm giá VIP (Xu): <span className="font-semibold text-pink-400">-{formatNumber(vipDiscountAmountCoin)} Xu</span></p>
+            )}
+
+            <div className="border-t border-gray-700 pt-3 mt-3 space-y-2">
+              {totalAmountUsd > 0 && (
+                <p className="text-2xl font-bold text-white flex justify-end items-center">
+                  <span className="mr-2">Tổng ($):</span>
+                  <span className="text-green-400 flex items-center">
+                    <FaDollarSign className="mr-1" /> {formatNumber(totalAmountUsd)}
+                  </span>
+                </p>
+              )}
+              {totalAmountCoin > 0 && (
+                <p className="text-2xl font-bold text-white flex justify-end items-center">
+                  <span className="mr-2">Tổng (Xu):</span>
+                  <span className="text-yellow-400 flex items-center">
+                    <FaCoins className="mr-1" /> {formatNumber(totalAmountCoin)}
+                  </span>
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -178,6 +218,7 @@ export default function AdminOrderDetailPage() {
 
           <div className="mt-4 text-center text-sm text-gray-400">
             <p>Người xử lý: {order.staff?.inGameName || (isUpdating ? adminUser.inGameName : 'Chưa có')}</p>
+            <p className="mt-1">Cập nhật lần cuối: {new Date(order.updatedAt).toLocaleString('vi-VN')}</p>
           </div>
         </div>
       </div>

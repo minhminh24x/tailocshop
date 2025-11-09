@@ -15,29 +15,30 @@ export const getMyOrders = () => {
 export const getMyOrderById = (orderId) => {
   return apiClient.get(`/orders/my-orders/${orderId}`);
 };
+
 /**
  * [SỬA] Gửi yêu cầu tạo đơn hàng mới
- * @param {object} orderData - { items, inGameName, deliveryTimeSlotId, preferredCurrency }
+ * @param {object} orderData - { items, inGameName, deliveryTimeSlotId }
+ * Đối tượng này được gửi thẳng từ CheckoutPage.js và đã có định dạng chuẩn.
  */
 export const createOrder = async (orderData) => {
   try {
-    // [SỬA] Đảm bảo gửi đủ 4 trường
-    const { items, inGameName, deliveryTimeSlotId, preferredCurrency } = orderData;
+    // [SỬA] Gửi thẳng 'orderData' mà không cần xử lý hay ánh xạ lại.
+    // Đối tượng 'orderData' từ CheckoutPage.js đã chứa:
+    // { 
+    //   inGameName: "...", 
+    //   deliveryTimeSlotId: "...", 
+    //   items: [{ itemId, quantity, currencyAtPurchase }] 
+    // }
+    // Đây chính xác là những gì backend validation (order.validation.js) mong đợi.
     
-    // Ánh xạ items trong giỏ hàng (từ cartStore) sang định dạng API cần
-    const mappedItems = items.map(item => ({
-      itemId: item.id,
-      quantity: item.quantity,
-    }));
-
-    const response = await apiClient.post('/orders', {
-      items: mappedItems,
-      inGameName,
-      deliveryTimeSlotId,
-      preferredCurrency // [SỬA] Gửi tiền tệ ưu tiên
-    });
+    // [BỎ] Toàn bộ logic destructure và map lại đã bị xóa.
+    
+    const response = await apiClient.post('/orders', orderData);
     return response.data;
+    
   } catch (error) {
+    // Log lỗi vẫn giữ nguyên
     console.error("Lỗi khi tạo đơn hàng:", error.response?.data || error.message);
     throw error.response?.data || error;
   }
