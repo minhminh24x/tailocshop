@@ -1,11 +1,11 @@
 // File: frontend/src/pages/admin/manager/AdminManageItems.js
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { 
-  getAllItemsAdmin, 
-  createItemAdmin, 
-  updateItemAdmin, 
-  deleteItemAdmin 
+import {
+  getAllItemsAdmin,
+  createItemAdmin,
+  updateItemAdmin,
+  deleteItemAdmin
 } from '../../../services/adminItemService.js';
 import ItemModal from '../../../components/admin/ItemModal.js';
 
@@ -89,6 +89,33 @@ export default function AdminManageItems() {
       }
     }
   };
+  /**
+   * Hiển thị badge trạng thái tồn kho
+   * @param {object} props
+   * @param {number} props.quantity Số lượng tồn kho
+   */
+  const StockStatusBadge = ({ quantity }) => {
+    let text = 'Còn Nhiều';
+    let classes = 'bg-green-700 text-green-100 border-green-500'; // "Còn Nhiều"
+
+    if (quantity <= 0) {
+      text = 'Hết Hàng';
+      classes = 'bg-red-700 text-red-100 border-red-500'; // "Hết Hàng"
+    } else if (quantity <= 20) {
+      // Bạn có thể thay đổi mốc 20 này thành 10, 50, ... tùy ý
+      text = 'Còn Ít';
+      classes = 'bg-yellow-700 text-yellow-100 border-yellow-500'; // "Còn Ít"
+    }
+
+    // Thêm viền mờ như bạn yêu cầu
+    const style = `px-3 py-1 text-xs font-semibold rounded-full border ${classes}`;
+
+    return (
+      <span className={style}>
+        {text}
+      </span>
+    );
+  };
 
   // === Render ===
   if (isLoading) {
@@ -119,8 +146,8 @@ export default function AdminManageItems() {
               <th className="py-3 px-4 text-left">Tên Vật phẩm</th>
               <th className="py-3 px-4 text-left">Phân loại</th>
               <th className="py-3 px-4 text-left">Đơn vị</th>
-              <th className="py-3 px-4 text-right">Giá (Xu)</th>
-              <th className="py-3 px-4 text-right">Tồn kho</th>
+              <th className="py-3 px-4 text-center">Giá (Xu)</th> {/* Sửa: text-center */}
+              <th className="py-3 px-4 text-center">Tồn kho</th> {/* Sửa: text-center */}
               <th className="py-3 px-4 text-center">Trạng thái</th>
               <th className="py-3 px-4 text-center">Hành động</th>
             </tr>
@@ -131,8 +158,10 @@ export default function AdminManageItems() {
                 <td className="py-3 px-4 font-medium">{item.name}</td>
                 <td className="py-3 px-4 text-gray-400">{item.category?.name || 'N/A'}</td>
                 <td className="py-3 px-4 text-gray-400">{item.unit}</td>
-                <td className="py-3 px-4 text-right font-mono text-green-400">{item.priceCoin || 0}</td>
-                <td className="py-3 px-4 text-right font-mono">{item.stockQuantity}</td>
+                <td className="py-3 px-4 text-center font-mono text-green-400">{item.priceCoin || 0}</td>
+                <td className="py-3 px-4 text-center">
+                  <StockStatusBadge quantity={item.stockQuantity} />
+                </td>
                 <td className="py-3 px-4 text-center">
                   {item.isActive ? (
                     <span className="px-2 py-1 text-xs font-semibold bg-green-700 text-green-100 rounded-full">Kích hoạt</span>

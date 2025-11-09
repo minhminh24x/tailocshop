@@ -60,6 +60,24 @@ const createItem = async (itemBody) => {
 };
 
 /**
+ * [MỚI] Lấy TẤT CẢ vật phẩm cho Admin (bao gồm cả item bị ẩn)
+ * @returns {Promise<Item[]>}
+ */
+const getAllItemsAdmin = async () => {
+  return prisma.item.findMany({
+    // KHÔNG CÓ "where: { isActive: true }"
+    include: {
+      category: {
+        select: { id: true, name: true, slug: true },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+};
+
+/**
  * Lấy tất cả vật phẩm (có thể thêm filter/pagination sau)
  * @returns {Promise<Item[]>}
  */
@@ -193,6 +211,7 @@ const deleteItem = async (id) => {
 export const itemService = {
   createItem,
   getAllItems,
+  getAllItemsAdmin,
   getFeaturedItems,
   getItemBySlugAndUnit,
   updateItem,

@@ -14,6 +14,11 @@ const getAllItems = asyncHandler(async (req, res) => {
   res.status(httpStatus.OK).send(items);
 });
 
+const getAllItemsAdmin = asyncHandler(async (req, res) => {
+  const items = await itemService.getAllItemsAdmin();
+  res.status(httpStatus.OK).send(items);
+});
+
 const getItem = asyncHandler(async (req, res) => {
   const { slug, unit } = req.params;
   const item = await itemService.getItemBySlugAndUnit(slug, unit);
@@ -44,6 +49,7 @@ const deleteItem = asyncHandler(async (req, res) => {
 export const itemController = {
   createItem,
   getAllItems,
+  getAllItemsAdmin,
   getFeaturedItems,
   getItem,
   updateItem,

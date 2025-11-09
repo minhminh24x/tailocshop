@@ -10,6 +10,13 @@ import { protect, isAdmin } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
+router.get(
+  '/admin/all',
+  // authMiddleware, // TODO: Bật các dòng này lên
+  // isAdmin,
+  itemController.getAllItemsAdmin
+);
+
 // === PUBLIC ROUTES ===
 router.get('/featured', itemController.getFeaturedItems);
 router.get('/', itemController.getAllItems);
@@ -27,6 +34,9 @@ router.post(
   validate(itemValidation.createItemSchema),
   itemController.createItem
 );
+
+// (ADMIN) Lấy TẤT CẢ item (kể cả active=false)
+
 
 router.patch(
   '/:id',
