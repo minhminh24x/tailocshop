@@ -190,7 +190,7 @@ const createOrder = async (userId, orderData) => {
       
       const vipDiscountPercent = user.vipLevel.discountPercent || 0;
       const vipDiscountAmountCoin = subTotalCoin * (vipDiscountPercent / 100);
-      const totalAmountCoin = subTotalCoin - vipDiscountAmountCoin;
+      const totalAmountCoin = Math.ceil(subTotalCoin - vipDiscountAmountCoin);
       const totalAmountUsd = subTotalUsd;
 
       // 2.4. TẠO ĐƠN HÀNG (Order)
@@ -207,6 +207,7 @@ const createOrder = async (userId, orderData) => {
 
           subTotalCoin: subTotalCoin,
           vipDiscountAmountCoin: vipDiscountAmountCoin,
+          
           totalAmountCoin: totalAmountCoin,
           
           subTotalUsd: subTotalUsd,
