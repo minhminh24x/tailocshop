@@ -17,23 +17,12 @@ export const getMyOrderById = (orderId) => {
 };
 
 /**
- * [SỬA] Gửi yêu cầu tạo đơn hàng mới
+ * Gửi yêu cầu tạo đơn hàng mới
  * @param {object} orderData - { items, inGameName, deliveryTimeSlotId }
- * Đối tượng này được gửi thẳng từ CheckoutPage.js và đã có định dạng chuẩn.
  */
 export const createOrder = async (orderData) => {
   try {
-    // [SỬA] Gửi thẳng 'orderData' mà không cần xử lý hay ánh xạ lại.
-    // Đối tượng 'orderData' từ CheckoutPage.js đã chứa:
-    // { 
-    //   inGameName: "...", 
-    //   deliveryTimeSlotId: "...", 
-    //   items: [{ itemId, quantity, currencyAtPurchase }] 
-    // }
-    // Đây chính xác là những gì backend validation (order.validation.js) mong đợi.
-    
-    // [BỎ] Toàn bộ logic destructure và map lại đã bị xóa.
-    
+    // Gửi thẳng 'orderData' mà không cần xử lý hay ánh xạ lại.
     const response = await apiClient.post('/orders', orderData);
     return response.data;
     

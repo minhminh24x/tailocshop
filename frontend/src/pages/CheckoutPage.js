@@ -11,7 +11,8 @@ import { formatNumber } from '../utils/formatNumber.js';
 
 export default function CheckoutPage() {
   const { items, totalItems, clearCart } = useCartStore();
-  const { user, vipLevel } = useAuthStore();
+  const { user } = useAuthStore();
+  const vipLevel = user?.vipLevel;
   const navigate = useNavigate();
 
   // === STATE ===
@@ -240,8 +241,8 @@ export default function CheckoutPage() {
                 <div className="flex flex-col space-y-3">
                   <label
                     className={`flex items-center p-4 rounded-lg cursor-pointer transition-all ${paymentMethod === 'COIN'
-                        ? 'bg-yellow-500/20 border-yellow-500 border-2'
-                        : 'bg-gray-700 border border-gray-600 hover:bg-gray-600'
+                      ? 'bg-yellow-500/20 border-yellow-500 border-2'
+                      : 'bg-gray-700 border border-gray-600 hover:bg-gray-600'
                       }`}
                   >
                     <input
@@ -259,8 +260,8 @@ export default function CheckoutPage() {
                   </label>
                   <label
                     className={`flex items-center p-4 rounded-lg cursor-pointer transition-all ${paymentMethod === 'USD'
-                        ? 'bg-green-500/20 border-green-500 border-2'
-                        : 'bg-gray-700 border border-gray-600 hover:bg-gray-600'
+                      ? 'bg-green-500/20 border-green-500 border-2'
+                      : 'bg-gray-700 border border-gray-600 hover:bg-gray-600'
                       }`}
                   >
                     <input

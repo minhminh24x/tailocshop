@@ -1,59 +1,50 @@
-// src/store/authStore.js
+// File: src/store/authStore.js
 import { create } from 'zustand';
 import {
   loginUser,
   registerUser,
   logoutUser,
 } from '../services/authService.js';
-// --- THÊM IMPORT MỚI ---
 import { getMyProfile } from '../services/userService.js'; 
 import toast from 'react-hot-toast';
 
-export const useAuthStore = create((set) => ({
-  // 1. STATE (Dữ liệu)
+const useAuthStore = create((set) => ({
   user: null,
-  isLoading: false, // <-- Nên bắt đầu là false, vì nó chỉ true KHI bấm login/register
+  // [THÊM] State để lưu VIP tiếp theo
+  nextVipLevel: null, 
+  isLoading: false, 
   error: null,
-  isAuthLoading: true, // <-- Bắt đầu là true, chính xác!
+  isAuthLoading: true, 
 
-  // 2. ACTIONS (Hàm cập nhật state)
-
-  // --- HÀM KIỂM TRA PHIÊN ĐĂNG NHẬP (ĐÃ SỬA) ---
   checkAuthStatus: async () => {
-    const token = localStorage.getItem('token');
-
-    // Không cần set isAuthLoading: true, vì nó đã là true ngay từ đầu
-    // set({ isAuthLoading: true }); // Dòng này có thể bỏ
-
-    if (!token) {
-      // === 💡 SỬA LỖI TẠI ĐÂY ===
-      // Khi không có token (khách), set user: null và
-      // quan trọng nhất là set isAuthLoading: false
-      set({ user: null, isAuthLoading: false });
-      // ========================
-      return; 
-    }
-    
     try {
-      // Gọi API /api/users/profile (tên hàm là getMyProfile theo code của bạn)
-      const { data } = await getMyProfile();
-      // Nếu thành công, server trả về user
-      set({ user: data.user, isAuthLoading: false });
+      // API getMyProfile (từ file userService) giờ trả về { data: { user, nextVipLevel } }
+      const { data } = await getMyProfile(); 
+      
+      // [SỬA] Lưu cả user và nextVipLevel vào store
+      set({ 
+        user: data.user, 
+        nextVipLevel: data.nextVipLevel, // <-- LƯU Ở ĐÂY
+        isAuthLoading: false 
+      });
     } catch (err) {
-      // Nếu lỗi 401 (token hết hạn hoặc không có)
-      set({ user: null, isAuthLoading: false });
-      // Xóa token hỏng nếu có
-      localStorage.removeItem('token'); 
+      set({ user: null, nextVipLevel: null, isAuthLoading: false });
     }
   },
 
-  // --- HÀM ĐĂNG NHẬP ---
   login: async (credentials) => {
-    set({ isLoading: true, error: null }); // Dùng isLoading
+    set({ isLoading: true, error: null });
     try {
-      // ... (logic của bạn đã chuẩn)
-      const { data } = await loginUser(credentials);
-      set({ user: data.user, isLoading: false });
+      // API login cũng cần trả về { user, nextVipLevel }
+      // (Bạn sẽ cần sửa auth.controller.js - login)
+      const { data } = await loginUser(credentials); 
+      
+      // [SỬA] Lưu cả hai khi login
+      set({ 
+        user: data.user, 
+        nextVipLevel: data.nextVipLevel, // <-- LƯU Ở ĐÂY
+        isLoading: false 
+      });
       toast.success('Đăng nhập thành công!');
       return true;
     } catch (err) {
@@ -64,12 +55,11 @@ export const useAuthStore = create((set) => ({
     }
   },
 
-  // --- HÀM ĐĂNG KÝ ---
   register: async (userData) => {
-    set({ isLoading: true, error: null }); // Dùng isLoading
+    // (Giữ nguyên, register không cần login)
+    set({ isLoading: true, error: null });
     try {
-      // ... (logic của bạn đã chuẩn)
-      await registerUser(userData);
+      await registerUser(userData); 
       set({ isLoading: false });
       toast.success('Đăng ký thành công! Vui lòng đăng nhập.'); 
       return true;
@@ -81,18 +71,19 @@ export const useAuthStore = create((set) => ({
     }
   },
 
-  // --- HÀM ĐĂNG XUẤT ---
   logout: async () => {
-    set({ isLoading: true, error: null }); // Dùng isLoading
+    set({ isLoading: true, error: null }); 
     try {
-      // ... (logic của bạn đã chuẩn)
-      await logoutUser();
-      set({ user: null, isLoading: false }); 
+      await logoutUser(); 
+      // [SỬA] Xóa hết state khi logout
+      set({ user: null, nextVipLevel: null, isLoading: false }); 
       toast.success('Đăng xuất thành công!');
     } catch (err) {
+      set({ user: null, nextVipLevel: null, isLoading: false }); 
       const errorMsg = err.response?.data?.message || 'Lỗi khi đăng xuất';
-      set({ error: errorMsg, isLoading: false });
       toast.error(errorMsg);
     }
   },
 }));
+
+export { useAuthStore };
