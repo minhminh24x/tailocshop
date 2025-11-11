@@ -65,6 +65,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/vip-levels', vipLevelRoutes);
 app.use('/api/rates', currencyRoutes);
 
+
 // ✅ Route test
 app.get('/api', (req, res) => {
   res.status(200).json({ message: 'Chào mừng đến với Tài Lộc Shop API!' });

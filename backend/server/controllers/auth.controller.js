@@ -25,7 +25,9 @@ export const register = async (req, res) => {
     });
 
     if (existingUser) {
-      return res.status(409).json({ message: 'Email hoặc In-game name đã tồn tại' });
+      return res
+        .status(409)
+        .json({ message: 'Email hoặc In-game name đã tồn tại' });
     }
 
     // 4. Băm mật khẩu
@@ -44,11 +46,10 @@ export const register = async (req, res) => {
 
     // 6. Trả về thành công (Không bao giờ trả về mật khẩu)
     const { passwordHash, ...userInfo } = newUser; // Lọc bỏ passwordHash
-    res.status(201).json({ 
+    res.status(201).json({
       message: 'Tạo tài khoản thành công!',
-      user: userInfo 
+      user: userInfo,
     });
-
   } catch (error) {
     console.error('Lỗi khi đăng ký:', error);
     res.status(500).json({ message: 'Lỗi máy chủ nội bộ' });
@@ -56,7 +57,7 @@ export const register = async (req, res) => {
 };
 
 // =============================================
-// HÀM LOGIN MỚI
+// HÀM LOGIN MỚI (ĐÃ SỬA COOKIE)
 // =============================================
 export const login = async (req, res) => {
   // 1. Lấy dữ liệu từ 'body'
@@ -65,7 +66,9 @@ export const login = async (req, res) => {
   try {
     // 2. Kiểm tra dữ liệu đầu vào
     if (!email || !password) {
-      return res.status(400).json({ message: 'Vui lòng cung cấp email và mật khẩu' });
+      return res
+        .status(400)
+        .json({ message: 'Vui lòng cung cấp email và mật khẩu' });
     }
 
     // 3. Tìm người dùng bằng email
@@ -74,20 +77,21 @@ export const login = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({ message: 'Email hoặc mật khẩu không chính xác' });
+      return res
+        .status(404)
+        .json({ message: 'Email hoặc mật khẩu không chính xác' });
     }
 
     // 4. So sánh mật khẩu
-    // (So sánh mật khẩu 'password' người dùng gửi lên
-    // với 'passwordHash' trong database)
     const isPasswordCorrect = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordCorrect) {
-      return res.status(401).json({ message: 'Email hoặc mật khẩu không chính xác' });
+      return res
+        .status(401)
+        .json({ message: 'Email hoặc mật khẩu không chính xác' });
     }
 
     // 5. Tạo JSON Web Token (JWT)
-    // ĐỊNH NGHĨA THỜI GIAN
     const age = 30 * 60 * 1000; // 30 phút (tính bằng mili giây)
 
     const token = jwt.sign(
@@ -96,15 +100,25 @@ export const login = async (req, res) => {
         role: user.role,
       },
       process.env.JWT_SECRET_KEY,
-      { expiresIn: '30m' } // <-- SỬA TỪ '7d' THÀNH '30m'
+      { expiresIn: '30m' } // Khớp với thời gian 'age'
     );
 
-    // 6. Gửi Token về cho client qua Cookie
-    res.cookie('access_token', token, {
+    // [SỬA ĐỔI] Tạo cấu hình Cookie
+    const cookieOptions = {
       httpOnly: true,
-      // secure: true, // (Bật khi deploy HTTPS)
-      maxAge: age, // <-- SỬA THÀNH 'age' (30 phút)
-    });
+      maxAge: age,
+      
+      // [THÊM] Bắt buộc cho cookie cross-domain (khi deploy)
+      // Chỉ gửi cookie qua HTTPS
+      secure: process.env.NODE_ENV === 'production', 
+      
+      // [THÊM] Cho phép gửi cookie từ domain khác (Render -> Vercel)
+      // 'Lax' cho môi trường dev (localhost), 'None' cho production
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', 
+    };
+
+    // 6. Gửi Token về cho client qua Cookie
+    res.cookie('access_token', token, cookieOptions); // <-- Sử dụng cookieOptions
 
     // 7. Gửi thông tin user về
     const { passwordHash, ...userInfo } = user;
@@ -112,7 +126,6 @@ export const login = async (req, res) => {
       message: 'Đăng nhập thành công!',
       user: userInfo,
     });
-
   } catch (error) {
     console.error('Lỗi khi đăng nhập:', error);
     res.status(500).json({ message: 'Lỗi máy chủ nội bộ' });
@@ -120,16 +133,24 @@ export const login = async (req, res) => {
 };
 
 // =============================================
-// HÀM LOGOUT
+// HÀM LOGOUT (ĐÃ SỬA COOKIE)
 // =============================================
 export const logout = (req, res) => {
   try {
-    // 1. Gửi 1 cookie rỗng tên 'access_token'
-    // 2. Đặt maxAge = 0 (hoặc 1 mili giây) để nó hết hạn ngay lập tức
-    res.cookie('access_token', '', {
+    // [SỬA ĐỔI] Lấy cookieOptions
+    // Các thuộc tính (secure, sameSite) PHẢI KHỚP
+    // với lúc tạo cookie thì trình duyệt mới xóa
+    const cookieOptions = {
       httpOnly: true,
-      maxAge: 0,
-    });
+      maxAge: 0, // Hết hạn ngay lập tức
+      
+      // [THÊM] Phải khớp với cookie lúc login
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+    };
+
+    // 1. Gửi cookie rỗng với đúng options để xóa nó đi
+    res.cookie('access_token', '', cookieOptions);
 
     // 3. Trả về thông báo thành công
     res.status(200).json({ message: 'Đăng xuất thành công!' });
