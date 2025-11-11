@@ -48,7 +48,7 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
         .catch(() => toast.error('Không thể tải danh sách phân loại'))
         .finally(() => setIsLoadingCategories(false));
     }
-  }, [isOpen]);
+  }, [isOpen, itemToEdit]);
 
   // Cập nhật form khi "itemToEdit" thay đổi
   useEffect(() => {
