@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs'; // Giữ lại import này cho hàm changeMyPassw
  * Lấy hồ sơ cá nhân của tôi (đã sửa lỗi)
  */
 export const getMyProfile = async (req, res) => {
-  const userId = req.userId; 
+  const userId = req.user.id;
 
   try {
     // 1. Lấy thông tin user và VIP HIỆN TẠI
