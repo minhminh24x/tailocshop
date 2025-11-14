@@ -1,6 +1,9 @@
 // File: backend/server/routes/supplierSubmission.route.js
 import express from 'express';
-import { auth } from '../middleware/auth.middleware.js';
+
+// [SỬA LỖI] Import 'protect' và 'authorize' thay vì 'auth'
+import { protect, authorize } from '../middleware/auth.middleware.js'; 
+
 import validate from '../middleware/validate.js';
 import { supplierSubmissionValidation } from '../validations/supplierSubmission.validation.js';
 import { supplierSubmissionController } from '../controllers/supplierSubmission.controller.js';
@@ -11,13 +14,15 @@ router
   .route('/')
   // Supplier tạo phiếu
   .post(
-    auth('SUPPLIER'),
+    protect, // 1. Yêu cầu đăng nhập
+    authorize('SUPPLIER'), // 2. Chỉ Supplier
     validate(supplierSubmissionValidation.createSubmission),
     supplierSubmissionController.handleCreateSubmission
   )
   // Admin/Staff/Supplier xem list phiếu (Service sẽ tự lọc)
   .get(
-    auth('ADMIN', 'STAFF', 'SUPPLIER'), 
+    protect, // 1. Yêu cầu đăng nhập
+    authorize('ADMIN', 'STAFF', 'SUPPLIER'), // 2. Chỉ 3 role này
     supplierSubmissionController.handleGetSubmissions
   );
 
@@ -25,7 +30,8 @@ router
   .route('/:submissionId')
   // Admin/Staff/Supplier xem chi tiết phiếu (Service sẽ tự lọc)
   .get(
-    auth('ADMIN', 'STAFF', 'SUPPLIER'),
+    protect, // 1. Yêu cầu đăng nhập
+    authorize('ADMIN', 'STAFF', 'SUPPLIER'), // 2. Chỉ 3 role này
     validate(supplierSubmissionValidation.getSubmissionById),
     supplierSubmissionController.handleGetSubmissionById
   );
@@ -33,7 +39,8 @@ router
 // Admin/Staff duyệt
 router.put(
   '/:submissionId/approve',
-  auth('ADMIN', 'STAFF'),
+  protect, // 1. Yêu cầu đăng nhập
+  authorize('ADMIN', 'STAFF'), // 2. Chỉ Admin/Staff
   validate(supplierSubmissionValidation.approveSubmission),
   supplierSubmissionController.handleApproveSubmission
 );
@@ -41,7 +48,8 @@ router.put(
 // Admin/Staff từ chối
 router.put(
   '/:submissionId/reject',
-  auth('ADMIN', 'STAFF'),
+  protect, // 1. Yêu cầu đăng nhập
+  authorize('ADMIN', 'STAFF'), // 2. Chỉ Admin/Staff
   validate(supplierSubmissionValidation.rejectSubmission),
   supplierSubmissionController.handleRejectSubmission
 );

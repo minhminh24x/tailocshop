@@ -3,15 +3,17 @@ import nodemailer from 'nodemailer';
 import httpStatus from 'http-status';
 import ApiError from '../utils/ApiError.js';
 
-// Cấu hình transporter (Nên dùng biến môi trường)
-// Ví dụ test với Ethereal (lấy Ethereal credentials để test)
+// Cấu hình transporter dùng Gmail SMTP
+// Yêu cầu: tạo App Password và đặt trong biến môi trường EMAIL_PASS
+// EMAIL_USER = loclm112.noreply@gmail.com
+// EMAIL_PASS = <App Password>
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp.ethereal.email',
-  port: parseInt(process.env.EMAIL_PORT, 10) || 587,
-  secure: process.env.EMAIL_SECURE === 'true' || false, // true for 465, false cho các port khác
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, // Gmail dùng SSL cho port 465
   auth: {
-    user: process.env.EMAIL_USER || 'YOUR_ETHEREAL_USER', //
-    pass: process.env.EMAIL_PASS || 'YOUR_ETHEREAL_PASSWORD', //
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
@@ -23,7 +25,7 @@ const transporter = nodemailer.createTransport({
  */
 const sendTemporaryPasswordEmail = async (toEmail, inGameName, temporaryPassword) => {
   const mailOptions = {
-    from: '"Tài Lộc Shop" <noreply@tailocshop.com>',
+    from: 'Tài Lộc Shop <loclm112.noreply@gmail.com>',
     to: toEmail,
     subject: 'Tài khoản của bạn tại Tài Lộc Shop đã được tạo',
     html: `
@@ -41,11 +43,12 @@ const sendTemporaryPasswordEmail = async (toEmail, inGameName, temporaryPassword
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent: %s', info.messageId);
-    // Link xem email test trên Ethereal
-    console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+    console.log('Email sent:', info.messageId);
   } catch (error) {
-    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, `Không thể gửi email: ${error.message}`);
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      `Không thể gửi email: ${error.message}`
+    );
   }
 };
 

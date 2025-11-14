@@ -41,6 +41,7 @@ export const register = async (req, res) => {
         inGameName: inGameName,
         passwordHash: hashedPassword,
         // Các trường khác như 'role' sẽ dùng giá trị DEFAULT (CUSTOMER)
+        mustChangePassword: false,
       },
     });
 

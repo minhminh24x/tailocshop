@@ -1,45 +1,44 @@
-// File: server/routes/user.route.js
+// File: backend/server/routes/user.route.js
 import express from 'express';
-// [THÊM] Import controller đổi mật khẩu
-import { getMyProfile, changeMyPassword } from '../controllers/user.controller.js';
-import { userValidation } from '../validations/user.validation.js'; //
+
+// [SỬA] Xóa import lẻ
+// import { getMyProfile, changeMyPassword } from '../controllers/user.controller.js';
+
+// [GIỮ NGUYÊN] Import validation và controller
+import { userValidation } from '../validations/user.validation.js';
 import { userController } from '../controllers/user.controller.js'; //
 
-
-// [SỬA] Đổi tên 'verifyToken' thành 'protect' 
-// để khớp với file auth.middleware.js đã nâng cấp của chúng ta
-import { protect } from '../middleware/auth.middleware.js'; 
+// [SỬA] Import 'protect' và 'authorize'
+import { protect, authorize } from '../middleware/auth.middleware.js'; 
+import validate from '../middleware/validate.js'; // Thêm import validate
 
 const router = express.Router();
 
-// [MỚI] POST /api/v1/users
-// (Admin tạo tài khoản Staff/Supplier)
+// [CHUẨN HÓA] POST /api/v1/users (Admin tạo)
 router.post(
   '/',
-  auth('ADMIN'), // Chỉ Admin
-  validate(userValidation.adminCreateUser),
+  protect, // 1. Phải đăng nhập
+  authorize('ADMIN'), // 2. Phải là Admin
+  validate(userValidation.adminCreateUser), // 3. Validate
   userController.adminCreateUser
 );
 
-// [MỚI] PUT /api/v1/users/change-password
-// (User tự đổi mật khẩu, áp dụng cho cả việc đổi lần đầu)
+// [CHUẨN HÓA] PUT /api/v1/users/change-password (User tự đổi)
 router.put(
   '/change-password',
-  auth(), // Bất kỳ ai đã đăng nhập
-  validate(userValidation.changeMyPassword),
+  protect, // 1. Phải đăng nhập
+  validate(userValidation.changeMyPassword), // 2. Validate
   userController.changeMyPassword
 );
 
-// Đây là điểm mấu chốt:
-// Bất kỳ ai gọi 'GET /api/users/profile'
-// Sẽ phải đi qua 'protect' TRƯỚC
-// Nếu 'protect' thành công (gọi next()), thì mới tới 'getMyProfile'
+// [CHUẨN HÓA] GET /api/v1/users/profile (Lấy thông tin cá nhân)
+router.get(
+  '/profile', 
+  protect, // 1. Phải đăng nhập
+  userController.getMyProfile // Gọi qua controller
+);
 
-// [SỬA] Đổi tên 'verifyToken' thành 'protect' tại đây
-router.get('/profile', protect, getMyProfile); //
-
-// [THÊM] Route mới để đổi mật khẩu
-// Cũng phải đi qua 'protect' để biết là user nào đang muốn đổi
-router.put('/change-password', protect, changeMyPassword);
+// [XÓA] Xóa route /change-password bị lặp
+// router.put('/change-password', protect, changeMyPassword);
 
 export default router;

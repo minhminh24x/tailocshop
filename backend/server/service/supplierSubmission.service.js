@@ -2,7 +2,9 @@
 import prisma from '../lib/prisma.js';
 import ApiError from '../utils/ApiError.js';
 import httpStatus from 'http-status';
-import { Prisma, Decimal } from '@prisma/client';
+// Sửa lỗi import CommonJS
+import pkg from '@prisma/client';
+const { Prisma, Decimal } = pkg;
 
 /**
  * Tạo phiếu nhập hàng (do Supplier thực hiện)

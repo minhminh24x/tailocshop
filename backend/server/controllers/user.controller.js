@@ -87,47 +87,23 @@ export const getMyProfile = async (req, res) => {
 /**
  * Đổi mật khẩu
  */
-export const changeMyPassword = async (req, res) => {
-  const userId = req.userId;
-  const { currentPassword, newPassword } = req.body;
+const changeMyPassword = asyncHandler(async (req, res) => {
+  // 1. Lấy userId từ middleware 'protect'
+  const userId = req.user.id;
+  
+  // 2. Dữ liệu (oldPassword, newPassword) đã được validate_từ_route
+  // và sẽ được xử lý bởi userService
+  await userService.changeMyPassword(userId, req.body);
 
-  if (!currentPassword || !newPassword) {
-    return res.status(400).json({ message: 'Vui lòng cung cấp mật khẩu cũ và mới.' });
-  }
-  if (newPassword.length < 6) {
-    return res.status(400).json({ message: 'Mật khẩu mới phải có ít nhất 6 ký tự.' });
-  }
+  // 3. Trả về thành công
+  // (Lưu ý: userService đã xử lý việc so sánh mật khẩu cũ
+  // và cập nhật mustChangePassword = false)
+  res.status(httpStatus.OK).json({ message: 'Đổi mật khẩu thành công!' });
+});
 
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
 
-    if (!user) {
-      return res.status(404).json({ message: 'Không tìm thấy người dùng.' });
-    }
-
-    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
-
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Mật khẩu cũ không chính xác.' });
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    const newPasswordHash = await bcrypt.hash(newPassword, salt);
-
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        passwordHash: newPasswordHash,
-      },
-    });
-
-    res.status(200).json({ message: 'Đổi mật khẩu thành công!' });
-
-  } catch (error) {
-    // [THÊM] Log lỗi ra console backend để dễ debug
-    console.error("Lỗi tại changeMyPassword:", error);
-    res.status(500).json({ message: 'Lỗi máy chủ nội bộ' });
-  }
+export const userController = {
+  adminCreateUser,
+  getMyProfile,
+  changeMyPassword,
 };

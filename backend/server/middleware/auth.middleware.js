@@ -1,4 +1,4 @@
-// File: server/middleware/auth.middleware.js
+// File: backend/server/middleware/auth.middleware.js
 import jwt from 'jsonwebtoken';
 import asyncHandler from '../utils/asyncHandler.js';
 import ApiError from '../utils/ApiError.js';
@@ -6,13 +6,14 @@ import prisma from '../lib/prisma.js';
 import httpStatus from 'http-status';
 
 /**
- * [ĐÃ SỬA LỖI]
+ * [ĐÃ SỬA LỖI & NÂNG CẤP]
  * Middleware 'protect'
+ * - Thêm: Kiểm tra 'mustChangePassword'
  */
 export const protect = asyncHandler(async (req, res, next) => {
   let token;
 
-  // 1. Lấy token từ cookie
+  // 1. Lấy token từ cookie (Giữ nguyên logic của bạn)
   if (req.cookies.access_token) {
     token = req.cookies.access_token;
   }
@@ -22,19 +23,19 @@ export const protect = asyncHandler(async (req, res, next) => {
   }
 
   try {
-    // 2. Xác thực token (Đã đúng)
-    const payload = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    // 2. Xác thực token (Giữ nguyên logic của bạn)
+    // Hãy chắc chắn .env của bạn có JWT_SECRET_KEY
+    const payload = jwt.verify(token, process.env.JWT_SECRET_KEY); 
 
     // 3. Lấy thông tin user từ DB
     const currentUser = await prisma.user.findUnique({
-      where: { id: payload.id },
-      // [SỬA LỖI] Sửa lại khối 'select' cho đúng schema
+      where: { id: payload.id }, // Giữ nguyên 'payload.id'
       select: {
         id: true,
         email: true,
-        // 'name: true,' đã bị xóa
-        role: true, // Đảm bảo model User của bạn có trường 'role'
-        inGameName: true, // [THÊM VÀO] Lấy 'inGameName'
+        role: true, 
+        inGameName: true,
+        mustChangePassword: true, // [THÊM] Lấy cờ này
       },
     });
 
@@ -42,33 +43,46 @@ export const protect = asyncHandler(async (req, res, next) => {
       throw new ApiError(httpStatus.UNAUTHORIZED, 'Người dùng của token này không còn tồn tại');
     }
 
-    // 4. Gắn toàn bộ thông tin user vào request
+    // 4. [LOGIC MỚI] Kiểm tra cờ bắt buộc đổi mật khẩu
+    if (currentUser.mustChangePassword) {
+      // Cho phép truy cập CHỈ endpoint 'change-password' và 'logout'
+      const isChangingPassword = req.originalUrl.includes('/api/v1/users/change-password');
+      const isLoggingOut = req.originalUrl.includes('/api/v1/auth/logout');
+
+      if (!isChangingPassword && !isLoggingOut) {
+        // Nếu cố truy cập API khác
+        const error = new ApiError(
+          httpStatus.FORBIDDEN,
+          'Bạn phải đổi mật khẩu lần đầu tiên để tiếp tục',
+          true,
+          { code: 'MUST_CHANGE_PASSWORD' } //
+        );
+        return next(error);
+      }
+    }
+    // [KẾT THÚC LOGIC MỚI]
+
+    // 5. Gắn toàn bộ thông tin user vào request
     req.user = currentUser;
     next();
 
   } catch (error) {
-    // [LƯU Ý]
-    // Lỗi Prisma (như lỗi 'name' không tồn tại) cũng sẽ bị bắt ở đây
-    // và trả về 'Token không hợp lệ'.
-    // Đây là lý do bạn thấy thông báo lỗi này.
-
     if (error.name === 'TokenExpiredError') {
       throw new ApiError(httpStatus.UNAUTHORIZED, 'Token đã hết hạn');
     }
     
-    // Nếu lỗi là do Prisma (giống như vừa rồi) hoặc JWT sai
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Token không hợp lệ hoặc lỗi truy vấn người dùng');
   }
 });
 
 /**
- * Middleware để kiểm tra vai trò (role)
- * @param {string} requiredRole - Vai trò yêu cầu (ví dụ: 'ADMIN')
+ * [SỬA] Middleware để kiểm tra vai trò (role)
+ * @param {...string} requiredRoles - Các vai trò yêu cầu (ví dụ: 'ADMIN', 'STAFF')
  */
-export const authorize = (requiredRole) => {
+export const authorize = (...requiredRoles) => {
   return (req, res, next) => {
     // Phải dùng sau 'protect', nên req.user đã có
-    if (!req.user || req.user.role !== requiredRole) {
+    if (!req.user || !requiredRoles.includes(req.user.role)) {
       throw new ApiError(
         httpStatus.FORBIDDEN,
         'Bạn không có quyền truy cập chức năng này'
@@ -77,17 +91,15 @@ export const authorize = (requiredRole) => {
     next();
   };
 };
+
 /**
- * [HÀM MỚI] (Giữ nguyên, đã đúng)
  * Middleware kiểm tra xem user có phải là 'ADMIN' không
+ * (Giữ nguyên hàm này vì nó được dùng ở nơi khác)
  */
 export const isAdmin = (req, res, next) => {
-  // Hàm 'protect' đã chạy trước và gắn `req.user`
   if (req.user && req.user.role === 'ADMIN') {
-    // Nếu đúng là ADMIN, cho phép đi tiếp
     next();
   } else {
-    // Nếu không, ném lỗi 403 Forbidden (Cấm truy cập)
     next(new ApiError(httpStatus.FORBIDDEN, 'Bạn không có quyền thực hiện hành động này'));
   }
 };
