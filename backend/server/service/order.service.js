@@ -3,13 +3,7 @@ import prisma from '../lib/prisma.js';
 import ApiError from '../utils/ApiError.js';
 import httpStatus from 'http-status';
 
-// === HÀM HELPER (ĐÃ SỬA LỖI TỪ ĐẦU) ===
-/**
- * Cập nhật cấp độ VIP cho user dựa trên tổng chi tiêu
- * @param {object} tx - Prisma transaction client
- * @param {string} userId - ID của user
- * @param {number} newTotalSpent - Tổng chi tiêu MỚI (đã quy đổi)
- */
+// === HÀM HELPER (Giữ nguyên) ===
 const updateUserVipLevel = async (tx, userId, newTotalSpent) => {
   // 1. Lấy tất cả các cấp VIP, sắp xếp GIẢM DẦN theo ngưỡng coin
   const allVipLevels = await tx.vipLevel.findMany({
@@ -35,18 +29,18 @@ const updateUserVipLevel = async (tx, userId, newTotalSpent) => {
 
 
 /**
- * [NÂNG CẤP CUỐI] Tạo đơn hàng mới (Hỗ trợ Mixed-Currency VÀ Quy đổi VIP)
- * @param {string} userId - ID của user từ req.user
- * @param {object} orderData - Dữ liệu từ req.body
- * @returns {Promise<object>} Đơn hàng vừa tạo
+ * [ĐÃ SỬA] Tạo đơn hàng mới
+ * - Thêm: Ghi log xuất kho (InventoryLog)
+ * - Xóa: Logic cộng điểm VIP (chuyển sang updateOrderAdmin)
  */
 const createOrder = async (userId, orderData) => {
   const { items, inGameName, deliveryTimeSlotId, preferredCurrency } = orderData;
 
-  // 1. Kiểm tra dữ liệu đầu vào cơ bản (Giữ nguyên)
+  // 1. Kiểm tra dữ liệu đầu vào (Giữ nguyên)
   if (!items || items.length === 0) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Giỏ hàng không được rỗng');
   }
+  // ... (các kiểm tra khác giữ nguyên)
   if (!inGameName || inGameName.trim() === '') {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Vui lòng nhập tên trong game');
   }
@@ -57,82 +51,59 @@ const createOrder = async (userId, orderData) => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Vui lòng chọn loại tiền tệ ưu tiên (COIN hoặc USD)');
   }
 
-  // 2. Bắt đầu một GIAO DỊCH (TRANSACTION)
+  // 2. Bắt đầu GIAO DỊCH
   try {
     const newOrder = await prisma.$transaction(async (tx) => {
       
-      // [BẮT ĐẦU SỬA] LOGIC TẠO MÃ ĐƠN HÀNG (ORDER NUMBER)
-      // 1. Lấy ngày giờ Việt Nam (UTC+7)
+      // [LOGIC TẠO MÃ ĐƠN HÀNG] (Giữ nguyên)
       const now = new Date();
-      // Đảm bảo múi giờ đúng
       const vietnamTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
-
-      const year = vietnamTime.getFullYear().toString().slice(-2); // "25"
-      const month = (vietnamTime.getMonth() + 1).toString().padStart(2, '0'); // "11"
-      const day = vietnamTime.getDate().toString().padStart(2, '0'); // "10"
-      
-      const datePrefix = `${year}${month}${day}`; // "251110"
-
-      // 2. Tìm đơn hàng cuối cùng trong ngày
+      const year = vietnamTime.getFullYear().toString().slice(-2);
+      const month = (vietnamTime.getMonth() + 1).toString().padStart(2, '0');
+      const day = vietnamTime.getDate().toString().padStart(2, '0');
+      const datePrefix = `${year}${month}${day}`;
       const lastOrderToday = await tx.order.findFirst({
-        where: {
-          orderNumber: {
-            startsWith: datePrefix,
-          },
-        },
-        orderBy: {
-          orderNumber: 'desc', // Lấy số lớn nhất, vd: "2511100012"
-        },
-        select: {
-          orderNumber: true,
-        },
+        where: { orderNumber: { startsWith: datePrefix } },
+        orderBy: { orderNumber: 'desc' },
+        select: { orderNumber: true },
       });
-
-      // 3. Tính toán số thứ tự mới
       let newSequence = 1;
       if (lastOrderToday && lastOrderToday.orderNumber) {
-        // Tách 4 số cuối (an toàn hơn 3)
-        const lastSequenceStr = lastOrderToday.orderNumber.slice(-4); // Lấy "0012"
+        const lastSequenceStr = lastOrderToday.orderNumber.slice(-4);
         newSequence = parseInt(lastSequenceStr, 10) + 1;
       }
-
-      // 4. Tạo mã mới (với 4 chữ số, cho phép 9999 đơn/ngày)
       const newOrderNumber = `${datePrefix}${newSequence.toString().padStart(4, '0')}`;
-      // [KẾT THÚC SỬA] LOGIC TẠO MÃ ĐƠN HÀNG
-
       
-      // 2.1. Lấy thông tin User (để tính VIP)
+      // 2.1. Lấy thông tin User (vẫn cần để tính discount)
       const user = await tx.user.findFirstOrThrow({
         where: { id: userId },
         include: { vipLevel: true },
       });
 
-      // ... (Tất cả logic: lấy itemIds, dbItems, tỷ giá, kiểm tra kho... giữ nguyên) ...
+      // 2.2. Lấy thông tin Items và Tỷ giá (Giữ nguyên)
       const itemIds = items.map((item) => item.itemId);
       const dbItems = await tx.item.findMany({
         where: { id: { in: itemIds } },
       });
-
       const xuToUsdRateEntry = await tx.currencyExchangeRate.findUnique({
         where: { rateType: 'XU_TO_USD' }, 
       });
-
       if (!xuToUsdRateEntry || !xuToUsdRateEntry.rate) {
-        throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Lỗi hệ thống: Không tìm thấy tỷ giá XU sang USD. Vui lòng liên hệ Admin.');
+        throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Lỗi hệ thống: Không tìm thấy tỷ giá XU sang USD.');
       }
-      const conversionRate = parseFloat(xuToUsdRateEntry.rate);
-      if (conversionRate <= 0) {
-        throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Lỗi hệ thống: Tỷ giá XU sang USD không hợp lệ.');
-      }
+      // const conversionRate = parseFloat(xuToUsdRateEntry.rate); // Dùng cho phần sau
 
+      // 2.3. Tính toán và kiểm tra kho (Sửa đổi)
       let subTotalCoin = 0;
       let subTotalUsd = 0;
       const orderDetailsData = [];
-      const itemUpdateOps = [];
+      
+      // [SỬA ĐỔI] Chúng ta cần một mảng riêng để cập nhật kho
+      const itemsToUpdateStock = []; 
 
       for (const cartItem of items) {
         const dbItem = dbItems.find((item) => item.id === cartItem.itemId);
-
+        // ... (Kiểm tra !dbItem, kiểm tra stockQuantity giữ nguyên)
         if (!dbItem) {
           throw new ApiError(httpStatus.NOT_FOUND, `Vật phẩm với ID ${cartItem.itemId} không tồn tại.`);
         }
@@ -140,28 +111,24 @@ const createOrder = async (userId, orderData) => {
           throw new ApiError(httpStatus.BAD_REQUEST, `Vật phẩm "${dbItem.name}" không đủ số lượng (còn ${dbItem.stockQuantity}).`);
         }
 
+        // ... (Logic tính giá, preferredCurrency giữ nguyên)
         const hasCoinPrice = dbItem.priceCoin !== null;
         const hasUsdPrice = dbItem.priceUsd !== null;
-        
         let price = 0;
         let currencyForThisItem = 'COIN'; 
-
         if (preferredCurrency === 'USD' && hasUsdPrice) {
           price = parseFloat(dbItem.priceUsd);
           currencyForThisItem = 'USD';
           subTotalUsd += (price * cartItem.quantity);
-
         } else if (hasCoinPrice) {
           price = parseFloat(dbItem.priceCoin);
           currencyForThisItem = 'COIN';
           subTotalCoin += (price * cartItem.quantity);
-          
         } else {
-          throw new ApiError(httpStatus.BAD_REQUEST, `Vật phẩm "${dbItem.name}" không có thông tin giá XU. Vui lòng liên hệ Admin.`);
+           throw new ApiError(httpStatus.BAD_REQUEST, `Vật phẩm "${dbItem.name}" không có thông tin giá XU.`);
         }
 
         const lineTotal = price * cartItem.quantity;
-
         orderDetailsData.push({
           itemId: dbItem.id,
           quantity: cartItem.quantity,
@@ -171,15 +138,15 @@ const createOrder = async (userId, orderData) => {
           totalLineAmount: lineTotal,
         });
 
-        itemUpdateOps.push(
-          tx.item.update({
-            where: { id: dbItem.id },
-            data: { stockQuantity: { decrement: cartItem.quantity } },
-          })
-        );
+        // [SỬA] Thêm vào mảng để cập nhật stock
+        itemsToUpdateStock.push({
+          id: dbItem.id,
+          quantityToDecrement: cartItem.quantity,
+        });
       }
       
-      if (deliveryTimeSlotId !== "00000000-0000-0000-0000-000000000000") {
+      // ... (Kiểm tra timeSlot giữ nguyên)
+       if (deliveryTimeSlotId !== "00000000-0000-0000-0000-000000000000") {
         const timeSlot = await tx.deliveryTimeSlot.findFirst({
           where: { id: deliveryTimeSlotId, isActive: true }
         });
@@ -188,31 +155,26 @@ const createOrder = async (userId, orderData) => {
         }
       }
       
+      // 2.4. Tính toán tổng đơn hàng (Giữ nguyên)
       const vipDiscountPercent = user.vipLevel.discountPercent || 0;
       const vipDiscountAmountCoin = subTotalCoin * (vipDiscountPercent / 100);
       const totalAmountCoin = Math.ceil(subTotalCoin - vipDiscountAmountCoin);
       const totalAmountUsd = subTotalUsd;
 
-      // 2.4. TẠO ĐƠN HÀNG (Order)
+      // 2.5. TẠO ĐƠN HÀNG (Order)
       const createdOrder = await tx.order.create({
         data: {
-          // [THÊM DÒNG NÀY]
           orderNumber: newOrderNumber,
-          
           customerUserId: userId,
           inGameName: inGameName,
           status: 'PENDING',
           paymentStatus: 'UNPAID',
           deliveryTimeSlotId: deliveryTimeSlotId,
-
           subTotalCoin: subTotalCoin,
           vipDiscountAmountCoin: vipDiscountAmountCoin,
-          
           totalAmountCoin: totalAmountCoin,
-          
           subTotalUsd: subTotalUsd,
           totalAmountUsd: totalAmountUsd,
-
           orderDetails: {
             createMany: {
               data: orderDetailsData,
@@ -220,36 +182,59 @@ const createOrder = async (userId, orderData) => {
           },
         },
         include: {
+          // [THÊM] Cần include orderDetails để ghi log kho
           orderDetails: true,
         },
       });
 
-      // 2.5. THỰC THI CẬP NHẬT TỒN KHO
-      await Promise.all(itemUpdateOps);
-
-      // 2.6. [SỬA ĐỔI LỚN] Cập nhật tổng chi tiêu (quy đổi USD sang COIN)
-      const usdSpentInCoinValue = totalAmountUsd / conversionRate;
-      const totalEquivalentSpent = totalAmountCoin + usdSpentInCoinValue;
-
-      if (totalEquivalentSpent > 0) {
-        const updatedUser = await tx.user.update({
-          where: { id: userId },
-          data: {
-            totalSpentCoin: { 
-              increment: totalEquivalentSpent 
-            }
-          },
-          select: { totalSpentCoin: true } 
-        });
-        await updateUserVipLevel(tx, userId, updatedUser.totalSpentCoin);
+      // 2.6. [NÂNG CẤP] THỰC THI CẬP NHẬT TỒN KHO VÀ GHI LOG KHO
+      const itemUpdateOps = [];
+      
+      // Tạo các lệnh cập nhật kho
+      for (const item of itemsToUpdateStock) {
+        itemUpdateOps.push(
+          tx.item.update({
+            where: { id: item.id },
+            data: { stockQuantity: { decrement: item.quantityToDecrement } },
+            select: { id: true, stockQuantity: true } // Lấy stock mới
+          })
+        );
       }
       
+      // Chạy cập nhật kho
+      const updatedItems = await Promise.all(itemUpdateOps);
+
+      // Tạo các lệnh ghi log kho
+      const logCreationOps = updatedItems.map((updatedItem) => {
+        // Lấy lại thông tin từ orderDetails để đảm bảo
+        const detail = createdOrder.orderDetails.find(d => d.itemId === updatedItem.id);
+        
+        return tx.inventoryLog.create({
+          data: {
+            itemId: updatedItem.id,
+            userId: userId, // ID của customer thực hiện
+            orderId: createdOrder.id, //
+            quantityChange: -detail.quantity, // (Trừ kho)
+            newStockQuantity: updatedItem.stockQuantity, // (Stock sau khi trừ)
+            reason: 'ORDER_FULFILLED', //
+          }
+        });
+      });
+      
+      // Chạy ghi log kho
+      await Promise.all(logCreationOps);
+
+      // 2.7. [ĐÃ XÓA] LOGIC CẬP NHẬT VIP
+      // Toàn bộ khối logic (totalEquivalentSpent, user.update, updateUserVipLevel)
+      // đã được xóa khỏi đây.
+
       return createdOrder;
     });
 
     return newOrder;
 
   } catch (error) {
+    // ... (Khối catch giữ nguyên)
     if (error instanceof ApiError) {
       throw error;
     }
@@ -259,7 +244,6 @@ const createOrder = async (userId, orderData) => {
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, `Không thể tạo đơn hàng: ${error.message}`);
   }
 };
-
 
 /**
  * [SỬA] Lấy danh sách đơn hàng CỦA TÔI (cho Customer)
@@ -362,33 +346,139 @@ const getOrderByIdAdmin = async (orderId) => {
 };
 
 /**
- * [MỚI] Cập nhật 1 đơn hàng (cho Admin)
- * @param {string} orderId - ID đơn hàng
+ * [NÂNG CẤP LỚN] Cập nhật 1 đơn hàng (cho Admin)
+ * - Thêm: Chặn sửa đơn hàng đã chốt (COMPLETED, CANCELLED).
+ * - Thêm: Hoàn kho (InventoryLog) khi chuyển sang CANCELLED.
+ * - Thêm: Cộng điểm VIP (totalSpentCoin) khi chuyển sang COMPLETED.
+ * * @param {string} orderId - ID đơn hàng
  * @param {object} updateBody - { status, paymentStatus }
  * @param {string} adminUserId - ID của admin/staff thực hiện
  */
 const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
   const { status, paymentStatus } = updateBody;
 
+  // 1. Lấy trạng thái đơn hàng HIỆN TẠI
+  // Cần include orderDetails (để hoàn kho) và customer (để cộng VIP)
   const order = await prisma.order.findUnique({
-    where: { id: orderId }
+    where: { id: orderId },
+    include: {
+      orderDetails: true, //
+      customer: true, //
+    },
   });
 
   if (!order) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Không tìm thấy đơn hàng');
   }
 
-  // TODO: Thêm logic nghiệp vụ phức tạp ở đây
-  // Ví dụ: Nếu chuyển status -> COMPLETED, phải kiểm tra paymentStatus == PAID
-  // Víu dụ: Nếu chuyển status -> CANCELLED, phải hoàn lại stock
+  // 2. [YÊU CẦU] Chặn cập nhật nếu đơn hàng đã chốt
+  if (order.status === 'COMPLETED' || order.status === 'CANCELLED') {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Không thể cập nhật đơn hàng đã hoàn thành hoặc đã hủy.'
+    );
+  }
 
-  return prisma.order.update({
-    where: { id: orderId },
-    data: {
-      status: status, 
-      paymentStatus: paymentStatus, 
-      staffUserId: adminUserId, 
-    },
+  // 3. Bắt đầu GIAO DỊCH để đảm bảo toàn vẹn dữ liệu
+  return prisma.$transaction(async (tx) => {
+    
+    // 4. [YÊU CẦU] XỬ LÝ LOGIC HỦY ĐƠN (HOÀN KHO)
+    // Chỉ chạy khi trạng thái MỚI là CANCELLED
+    if (status === 'CANCELLED') {
+      const itemUpdates = [];
+      const inventoryLogs = [];
+
+      // Loop qua các sản phẩm trong đơn hàng
+      for (const detail of order.orderDetails) {
+        itemUpdates.push(
+          tx.item.update({
+            where: { id: detail.itemId },
+            data: { stockQuantity: { increment: detail.quantity } }, // Hoàn kho (tăng)
+            select: { id: true, stockQuantity: true },
+          })
+        );
+      }
+      
+      const updatedItems = await Promise.all(itemUpdates);
+
+      // Ghi log việc hoàn kho này
+      updatedItems.forEach((item, index) => {
+        const detail = order.orderDetails.find(d => d.itemId === item.id); // Tìm đúng detail
+        inventoryLogs.push(
+          tx.inventoryLog.create({
+            data: {
+              itemId: detail.itemId,
+              userId: adminUserId, // Admin là người thực hiện
+              orderId: order.id, //
+              quantityChange: detail.quantity, // (Số dương)
+              newStockQuantity: item.stockQuantity, //
+              reason: 'ADMIN_ADJUSTMENT', //
+              notes: 'Hoàn kho do admin hủy đơn hàng', //
+            },
+          })
+        );
+      });
+      await Promise.all(inventoryLogs);
+    }
+
+    // 5. [YÊU CẦU] XỬ LÝ LOGIC HOÀN THÀNH (CỘNG ĐIỂM VIP)
+    // Chỉ chạy khi trạng thái MỚI là COMPLETED
+    if (status === 'COMPLETED') {
+      // Kiểm tra thanh toán
+      // Đơn hàng phải được đánh dấu là PAID (hoặc trong body, hoặc đã PAID từ trước)
+      const isPaid = (paymentStatus === 'PAID' || order.paymentStatus === 'PAID');
+      if (!isPaid) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'Không thể hoàn thành đơn hàng chưa thanh toán.'
+        );
+      }
+
+      // Chỉ cộng điểm nếu đơn hàng có gắn với 1 customer
+      if (order.customerUserId && order.customer) {
+        // Lấy tỷ giá (bắt buộc)
+        const xuToUsdRateEntry = await tx.currencyExchangeRate.findUnique({
+          where: { rateType: 'XU_TO_USD' },
+        });
+
+        if (!xuToUsdRateEntry || !xuToUsdRateEntry.rate || parseFloat(xuToUsdRateEntry.rate) <= 0) {
+          // Nếu lỗi tỷ giá, chúng ta rollback transaction
+          throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Lỗi hệ thống: Tỷ giá XU sang USD không hợp lệ. Không thể cộng điểm VIP.');
+        }
+        
+        const conversionRate = parseFloat(xuToUsdRateEntry.rate);
+        
+        // Tính tổng chi tiêu quy đổi
+        const usdSpentInCoinValue = parseFloat(order.totalAmountUsd) / conversionRate; //
+        const totalEquivalentSpent = parseFloat(order.totalAmountCoin) + usdSpentInCoinValue; //
+
+        if (totalEquivalentSpent > 0) {
+          // Cập nhật tổng chi tiêu cho user
+          const updatedUser = await tx.user.update({
+            where: { id: order.customerUserId },
+            data: {
+              totalSpentCoin: {
+                increment: totalEquivalentSpent,
+              },
+            },
+            select: { totalSpentCoin: true },
+          });
+          
+          // Cập nhật lại cấp VIP
+          await updateUserVipLevel(tx, order.customerUserId, updatedUser.totalSpentCoin);
+        }
+      }
+    }
+
+    // 6. Cập nhật trạng thái cuối cùng cho đơn hàng
+    return tx.order.update({
+      where: { id: orderId },
+      data: {
+        status: status, 
+        paymentStatus: paymentStatus, 
+        staffUserId: adminUserId, // Ghi lại admin đã xử lý
+      },
+    });
   });
 };
 

@@ -77,6 +77,7 @@ model User {
   inGameName     String    @unique @map("in_game_name") @db.VarChar(100)
   role           UserRole  @default(CUSTOMER)
   totalSpentCoin Decimal   @default(0) @map("total_spent_coin") @db.Decimal(12, 2)
+  mustChangePassword Boolean @default(true) @map("must_change_password")
   
   // Quan hệ với VipLevel
   vipLevelInt    Int       @default(0) @map("vip_level")

@@ -1,6 +1,15 @@
 // File: server/controllers/user.controller.js
 import prisma from '../lib/prisma.js';
 import bcrypt from 'bcryptjs'; // Giữ lại import này cho hàm changeMyPassword
+import { userService } from '../service/user.service.js';
+import httpStatus from 'http-status';
+import asyncHandler from '../utils/asyncHandler.js';
+
+// [MỚI] (Dành cho Admin)
+const adminCreateUser = asyncHandler(async (req, res) => {
+  const user = await userService.adminCreateUser(req.body);
+  res.status(httpStatus.CREATED).send(user);
+});
 
 /**
  * Lấy hồ sơ cá nhân của tôi (đã sửa lỗi)
