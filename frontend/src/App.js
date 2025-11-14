@@ -14,7 +14,7 @@ import ItemDetailPage from './pages/ItemDetailPage.js';
 import MyOrdersPage from './pages/MyOrdersPage.js';
 import MyOrderDetailPage from './pages/MyOrderDetailPage.js';
 import CartPage from './pages/CartPage.js';
-import CheckoutPage from './pages/CheckoutPage.js'; 
+import CheckoutPage from './pages/CheckoutPage.js';
 // --- THÊM MỚI ---
 import UserProfilePage from './pages/UserProfilePage.js'; // Trang hồ sơ
 import SupportPage from './pages/SupportPage.js'; // Trang hỗ trợ
@@ -38,10 +38,14 @@ import AdminManageCategories from './pages/admin/manager/AdminManageCategories.j
 import AdminManageInventory from './pages/admin/manager/AdminManageInventory.js';
 import AdminManageUsers from './pages/admin/manager/AdminManageUsers.js';
 import AdminOrderDetailPage from './pages/admin/manager/AdminOrderDetailPage.js';
-import AdminManageTimeSlots from './pages/admin/manager/AdminManageTimeSlots.js'; 
+import AdminManageTimeSlots from './pages/admin/manager/AdminManageTimeSlots.js';
 import AdminManageVipLevels from './pages/admin/manager/AdminManageVipLevels.js';
 import AdminManageRates from './pages/admin/manager/AdminManageRates.js';
 import { useCurrencyStore } from './store/currencyStore.js';
+import AdminManageCustomers from './pages/admin/manager/AdminManageCustomers';
+import AdminCustomerDetailPage from './pages/admin/manager/AdminCustomerDetailPage';
+import AdminManageSubmissions from './pages/admin/manager/AdminManageSubmissions';
+import AdminSubmissionDetailPage from './pages/admin/manager/AdminSubmissionDetailPage';
 
 function App() {
   const checkAuthStatus = useAuthStore((state) => state.checkAuthStatus);
@@ -75,7 +79,7 @@ function App() {
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
           <Route path="cart" element={<CartPage />} />
-          
+
           {/* --- THÊM MỚI --- */}
           <Route path="support" element={<SupportPage />} />
           {/* --- KẾT THÚC THÊM MỚI --- */}
@@ -88,7 +92,7 @@ function App() {
             <Route path="/my-orders" element={<MyOrdersPage />} />
             <Route path="/my-orders/:id" element={<MyOrderDetailPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
-            
+
             {/* --- THÊM MỚI --- */}
             <Route path="/profile" element={<UserProfilePage />} />
             {/* --- KẾT THÚC THÊM MỚI --- */}
@@ -108,7 +112,11 @@ function App() {
             <Route path="vip-levels" element={<AdminManageVipLevels />} />
             <Route path="inventory" element={<AdminManageInventory />} />
             <Route path="rates" element={<AdminManageRates />} />
-            <Route path="users" element={<AdminManageUsers />} />
+            <Route path="manage-users" element={<AdminManageUsers />} />
+            <Route path="manage-customers" element={<AdminManageCustomers />} />
+            <Route path="customer/:userId" element={<AdminCustomerDetailPage />} />
+            <Route path="manage-submissions" element={<AdminManageSubmissions />} />
+            <Route path="submission/:id" element={<AdminSubmissionDetailPage />} />
             <Route index element={<Navigate to="dashboard" replace />} />
           </Route>
         </Route>
