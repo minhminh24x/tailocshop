@@ -101,9 +101,25 @@ const changeMyPassword = asyncHandler(async (req, res) => {
   res.status(httpStatus.OK).json({ message: 'Đổi mật khẩu thành công!' });
 });
 
+// [MỚI] (Dành cho Admin)
+const adminGetUsers = asyncHandler(async (req, res) => {
+  // Lấy filter từ query string (VD: ?roles=STAFF,SUPPLIER)
+  const roles = req.query.roles ? req.query.roles.split(',') : [];
+  const users = await userService.adminGetUsers(roles);
+  res.status(httpStatus.OK).send(users);
+});
+
+// [MỚI] (Dành cho Admin)
+const adminGetUserDetail = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const user = await userService.adminGetUserDetail(userId);
+  res.status(httpStatus.OK).send(user);
+});
 
 export const userController = {
   adminCreateUser,
   getMyProfile,
   changeMyPassword,
+  adminGetUsers, //
+  adminGetUserDetail,
 };

@@ -97,8 +97,82 @@ const changeMyPassword = async (userId, passwordData) => {
     },
   });
 };
+/**
+ * [MỚI - Admin] Lấy danh sách user (có lọc theo role)
+ * @param {Array<string>} roles - Mảng các role (VD: ['STAFF', 'SUPPLIER'])
+ * @returns {Promise<User[]>}
+ */
+const adminGetUsers = async (roles) => {
+  const whereClause = {};
+  
+  // Nếu có filter roles, thêm vào
+  if (roles && roles.length > 0) {
+    whereClause.role = { in: roles };
+  }
 
+  return prisma.user.findMany({
+    where: whereClause,
+    select: {
+      id: true,
+      email: true,
+      inGameName: true,
+      role: true,
+      createdAt: true,
+      // Lấy thông tin VIP cho list customer
+      vipLevel: {
+        select: {
+          level: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+};
+
+/**
+ * [MỚI - Admin] Lấy chi tiết 1 user
+ * @param {string} userId
+ * @returns {Promise<User>}
+ */
+const adminGetUserDetail = async (userId) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      // Lấy cấp VIP
+      vipLevel: true,
+      // Lấy các đơn hàng đã đặt (nếu là Customer)
+      orders: {
+        orderBy: { createdAt: 'desc' },
+        take: 20, // Lấy 20 đơn hàng gần nhất
+      },
+      // Lấy các phiếu nhập hàng (nếu là Supplier)
+      supplierSubmissions: {
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      },
+      // Lấy các đơn hàng đã xử lý (nếu là Staff)
+      handledOrders: {
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      },
+    },
+  });
+
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Không tìm thấy người dùng');
+  }
+
+  // Xóa mật khẩu hash trước khi trả về
+  delete user.passwordHash;
+  return user;
+};
+
+
+// Cập nhật export
 export const userService = {
   adminCreateUser,
   changeMyPassword,
+  adminGetUsers, //
+  adminGetUserDetail, //
 };

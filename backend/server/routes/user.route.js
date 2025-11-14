@@ -41,4 +41,29 @@ router.get(
 // [XÓA] Xóa route /change-password bị lặp
 // router.put('/change-password', protect, changeMyPassword);
 
+// [SỬA] Thêm route GET /
+router
+  .route('/')
+  // (Admin tạo tài khoản Staff/Supplier)
+  .post(
+    protect,
+    authorize('ADMIN'),
+    validate(userValidation.adminCreateUser),
+    userController.adminCreateUser
+  )
+  // [MỚI] (Admin Lấy danh sách user)
+  .get(
+    protect,
+    authorize('ADMIN'),
+    userController.adminGetUsers
+  );
+
+// [MỚI] (Admin Lấy chi tiết user)
+router.get(
+  '/:userId',
+  protect,
+  authorize('ADMIN'),
+  userController.adminGetUserDetail
+);
+
 export default router;
