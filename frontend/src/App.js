@@ -47,6 +47,10 @@ import AdminCustomerDetailPage from './pages/admin/manager/AdminCustomerDetailPa
 import AdminManageSubmissions from './pages/admin/manager/AdminManageSubmissions';
 import AdminSubmissionDetailPage from './pages/admin/manager/AdminSubmissionDetailPage';
 
+// import SupplierDashboard from './pages/supplier/SupplierDashboard';
+// import SupplierCreateSubmission from './pages/supplier/SupplierCreateSubmission';
+// import SupplierManageSubmissions from './pages/supplier/SupplierManageSubmissions';
+
 function App() {
   const checkAuthStatus = useAuthStore((state) => state.checkAuthStatus);
   const isAuthLoading = useAuthStore((state) => state.isAuthLoading);
@@ -120,6 +124,21 @@ function App() {
             <Route index element={<Navigate to="dashboard" replace />} />
           </Route>
         </Route>
+
+        {/* === Supplier Routes === */}
+
+        {/* === Supplier Routes === */}
+        {/*
+<Route element={<SupplierProtectedRoute />}>
+  <Route path="/supplier" element={<SupplierLayout />}>
+    <Route index element={<SupplierDashboard />} />
+    <Route path="create-submission" element={<SupplierCreateSubmission />} />
+    <Route path="my-submissions" element={<SupplierManageSubmissions />} />
+    <Route path="submission/:id" element={<AdminSubmissionDetailPage />} />
+  </Route>
+</Route>
+*/}
+
 
         {/* === Not Found Route === */}
         <Route path="*" element={<NotFoundPage />} />

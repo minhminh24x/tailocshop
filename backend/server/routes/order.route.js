@@ -1,14 +1,15 @@
-// server/routes/order.route.js
+// File: backend/server/routes/order.route.js
 import express from 'express';
 import { orderController } from '../controllers/order.controller.js';
 import validate from '../middleware/validate.js';
-import { orderValidation } from '../validations/index.js';
-import { protect, isAdmin } from '../middleware/auth.middleware.js';
+import { orderValidation } from '../validations/index.js'; // Giữ nguyên
+
+// [SỬA 1] Import 'protect' VÀ 'authorize'
+import { protect, authorize } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-// === CUSTOMER ROUTES (Cần đăng nhập) ===
-// 'protect' sẽ đảm bảo req.user tồn tại
+// === CUSTOMER ROUTES (Giữ nguyên) ===
 router.post(
   '/',
   protect,
@@ -25,28 +26,32 @@ router.get(
   orderController.getMyOrderById
 );
 
-// === ADMIN ROUTES (Cần đăng nhập + quyền Admin) ===
+// === ADMIN & STAFF ROUTES ===
+
+// [SỬA 2] Đổi '/admin/all' thành '/admin' cho nhất quán
 router.get(
-  '/admin/all',
+  '/admin',
   protect,
-  isAdmin,
+  authorize('ADMIN', 'STAFF'), // [SỬA 3] Dùng authorize
   orderController.getAllOrdersAdmin
 );
 
-router.get(
-  '/admin/:id',
-  protect,
-  isAdmin,
-  validate(orderValidation.getOrderSchema),
-  orderController.getOrderByIdAdmin
-);
+// [SỬA 4] Gộp các route '/admin/:id' lại
+router
+  .route('/admin/:id')
+  .get(
+    protect,
+    authorize('ADMIN', 'STAFF'), // Dùng authorize
+    validate(orderValidation.getOrderSchema),
+    orderController.getOrderByIdAdmin
+  )
+  .patch( // (Bạn dùng patch, tôi giữ nguyên)
+    protect,
+    authorize('ADMIN', 'STAFF'), // Dùng authorize
+    validate(orderValidation.updateOrderAdminSchema),
+    orderController.updateOrderAdmin
+  );
 
-router.patch(
-  '/admin/:id',
-  protect,
-  isAdmin,
-  validate(orderValidation.updateOrderAdminSchema),
-  orderController.updateOrderAdmin
-);
+// (Các route .get và .patch riêng lẻ đã được gộp ở trên)
 
 export default router;
