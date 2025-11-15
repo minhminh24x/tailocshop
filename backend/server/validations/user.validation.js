@@ -1,7 +1,8 @@
 // File: backend/server/validations/user.validation.js
 import { z } from 'zod';
 
-const adminCreateUser = {
+// [SỬA] Bọc toàn bộ bằng z.object()
+const adminCreateUser = z.object({
   body: z.object({
     email: z.string().email('Email không hợp lệ'),
     inGameName: z.string().min(3, 'Tên in-game phải có ít nhất 3 ký tự'),
@@ -9,9 +10,13 @@ const adminCreateUser = {
       required_error: 'Chỉ có thể tạo role STAFF hoặc SUPPLIER',
     }),
   }),
-};
+  // Thêm query và params rỗng để Zod không báo lỗi
+  query: z.object({}),
+  params: z.object({}),
+});
 
-const changeMyPassword = {
+// [SỬA] Bọc toàn bộ bằng z.object()
+const changeMyPassword = z.object({
   body: z
     .object({
       oldPassword: z.string().min(1, 'Mật khẩu cũ là bắt buộc'),
@@ -22,7 +27,10 @@ const changeMyPassword = {
       message: 'Mật khẩu mới không khớp',
       path: ['confirmNewPassword'],
     }),
-};
+  // Thêm query và params rỗng
+  query: z.object({}),
+  params: z.object({}),
+});
 
 export const userValidation = {
   adminCreateUser,

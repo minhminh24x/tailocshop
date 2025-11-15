@@ -45,7 +45,7 @@ export default function AdminManageSubmissions() {
       {loading ? (
         <p>Đang tải...</p>
       ) : (
-        <div className="bg-white shadow rounded-lg overflow-x-auto">
+        <div className="bg-white shadow rounded-lg overflow-x-auto text-gray-900">
           <table className="min-w-full">
             <thead className="bg-gray-100">
               <tr>

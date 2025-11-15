@@ -47,7 +47,7 @@ export default function AdminSidebar() {
         </NavLink>
         
         <NavLink to="/admin/manage-customers" className={getNavLinkClass}>
-          📊 Quản lý Khách hàng
+          👥 Quản lý Khách hàng
         </NavLink>
         
         <NavLink to="/admin/manage-users" className={getNavLinkClass}>
@@ -56,10 +56,6 @@ export default function AdminSidebar() {
         
         <NavLink to="/admin/rates" className={getNavLinkClass}>
           💱 Quản lý Tỷ giá
-        </NavLink>
-        
-        <NavLink to="/admin/users" className={getNavLinkClass}>
-          👥 Quản lý Người dùng
         </NavLink>
 
         {/* [SỬA] Dùng 'getNavLinkClass' và emoji */}

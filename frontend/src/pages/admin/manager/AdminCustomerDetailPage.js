@@ -35,7 +35,7 @@ export default function AdminCustomerDetailPage() {
       <Link to="/admin/manage-customers" className="text-blue-600 hover:underline mb-4 block">&larr; Quay lại danh sách</Link>
       
       {/* Thông tin chính */}
-      <div className="bg-white shadow rounded-lg p-6 mb-6">
+      <div className="bg-white shadow rounded-lg p-6 mb-6 text-gray-900">
         <h1 className="text-3xl font-bold">{user.inGameName}</h1>
         <p className="text-gray-600">{user.email}</p>
         <p className="mt-2">
@@ -50,7 +50,7 @@ export default function AdminCustomerDetailPage() {
       </div>
 
       {/* 20 Đơn hàng gần nhất */}
-      <div className="bg-white shadow rounded-lg p-6">
+      <div className="bg-white shadow rounded-lg p-6 text-gray-900">
         <h2 className="text-2xl font-bold mb-4">20 Đơn hàng gần nhất</h2>
         <div className="overflow-x-auto">
           <table className="min-w-full">

@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import slowDown from 'express-slow-down';
 import dotenv from 'dotenv';
+dotenv.config();
 import cookieParser from 'cookie-parser';
 import httpStatus from 'http-status';
 
@@ -58,6 +59,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // ✅ API Routes
+
 app.use('/api/auth', authSlowDown, authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
@@ -66,7 +68,7 @@ app.use('/api/delivery-time-slots', deliveryTimeSlotRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/vip-levels', vipLevelRoutes);
 app.use('/api/rates', currencyRoutes);
-app.use('/api/v1/supplier-submissions', supplierSubmissionRoutes);
+app.use('/api/supplier-submissions', supplierSubmissionRoutes);
 
 // ✅ Route test
 app.get('/api', (req, res) => {

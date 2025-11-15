@@ -23,7 +23,7 @@ export default function CreateUserModal({ onClose, onUserCreated }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-center">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-center items-center text-gray-700">
       <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
         <h2 className="text-2xl font-bold mb-4">Tạo tài khoản mới</h2>
         <form onSubmit={handleSubmit}>

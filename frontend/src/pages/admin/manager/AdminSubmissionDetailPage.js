@@ -84,14 +84,14 @@ export default function AdminSubmissionDetailPage() {
       <h1 className="text-3xl font-bold mb-4">Chi tiết phiếu nhập (ID: ...{id.slice(-6)})</h1>
       
       {/* Thông tin phiếu */}
-      <div className="bg-white shadow rounded-lg p-6 mb-6">
+      <div className="bg-white shadow rounded-lg p-6 mb-6 text-gray-900">
         <p><span className="font-semibold">Supplier:</span> {submission.supplier.inGameName}</p>
         <p><span className="font-semibold">Trạng thái:</span> {submission.status}</p>
         <p><span className="font-semibold">Ghi chú (Supplier):</span> {submission.supplierNotes || 'Không có'}</p>
       </div>
 
       {/* Chi tiết vật phẩm */}
-      <div className="bg-white shadow rounded-lg p-6 mb-6">
+      <div className="bg-white shadow rounded-lg p-6 mb-6 text-gray-900">
         <h2 className="text-2xl font-bold mb-4">Chi tiết vật phẩm</h2>
         {submission.supplierSubmissionDetails.map(detail => (
           <div key={detail.id} className="grid grid-cols-4 gap-4 items-center mb-4 border-b pb-4">
@@ -123,7 +123,7 @@ export default function AdminSubmissionDetailPage() {
 
       {/* Admin duyệt */}
       {isPending && (
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="bg-white shadow rounded-lg p-6 text-gray-900">
           <h2 className="text-2xl font-bold mb-4">Duyệt phiếu</h2>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">Ghi chú (Admin)</label>
