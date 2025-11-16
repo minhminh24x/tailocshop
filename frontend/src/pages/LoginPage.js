@@ -7,7 +7,7 @@ import { useAuthStore } from '../store/authStore.js';
 // import { shallow } from 'zustand/shallow'; 
 
 export default function LoginPage() {
-  
+
   // [ĐÃ SỬA] Tách 3 hook riêng biệt
   const login = useAuthStore((state) => state.login);
   const isLoading = useAuthStore((state) => state.isLoading);
@@ -15,7 +15,7 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
+
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -23,16 +23,7 @@ export default function LoginPage() {
     const success = await login({ email, password });
 
     if (success) {
-      // Lấy thông tin user hiện tại trong Zustand
-      const user = useAuthStore.getState().user;
-
-      // Nếu là admin → vào trang quản trị
-      if (user?.role === 'ADMIN') {
-        navigate('/admin/dashboard', { replace: true });
-      } else {
-        // Người dùng thường → về trang chủ
-        navigate('/', { replace: true });
-      }
+      navigate(success, { replace: true });
     }
   };
 

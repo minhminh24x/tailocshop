@@ -1,125 +1,124 @@
-// File: server/controllers/user.controller.js
+// File: backend/server/controllers/user.controller.js
+
 import prisma from '../lib/prisma.js';
-import bcrypt from 'bcryptjs'; // Giữ lại import này cho hàm changeMyPassword
+import bcrypt from 'bcryptjs';
 import { userService } from '../service/user.service.js';
 import httpStatus from 'http-status';
 import asyncHandler from '../utils/asyncHandler.js';
 
-// [MỚI] (Dành cho Admin)
+// --- HÀM CHO ADMIN ---
+
 const adminCreateUser = asyncHandler(async (req, res) => {
   const user = await userService.adminCreateUser(req.body);
   res.status(httpStatus.CREATED).send(user);
 });
 
-/**
- * Lấy hồ sơ cá nhân của tôi (đã sửa lỗi)
- */
-export const getMyProfile = async (req, res) => {
-  const userId = req.user.id;
-
-  try {
-    // 1. Lấy thông tin user và VIP HIỆN TẠI
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        username: true, // Thêm username (trang Profile có dùng)
-        inGameName: true,
-        role: true,
-        totalSpentCoin: true, // Đây là 'totalCoinPurchased'
-        createdAt: true,
-        vipLevel: { // Lấy cả object VIP hiện tại
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            imageUrl: true,
-            requiredCoins: true
-          }
-        }
-      },
-    });
-
-    if (!user) {
-      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
-    }
-
-    // 2. Tìm CẤP VIP TIẾP THEO
-    let nextVipLevel = null;
-    const currentVipCoins = user.vipLevel?.requiredCoins || 0;
-
-    nextVipLevel = await prisma.vipLevel.findFirst({
-      where: {
-        requiredCoins: {
-          gt: currentVipCoins // Tìm cấp VIP có số coin > cấp hiện tại
-        }
-      },
-      orderBy: {
-        requiredCoins: 'asc' // Lấy cấp gần nhất
-      },
-      select: {
-        name: true,
-        requiredCoins: true
-      }
-    });
-
-    // 3. Gửi phản hồi
-    // Gửi về object chứa user VÀ nextVipLevel
-    // để trang UserProfilePage.js có thể dùng
-    res.status(200).json({ 
-      user: {
-        ...user,
-        // Đổi tên totalSpentCoin thành totalCoinPurchased cho khớp code Profile
-        totalCoinPurchased: user.totalSpentCoin, 
-      }, 
-      nextVipLevel 
-    });
-
-  } catch (error) {
-    // [THÊM] Log lỗi ra console backend để dễ debug
-    console.error("Lỗi tại getMyProfile:", error); 
-    res.status(500).json({ message: 'Lỗi máy chủ nội bộ' });
-  }
-};
-
-
-/**
- * Đổi mật khẩu
- */
-const changeMyPassword = asyncHandler(async (req, res) => {
-  // 1. Lấy userId từ middleware 'protect'
-  const userId = req.user.id;
-  
-  // 2. Dữ liệu (oldPassword, newPassword) đã được validate_từ_route
-  // và sẽ được xử lý bởi userService
-  await userService.changeMyPassword(userId, req.body);
-
-  // 3. Trả về thành công
-  // (Lưu ý: userService đã xử lý việc so sánh mật khẩu cũ
-  // và cập nhật mustChangePassword = false)
-  res.status(httpStatus.OK).json({ message: 'Đổi mật khẩu thành công!' });
-});
-
-// [MỚI] (Dành cho Admin)
 const adminGetUsers = asyncHandler(async (req, res) => {
-  // Lấy filter từ query string (VD: ?roles=STAFF,SUPPLIER)
   const roles = req.query.roles ? req.query.roles.split(',') : [];
   const users = await userService.adminGetUsers(roles);
   res.status(httpStatus.OK).send(users);
 });
 
-// [MỚI] (Dành cho Admin)
 const adminGetUserDetail = asyncHandler(async (req, res) => {
   const { userId } = req.params;
   const user = await userService.adminGetUserDetail(userId);
   res.status(httpStatus.OK).send(user);
 });
 
+
+// --- HÀM CHO USER ĐÃ XÁC THỰC ---
+
+/**
+ * Lấy hồ sơ cá nhân của tôi (đã sửa lỗi)
+ */
+const getMyProfile = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+
+  // 1. Lấy thông tin user và VIP HIỆN TẠI
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      inGameName: true,
+      role: true,
+      totalSpentCoin: true,
+      createdAt: true,
+      mustChangePassword: true,
+      vipLevel: {
+        select: {
+          level: true,
+          name: true,
+          coinThreshold: true,
+          discountPercent: true,
+        },
+      },
+    },
+  });
+
+  if (!user) {
+    return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+  }
+
+  // 2. Tìm CẤP VIP TIẾP THEO
+  let nextVipLevel = null;
+  // [FIX] Dùng ?. (optional chaining) để an toàn nếu user.vipLevel là null
+  const currentVipCoins = user.vipLevel?.coinThreshold || 0;
+
+  nextVipLevel = await prisma.vipLevel.findFirst({
+    where: {
+      coinThreshold: {
+        gt: currentVipCoins,
+      },
+    },
+    orderBy: {
+      coinThreshold: 'asc',
+    },
+    select: {
+      name: true,
+      coinThreshold: true,
+    },
+  });
+
+  // 3. Gửi phản hồi
+  res.status(200).json({
+    user: {
+      ...user,
+      totalCoinPurchased: user.totalSpentCoin,
+      // [FIX] Dùng ternary (toán tử 3 ngôi) để an toàn nếu user.vipLevel là null
+      vipLevel: user.vipLevel
+        ? {
+            ...user.vipLevel,
+            requiredCoins: user.vipLevel.coinThreshold,
+          }
+        : null,
+    },
+    // [FIX] Dùng ternary để an toàn nếu nextVipLevel là null
+    nextVipLevel: nextVipLevel
+      ? {
+          ...nextVipLevel,
+          requiredCoins: nextVipLevel.coinThreshold,
+        }
+      : null,
+  });
+});
+
+/**
+ * Đổi mật khẩu
+ */
+const changeMyPassword = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  await userService.changeMyPassword(userId, req.body);
+  res.status(httpStatus.OK).json({ message: 'Đổi mật khẩu thành công!' });
+});
+
+
+// --- EXPORT CONTROLLER ---
+
 export const userController = {
   adminCreateUser,
+  adminGetUsers,
+  adminGetUserDetail,
   getMyProfile,
   changeMyPassword,
-  adminGetUsers, //
-  adminGetUserDetail,
 };

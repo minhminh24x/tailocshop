@@ -36,43 +36,56 @@ export const useAuthStore = create(persist(
     login: async (credentials) => {
       set({ isLoading: true, error: null });
       try {
-        // 1. API login (authService) chỉ cần trả về user
+        // 1. API login (authService) PHẢI trả về user data cơ bản
+        // bao gồm { id, email, role, mustChangePassword }
         const { data } = await loginUser(credentials);
 
         // 2. Set user cơ bản vào state
         set({
-          user: data.user, // Giả định API login trả về { data: { user: ... } }
+          user: data.user,
           isLoading: false
         });
 
-        // 3. [QUAN TRỌNG] Gọi lại checkAuthStatus để lấy full profile (gồm nextVipLevel)
+        // 3. [FIX QUAN TRỌNG] Kiểm tra cờ đổi mật khẩu NGAY LẬP TỨC
+        if (data.user.mustChangePassword) {
+          toast.success('Đăng nhập thành công! Bạn cần đổi mật khẩu.');
+          // Không cần gọi checkAuthStatus, chuyển thẳng đến trang profile
+          return '/profile';
+        }
+
+        // 4. Nếu KHÔNG phải đổi, lúc này mới gọi checkAuthStatus
+        // (Và Lỗi 1 ở backend cũng phải được fix)
         await get().checkAuthStatus();
 
         toast.success('Đăng nhập thành công!');
 
-        // 4. [QUAN TRỌNG] Trả về redirect path cho LoginPage
-        const loggedInUser = get().user; // Lấy user đầy đủ sau khi checkAuthStatus
+        // 5. Sau khi gọi checkAuthStatus()
+        await get().checkAuthStatus();
 
-        if (loggedInUser.mustChangePassword) {
-          return '/profile'; // Bắt buộc đổi mật khẩu
+        // 6. Lấy user cập nhật từ state
+        const loggedInUser = get().user;
+
+        // [FIX QUAN TRỌNG]: Nếu không lấy được user đầy đủ → quay về trang chủ
+        if (!loggedInUser || !loggedInUser.role) {
+          console.warn("Không thể tải dữ liệu user từ checkAuthStatus");
+          toast.error('Không thể tải thông tin tài khoản.');
+          return '/'; // hoặc chuyển về '/login'
         }
 
+        // 7. Điều hướng dựa trên role
         switch (loggedInUser.role) {
-          case 'ADMIN':
-            return '/admin';
-          case 'STAFF':
-            return '/staff';
-          case 'SUPPLIER':
-            return '/supplier';
-          default:
-            return '/';
+          case 'ADMIN': return '/admin';
+          case 'STAFF': return '/staff';
+          case 'SUPPLIER': return '/supplier';
+          case 'CUSTOMER': return '/users'; // Bổ sung nếu cần
+          default: return '/';
         }
 
       } catch (err) {
         const errorMsg = err.response?.data?.message || 'Lỗi khi đăng nhập';
         set({ error: errorMsg, isLoading: false });
         toast.error(errorMsg);
-        throw err; // Ném lỗi để LoginPage (nơi gọi) bắt được
+        throw err;
       }
     },
 
