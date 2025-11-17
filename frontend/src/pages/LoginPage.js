@@ -5,7 +5,11 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore.js';
 // [XÓA] Xóa 'shallow'
 // import { shallow } from 'zustand/shallow'; 
-
+// Sử dụng Zustand để quản lý trạng thái xác thực
+// và xử lý đăng nhập người dùng
+// với giao diện người dùng thân thiện và phản hồi nhanh
+// trong ứng dụng React.
+// [ĐÃ SỬA] Tách các hook riêng biệt thay vì dùng shallow
 export default function LoginPage() {
 
   // [ĐÃ SỬA] Tách 3 hook riêng biệt
@@ -36,7 +40,7 @@ export default function LoginPage() {
         <h2 className="text-3xl font-bold text-center text-white mb-6">
           Đăng Nhập
         </h2>
-
+      
         {error && (
           <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded mb-4">
             <p>{error}</p>
