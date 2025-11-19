@@ -3,9 +3,16 @@ import apiClient from './apiClient.js';
 
 /**
  * Lấy tất cả vật phẩm (cho trang /items)
+ * [ĐÃ SỬA] Thêm tham số params để hỗ trợ phân trang, lọc, limit
  */
-export const getAllItems = () => {
-  return apiClient.get('/items');
+export const getAllItems = (params) => {
+  return apiClient.get('/items', { params });
+};
+
+// Giữ nguyên hàm này để tương thích ngược nếu có chỗ nào dùng tên 'getItems' cũ
+// (Alias function)
+export const getItems = (params) => {
+  return getAllItems(params);
 };
 
 /**

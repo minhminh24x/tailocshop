@@ -10,6 +10,7 @@ export default function LoginPromptModal({ isOpen, onClose }) {
     onClose();
     // Chuyển đến trang login, mang theo state 'from'
     // để sau khi login, quay lại đúng trang cart
+      
     navigate('/login', { state: { from: location } });
   };
 

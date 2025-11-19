@@ -3,9 +3,12 @@ import express from 'express';
 import cors from 'cors';
 import slowDown from 'express-slow-down';
 import dotenv from 'dotenv';
-dotenv.config();
 import cookieParser from 'cookie-parser';
 import httpStatus from 'http-status';
+// [NÂNG CẤP] Import thêm các thư viện bảo mật và hiệu năng
+import helmet from 'helmet';
+import compression from 'compression';
+import morgan from 'morgan';
 
 import authRoutes from './routes/auth.route.js';
 import userRoutes from './routes/user.route.js';
@@ -17,21 +20,30 @@ import vipLevelRoutes from './routes/vipLevel.route.js';
 import currencyRoutes from './routes/currency.route.js';
 import supplierSubmissionRoutes from './routes/supplierSubmission.route.js';
 
-
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// ✅ Cấu hình slowDown (chuẩn cho express-slow-down v2)
+// [NÂNG CẤP] 1. Security Headers (Bảo mật HTTP)
+app.use(helmet());
+
+// [NÂNG CẤP] 2. Gzip Compression (Tăng tốc độ tải API)
+app.use(compression());
+
+// [NÂNG CẤP] 3. Logging (Theo dõi request tốt hơn)
+// Chỉ log ngắn gọn ở production, chi tiết ở development
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// Cấu hình slowDown (Chống spam request)
 const authSlowDown = slowDown({
-  windowMs: 15 * 60 * 1000, // 15 phút
-  delayAfter: 5,            // Sau 5 request thì bắt đầu chậm lại
-  delayMs: () => 500,       // Mỗi request sau đó thêm 500ms delay
-  maxDelayMs: 3000,         // Delay tối đa là 3 giây
-  validate: { delayMs: false } // Ngăn cảnh báo version (tùy chọn)
+  windowMs: 15 * 60 * 1000, 
+  delayAfter: 5,            
+  delayMs: () => 500,       
+  maxDelayMs: 3000,         
+  validate: { delayMs: false } 
 });
 
-// ✅ Danh sách các origin được phép
+// Danh sách origin cho phép
 const allowedOrigins = [
   'http://localhost:3000',
   'https://tailocshop.onrender.com',
@@ -39,7 +51,7 @@ const allowedOrigins = [
   'https://tailocshop-6qtp-iefejt9eu-minhminh24xs-projects.vercel.app'
 ];
 
-// ✅ Cấu hình CORS nâng cao
+// Cấu hình CORS
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -59,7 +71,6 @@ app.use(express.json());
 app.use(cookieParser());
 
 // ✅ API Routes
-
 app.use('/api/auth', authSlowDown, authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
@@ -70,14 +81,16 @@ app.use('/api/vip-levels', vipLevelRoutes);
 app.use('/api/rates', currencyRoutes);
 app.use('/api/supplier-submissions', supplierSubmissionRoutes);
 
-// ✅ Route test
+// Route test
 app.get('/api', (req, res) => {
-  res.status(200).json({ message: 'Chào mừng đến với Tài Lộc Shop API!' });
+  res.status(200).json({ 
+    message: 'Chào mừng đến với Tài Lộc Shop API (Secured & Optimized)!' 
+  });
 });
 
-// ✅ Middleware xử lý lỗi
+// Middleware xử lý lỗi tập trung
 app.use((err, req, res, next) => {
-  console.error(err);
+  console.error('🔥 Error:', err); // Log lỗi ra console server để debug
   let statusCode = err.statusCode || 500;
   let message = err.message || 'Lỗi máy chủ nội bộ';
 
@@ -91,12 +104,14 @@ app.use((err, req, res, next) => {
   }
   if (err.code === 'P2002') {
     statusCode = httpStatus.BAD_REQUEST;
-    message = 'Lỗi trùng lặp dữ liệu (Unique constraint failed)';
+    message = 'Dữ liệu đã tồn tại (Trùng lặp)';
   }
 
   res.status(statusCode).json({
     status: 'error',
     message,
+    // [NÂNG CẤP] Chỉ hiện stack trace khi không phải production để bảo mật
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined 
   });
 });
 

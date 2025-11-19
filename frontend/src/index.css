@@ -1,4 +1,77 @@
-/* src/index.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif; /* Nên dùng font hiện đại */
+  background-color: #0f172a; /* Màu nền tối thẫm */
+  color: #ffffff;
+  overflow-x: hidden;
+}
+
+/* --- Hiệu ứng nền Mega Earth --- */
+.bg-mega-earth {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+  overflow: hidden;
+}
+
+.stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, #eee, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0));
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  animation: zoom 10s infinite alternate;
+  opacity: 0.3;
+}
+
+/* Hiệu ứng sương mù trôi nhẹ */
+.fog {
+  position: absolute;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(to right, transparent 0%, rgba(30, 41, 59, 0.6) 50%, transparent 100%);
+  animation: drift 20s linear infinite;
+  top: 0;
+  left: -50%;
+}
+
+@keyframes zoom {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.1); }
+}
+
+@keyframes drift {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(50%); }
+}
+
+/* Tùy chỉnh thanh cuộn */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a; 
+}
+::-webkit-scrollbar-thumb {
+  background: #475569; 
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #fbbf24; /* Vàng kim loại */
+}
