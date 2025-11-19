@@ -1,46 +1,70 @@
-// src/components/home/HeroSection.js
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 export default function HeroSection() {
   return (
-    <section className="relative bg-gradient-to-r from-gray-900 to-gray-700 text-white py-20 md:py-32 overflow-hidden shadow-xl rounded-b-3xl">
-      {/* Background Pattern (tùy chọn để thêm "wao") */}
-      <div className="absolute inset-0 z-0 opacity-10">
-        <svg className="w-full h-full" fill="none" viewBox="0 0 100 100">
-          <pattern id="pattern-circles" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
-            <circle cx="2" cy="2" r="1" fill="#4A5568"></circle>
-          </pattern>
-          <rect x="0" y="0" width="100%" height="100%" fill="url(#pattern-circles)"></rect>
-        </svg>
-      </div>
+    <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
+      {/* Decor elements */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-yellow-500/10 rounded-full blur-[80px] pointer-events-none"></div>
 
-      <div className="container mx-auto px-6 relative z-10 text-center animate-fade-in-up">
-        {/* Tiêu đề chính */}
-        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-4 text-pink-500">
-          Tài Lộc Shop
-        </h1>
+      <div className="container mx-auto px-4 relative z-10 text-center">
+        
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          <h1 className="text-5xl md:text-8xl font-black tracking-tighter mb-6 drop-shadow-2xl">
+            <span className="text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400">
+              KHÁM PHÁ KHO BÁU
+            </span>
+            <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-red-500 filter drop-shadow-[0_0_20px_rgba(234,179,8,0.5)]">
+              MEGA EARTH
+            </span>
+          </h1>
+          
+          <p className="text-lg md:text-2xl text-blue-200/80 font-medium mb-10 max-w-3xl mx-auto leading-relaxed">
+            Hệ thống vật phẩm thượng hạng, giao dịch tự động, uy tín hàng đầu server.
+            <br className="hidden md:block" />
+            Nâng tầm trải nghiệm game của bạn ngay hôm nay.
+          </p>
 
-        {/* Phụ đề */}
-        <p className="text-xl md:text-3xl text-gray-300 font-light mb-8 max-w-2xl mx-auto leading-relaxed">
-          Shop uy tín nhất <span className="font-semibold text-white">MegaEarth</span> - <span className="font-semibold text-white">KingMC</span>
-        </p>
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-5">
+            <Link
+              to="/items"
+              className="relative group px-8 py-4 rounded-full bg-yellow-500 text-slate-900 font-black text-lg shadow-[0_0_40px_rgba(234,179,8,0.4)] overflow-hidden transition-transform hover:scale-105 hover:shadow-[0_0_60px_rgba(234,179,8,0.6)]"
+            >
+              <span className="relative z-10">MUA NGAY</span>
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+            </Link>
+            
+            <Link
+              to="/support"
+              className="px-8 py-4 rounded-full bg-slate-800/50 backdrop-blur-md border border-white/10 text-white font-bold text-lg hover:bg-slate-800 hover:border-yellow-500/50 transition-all"
+            >
+              HỖ TRỢ 24/7
+            </Link>
+          </div>
+        </motion.div>
 
-        {/* Nút Call-to-Action */}
-        <div className="flex justify-center space-x-4">
-          <Link
-            to="/items"
-            className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg transform hover:scale-105 transition duration-300 ease-in-out"
-          >
-            Khám phá vật phẩm
-          </Link>
-          <Link
-            to="/about"
-            className="bg-transparent border-2 border-white hover:border-pink-500 text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg transform hover:scale-105 transition duration-300 ease-in-out"
-          >
-            Tìm hiểu thêm
-          </Link>
-        </div>
+        {/* Stats bar giả lập */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 1 }}
+          className="mt-16 flex flex-wrap justify-center gap-8 md:gap-16 opacity-70 grayscale hover:grayscale-0 transition-all duration-500"
+        >
+          {['10,000+ Khách Hàng', 'Giao Dịch Tự Động', 'Uy Tín 100%'].map((text, idx) => (
+            <div key={idx} className="flex items-center gap-2 text-gray-400 font-semibold uppercase tracking-widest text-sm">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              {text}
+            </div>
+          ))}
+        </motion.div>
+
       </div>
     </section>
   );

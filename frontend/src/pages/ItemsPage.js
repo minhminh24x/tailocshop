@@ -1,114 +1,139 @@
-// File: frontend/src/pages/ItemsPage.js
-import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom'; // Import Link
-import { getAllItems } from '../services/itemService.js'; // Import API service
-import ItemCard from '../components/items/ItemCard.js'; // Import ItemCard
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { getAllItems } from '../services/itemService';
+import { getAllCategoriesAdmin } from '../services/adminCategoryService'; 
+import ItemCard from '../components/items/ItemCard';
+import { Search, Sparkles } from 'lucide-react';
 
 export default function ItemsPage() {
   const [items, setItems] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  
-  // State cho tìm kiếm và sắp xếp
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('name-asc'); // Mặc định sắp xếp
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // 1. Gọi API để lấy tất cả vật phẩm
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [sortOrder, setSortOrder] = useState('newest'); 
+
   useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await getAllItems();
-        setItems(response.data);
-      } catch (err) {
-        console.error('Lỗi khi tải vật phẩm:', err);
-        setError(err.response?.data?.message || 'Không thể tải danh sách vật phẩm');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchItems();
+    fetchData();
   }, []);
 
-  // 2. Logic lọc và sắp xếp (thực hiện ở frontend)
-  const filteredAndSortedItems = useMemo(() => {
-    let filtered = items;
+  const fetchData = async () => {
+    try {
+      const [itemsRes, catsRes] = await Promise.all([
+        getAllItems(),
+        getAllCategoriesAdmin() 
+      ]);
 
-    // Lọc theo tìm kiếm (không phân biệt hoa thường)
-    if (searchTerm) {
-      filtered = items.filter((item) =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      // [SỬA LỖI QUAN TRỌNG]: Lấy dữ liệu từ .data của axios response
+      // Kiểm tra an toàn: nếu API trả về object có field 'items' (phân trang) hoặc trả về mảng trực tiếp
+      const rawItems = itemsRes.data;
+      const validItems = Array.isArray(rawItems) ? rawItems : (rawItems.items || []);
+      
+      setItems(validItems);
+      setCategories(catsRes.data || []); // Category thường trả về mảng trực tiếp
+      
+    } catch (error) {
+      console.error("Failed to fetch items:", error);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // Sắp xếp
-    const [key, direction] = sortBy.split('-');
-    
-    return [...filtered].sort((a, b) => {
-      let valA, valB;
+  // Logic lọc và sắp xếp (Bây giờ items chắc chắn là mảng nên .filter sẽ hoạt động)
+  const filteredItems = (items || []).filter(item => {
+    const matchSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    // Lưu ý: categoryId có thể là chuỗi hoặc số tùy DB, nên ép kiểu để so sánh
+    const matchCat = selectedCategory === 'ALL' || String(item.categoryId) === String(selectedCategory);
+    return matchSearch && matchCat;
+  }).sort((a, b) => {
+    if (sortOrder === 'price-asc') return parseFloat(a.priceCoin) - parseFloat(b.priceCoin);
+    if (sortOrder === 'price-desc') return parseFloat(b.priceCoin) - parseFloat(a.priceCoin);
+    return new Date(b.createdAt) - new Date(a.createdAt); // newest
+  });
 
-      if (key === 'name') {
-        valA = a.name.toLowerCase();
-        valB = b.name.toLowerCase();
-      } else if (key === 'price') {
-        // Ưu tiên giá Coin
-        valA = parseFloat(a.priceCoin || a.priceUsd || 0);
-        valB = parseFloat(b.priceCoin || b.priceUsd || 0);
-      }
-
-      if (valA < valB) return direction === 'asc' ? -1 : 1;
-      if (valA > valB) return direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [items, searchTerm, sortBy]);
-
-  // 3. Render
-  if (isLoading) {
-    return <p className="text-center text-xl text-gray-400">Đang tải vật phẩm...</p>;
-  }
-
-  if (error) {
-    return <p className="text-center text-xl text-red-500">Lỗi: {error}</p>;
+  if (loading) {
+    return (
+      <div className="flex flex-col justify-center items-center h-[60vh]">
+        <div className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-yellow-500 font-bold animate-pulse">Đang tải kho báu...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-4xl font-bold text-center mb-8 text-pink-500">Tất cả Vật phẩm</h1>
-
-      {/* Thanh Tìm kiếm & Sắp xếp */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-        <input
-          type="text"
-          placeholder="Tìm kiếm vật phẩm..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full md:w-1/2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
-        />
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className="w-full md:w-auto px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
-        >
-          <option value="name-asc">Tên (A-Z)</option>
-          <option value="name-desc">Tên (Z-A)</option>
-          <option value="price-asc">Giá (Thấp đến Cao)</option>
-          <option value="price-desc">Giá (Cao đến Thấp)</option>
-        </select>
+    <div className="space-y-8">
+      
+      {/* PAGE TITLE */}
+      <div className="text-center space-y-2">
+        <h1 className="text-4xl md:text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">
+          KHO TÀNG <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">VẬT PHẨM</span>
+        </h1>
+        <p className="text-gray-400 flex items-center justify-center gap-2">
+          <Sparkles size={16} className="text-yellow-400" />
+          Tất cả trang bị tốt nhất dành cho bạn
+          <Sparkles size={16} className="text-yellow-400" />
+        </p>
       </div>
 
-      {/* Lưới vật phẩm */}
-      {filteredAndSortedItems.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredAndSortedItems.map((item) => (
-            // [QUAN TRỌNG] Bọc ItemCard bằng Link
-            <Link key={item.id} to={`/item/${item.slug}/${item.unit}`}>
-              <ItemCard item={item} />
+      {/* CONTROL BAR (FILTER & SEARCH) */}
+      <div className="glass-panel p-4 rounded-2xl sticky top-24 z-30 shadow-xl transition-all duration-300">
+        <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
+          
+          {/* Search */}
+          <div className="relative w-full md:w-1/3">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input 
+              type="text" 
+              placeholder="Tìm kiếm vật phẩm..." 
+              className="w-full bg-slate-900/80 border border-gray-700 rounded-xl py-3 pl-10 text-white focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          {/* Filters */}
+          <div className="flex gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+            <select 
+              className="bg-slate-900/80 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 cursor-pointer hover:bg-slate-800 transition-colors"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
+              <option value="ALL">Tất cả danh mục</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+
+            <select 
+              className="bg-slate-900/80 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 cursor-pointer hover:bg-slate-800 transition-colors"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+            >
+              <option value="newest">Mới nhất</option>
+              <option value="price-asc">Giá thấp - cao</option>
+              <option value="price-desc">Giá cao - thấp</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* ITEMS GRID */}
+      {filteredItems.length === 0 ? (
+        <div className="text-center py-20 opacity-60">
+          <div className="text-6xl mb-4">📦</div>
+          <h3 className="text-xl font-bold text-gray-300">Không tìm thấy vật phẩm nào</h3>
+          <p className="text-gray-500">Thử tìm từ khóa khác xem sao nhé!</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredItems.map((item) => (
+            <Link key={item.id} to={`/items/${item.id}`} className="block h-full">
+               <ItemCard item={item} />
             </Link>
           ))}
         </div>
-      ) : (
-        <p className="text-center text-xl text-gray-400">Không tìm thấy vật phẩm nào.</p>
       )}
     </div>
   );

@@ -1,174 +1,129 @@
-// File: frontend/src/App.js
-
-// [KHẮC PHỤC] Đảm bảo chỉ có MỘT dòng import từ 'react-router-dom'
-import { Routes, Route, Navigate, Link, Outlet } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
 import React, { useEffect } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import { useAuthStore } from './store/authStore';
+// [SỬA LỖI] Không cần import fetchCart vì store tự động load
+import { useCartStore } from './store/cartStore'; 
+import { useCurrencyStore } from './store/currencyStore';
 
-// Import pages
-import HomePage from './pages/HomePage.js';
-import LoginPage from './pages/LoginPage.js';
-import RegisterPage from './pages/RegisterPage.js';
-import ItemsPage from './pages/ItemsPage.js';
-import ItemDetailPage from './pages/ItemDetailPage.js';
-import MyOrdersPage from './pages/MyOrdersPage.js';
-import MyOrderDetailPage from './pages/MyOrderDetailPage.js';
-import CartPage from './pages/CartPage.js';
-import CheckoutPage from './pages/CheckoutPage.js';
-// --- THÊM MỚI ---
-import UserProfilePage from './pages/UserProfilePage.js'; // Trang hồ sơ
-import SupportPage from './pages/SupportPage.js'; // Trang hỗ trợ
-// --- KẾT THÚC THÊM MỚI ---
-// --- oke fix
-// Import components
-import WarningModal from './components/WarningModal.js';
-import Header from './components/layout/Header.js';
-import Footer from './components/layout/Footer.js';
-import AdminProtectedRoute from './components/auth/AdminProtectedRoute.js';
-import UserProtectedRoute from './components/auth/UserProtectedRoute.js';
-import { useAuthStore } from './store/authStore.js';
+// Layout Components
+import Header from './components/layout/Header';
+import Footer from './components/layout/Footer';
 
-// Import các component Admin
-import AdminLayout from './pages/admin/AdminLayout.js';
-import AdminDashboard from './pages/admin/AdminDashboard.js';
-// Các trang quản lý trong Admin
-import AdminManageOrders from './pages/admin/manager/AdminManageOrders.js';
-import AdminManageItems from './pages/admin/manager/AdminManageItems.js';
-import AdminManageCategories from './pages/admin/manager/AdminManageCategories.js';
-import AdminManageInventory from './pages/admin/manager/AdminManageInventory.js';
-import AdminManageUsers from './pages/admin/manager/AdminManageUsers.js';
-import AdminOrderDetailPage from './pages/admin/manager/AdminOrderDetailPage.js';
-import AdminManageTimeSlots from './pages/admin/manager/AdminManageTimeSlots.js';
-import AdminManageVipLevels from './pages/admin/manager/AdminManageVipLevels.js';
-import AdminManageRates from './pages/admin/manager/AdminManageRates.js';
-import { useCurrencyStore } from './store/currencyStore.js';
-import AdminManageCustomers from './pages/admin/manager/AdminManageCustomers';
+// Pages
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ItemsPage from './pages/ItemsPage';
+import ItemDetailPage from './pages/ItemDetailPage';
+import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
+import UserProfilePage from './pages/UserProfilePage';
+import MyOrdersPage from './pages/MyOrdersPage';
+import MyOrderDetailPage from './pages/MyOrderDetailPage';
+import SupportPage from './pages/SupportPage';
+
+// Auth Guards
+import UserProtectedRoute from './components/auth/UserProtectedRoute';
+import StaffProtectedRoute from './components/auth/StaffProtectedRoute';
+import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
+import SupplierProtectedRoute from './components/auth/SupplierProtectedRoute';
+
+// Admin & Staff Pages
+import AdminLayout from './pages/admin/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminManageUsers from './pages/admin/manager/AdminManageUsers';
+import AdminManageCategories from './pages/admin/manager/AdminManageCategories';
+import AdminManageItems from './pages/admin/manager/AdminManageItems';
+import AdminManageOrders from './pages/admin/manager/AdminManageOrders';
+import AdminOrderDetailPage from './pages/admin/manager/AdminOrderDetailPage';
 import AdminCustomerDetailPage from './pages/admin/manager/AdminCustomerDetailPage';
+import AdminManageInventory from './pages/admin/manager/AdminManageInventory';
+import AdminManageTimeSlots from './pages/admin/manager/AdminManageTimeSlots';
+import AdminManageRates from './pages/admin/manager/AdminManageRates';
+import AdminManageVipLevels from './pages/admin/manager/AdminManageVipLevels';
 import AdminManageSubmissions from './pages/admin/manager/AdminManageSubmissions';
 import AdminSubmissionDetailPage from './pages/admin/manager/AdminSubmissionDetailPage';
 
-// import SupplierDashboard from './pages/supplier/SupplierDashboard';
-// import SupplierCreateSubmission from './pages/supplier/SupplierCreateSubmission';
-// import SupplierManageSubmissions from './pages/supplier/SupplierManageSubmissions';
+import StaffLayout from './pages/staff/StaffLayout';
+import SupplierLayout from './pages/supplier/SupplierLayout';
 
 function App() {
-  const checkAuthStatus = useAuthStore((state) => state.checkAuthStatus);
-  const isAuthLoading = useAuthStore((state) => state.isAuthLoading);
-  const fetchRate = useCurrencyStore((state) => state.fetchRate);
+  const { checkAuthStatus } = useAuthStore();
+  // [SỬA LỖI] Xóa bỏ dòng lấy fetchCart
+  // const { fetchCart } = useCartStore(); 
+  
+  const { fetchRate } = useCurrencyStore();
+  const location = useLocation();
 
   useEffect(() => {
     checkAuthStatus();
+    // [SỬA LỖI] Xóa bỏ dòng gọi fetchCart()
     fetchRate();
   }, [checkAuthStatus, fetchRate]);
 
-  if (isAuthLoading) {
-    return (
-      <div className="bg-gray-900 min-h-screen flex justify-center items-center text-white text-xl">
-        Đang tải Tài Lộc Shop...
-      </div>
-    );
-  }
+  // Kiểm tra xem có phải trang Admin/Staff/Supplier không để ẩn Header/Footer mặc định
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isStaffRoute = location.pathname.startsWith('/staff');
+  const isSupplierRoute = location.pathname.startsWith('/supplier');
+  const isDashboard = isAdminRoute || isStaffRoute || isSupplierRoute;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-900 text-white">
-      <Toaster position="top-right" />
-      <WarningModal />
+    <div className="App min-h-screen text-gray-100 flex flex-col relative z-0">
+      {/* Chỉ hiện Header khách hàng nếu KHÔNG phải trang dashboard */}
+      {!isDashboard && <Header />}
 
-      <Routes>
-        {/* === Public Routes (Layout chung) === */}
-        <Route path="/" element={<PublicLayout />}>
-          <Route index element={<HomePage />} />
-          <Route path="items" element={<ItemsPage />} />
-          <Route path="item/:slug/:unit" element={<ItemDetailPage />} />
-          <Route path="login" element={<LoginPage />} />
-          <Route path="register" element={<RegisterPage />} />
-          <Route path="cart" element={<CartPage />} />
+      {/* pt-24 để đẩy nội dung xuống dưới Header */}
+      <main className={`flex-grow ${!isDashboard ? 'pt-24 pb-10 px-4 md:px-8 max-w-7xl mx-auto w-full' : ''}`}>
+        <Routes>
+          {/* --- PUBLIC ROUTES --- */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/items" element={<ItemsPage />} />
+          <Route path="/items/:id" element={<ItemDetailPage />} />
+          <Route path="/support" element={<SupportPage />} />
+          
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
 
-          {/* --- THÊM MỚI --- */}
-          <Route path="support" element={<SupportPage />} />
-          {/* --- KẾT THÚC THÊM MỚI --- */}
+          {/* --- CUSTOMER PROTECTED ROUTES --- */}
+          <Route path="/cart" element={<UserProtectedRoute><CartPage /></UserProtectedRoute>} />
+          <Route path="/checkout" element={<UserProtectedRoute><CheckoutPage /></UserProtectedRoute>} />
+          <Route path="/profile" element={<UserProtectedRoute><UserProfilePage /></UserProtectedRoute>} />
+          <Route path="/my-orders" element={<UserProtectedRoute><MyOrdersPage /></UserProtectedRoute>} />
+          <Route path="/my-orders/:id" element={<UserProtectedRoute><MyOrderDetailPage /></UserProtectedRoute>} />
 
-        </Route>
-
-        {/* === User Protected Routes (Cần đăng nhập) === */}
-        <Route element={<UserProtectedRoute />}>
-          <Route element={<PublicLayout />}>
-            <Route path="/my-orders" element={<MyOrdersPage />} />
-            <Route path="/my-orders/:id" element={<MyOrderDetailPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-
-            {/* --- THÊM MỚI --- */}
-            <Route path="/profile" element={<UserProfilePage />} />
-            {/* --- KẾT THÚC THÊM MỚI --- */}
-
-          </Route>
-        </Route>
-
-        {/* === Admin Protected Routes (Layout riêng) === */}
-        <Route element={<AdminProtectedRoute />}>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="orders" element={<AdminManageOrders />} />
-            <Route path="orders/:id" element={<AdminOrderDetailPage />} />
-            <Route path="items" element={<AdminManageItems />} />
+          {/* --- ADMIN ROUTES --- */}
+          <Route path="/admin" element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<AdminManageUsers />} />
+            <Route path="users/:userId" element={<AdminCustomerDetailPage />} />
             <Route path="categories" element={<AdminManageCategories />} />
-            <Route path="timeslots" element={<AdminManageTimeSlots />} />
-            <Route path="vip-levels" element={<AdminManageVipLevels />} />
+            <Route path="items" element={<AdminManageItems />} />
+            <Route path="orders" element={<AdminManageOrders />} />
+            <Route path="orders/:orderId" element={<AdminOrderDetailPage />} />
             <Route path="inventory" element={<AdminManageInventory />} />
+            <Route path="time-slots" element={<AdminManageTimeSlots />} />
             <Route path="rates" element={<AdminManageRates />} />
-            <Route path="manage-users" element={<AdminManageUsers />} />
-            <Route path="manage-customers" element={<AdminManageCustomers />} />
-            <Route path="customer/:userId" element={<AdminCustomerDetailPage />} />
-            <Route path="manage-submissions" element={<AdminManageSubmissions />} />
-            <Route path="submission/:id" element={<AdminSubmissionDetailPage />} />
-            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="vip-levels" element={<AdminManageVipLevels />} />
+            <Route path="submissions" element={<AdminManageSubmissions />} />
+            <Route path="submissions/:id" element={<AdminSubmissionDetailPage />} />
           </Route>
-        </Route>
 
-        {/* === Supplier Routes === */}
+          {/* --- STAFF ROUTES --- */}
+          <Route path="/staff" element={<StaffProtectedRoute><StaffLayout /></StaffProtectedRoute>}>
+            <Route index element={<div className="p-6"><h1>Staff Dashboard</h1></div>} />
+          </Route>
 
-        {/* === Supplier Routes === */}
-        {/*
-<Route element={<SupplierProtectedRoute />}>
-  <Route path="/supplier" element={<SupplierLayout />}>
-    <Route index element={<SupplierDashboard />} />
-    <Route path="create-submission" element={<SupplierCreateSubmission />} />
-    <Route path="my-submissions" element={<SupplierManageSubmissions />} />
-    <Route path="submission/:id" element={<AdminSubmissionDetailPage />} />
-  </Route>
-</Route>
-*/}
+          {/* --- SUPPLIER ROUTES --- */}
+          <Route path="/supplier" element={<SupplierProtectedRoute><SupplierLayout /></SupplierProtectedRoute>}>
+             <Route index element={<div className="p-6"><h1>Supplier Dashboard</h1></div>} />
+          </Route>
 
+        </Routes>
+      </main>
 
-        {/* === Not Found Route === */}
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+      {!isDashboard && <Footer />}
     </div>
   );
 }
-
-// (Các component PublicLayout và NotFoundPage giữ nguyên như cũ)
-const PublicLayout = () => (
-  <>
-    <Header />
-    <main className="flex-grow container mx-auto px-4 py-8">
-      <Outlet />
-    </main>
-    <Footer />
-  </>
-);
-
-const NotFoundPage = () => (
-  <div className="text-center py-40">
-    <h1 className="text-5xl font-bold text-red-500">404</h1>
-    <p className="text-2xl mt-4">Không tìm thấy trang</p>
-    <Link
-      to="/"
-      className="mt-8 inline-block text-pink-400 hover:text-pink-300 text-lg"
-    >
-      &larr; Quay về Trang chủ
-    </Link>
-  </div>
-);
 
 export default App;

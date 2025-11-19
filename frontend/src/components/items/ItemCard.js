@@ -1,13 +1,12 @@
-// src/components/items/ItemCard.js
 import React, { useState } from 'react';
 import { formatNumber } from '../../utils/formatNumber.js';
+import { ShoppingCart } from 'lucide-react';
 
-// Ngưỡng hiển thị giá USD
 const MIN_USD_DISPLAY_THRESHOLD = 1.00; 
 
 export default function ItemCard({ item }) {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
-  const imageUrl = item.thumbnailImageUrl || 'https://placehold.co/300x200/2D3748/FFFFFF?text=TaiLocShop';
+  const imageUrl = item.thumbnailImageUrl || 'https://placehold.co/300x200/0f172a/FFFFFF?text=TaiLocShop';
 
   const priceCoinNum = parseFloat(item.priceCoin) || 0;
   const priceUsdNum = parseFloat(item.priceUsd) || 0;
@@ -18,89 +17,80 @@ export default function ItemCard({ item }) {
   const hasBothPrices = priceCoinNum > 0 && isUsdAvailable;
 
   return (
-    <div className="group relative bg-gray-800 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out hover:-translate-y-2 border border-gray-700 hover:border-yellow-500/50">
+    <div className="group relative bg-slate-900/40 backdrop-blur-md rounded-2xl overflow-hidden border border-white/5 hover:border-yellow-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)]">
       
-      {/* Phần hình ảnh với Skeleton Loading */}
-      <div className="aspect-w-16 aspect-h-9 overflow-hidden relative h-48 bg-gray-700">
-        {/* Skeleton loader (hiện khi ảnh chưa load) */}
+      {/* Hiệu ứng Glow phía sau khi hover */}
+      <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/0 to-yellow-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+      {/* Image Area */}
+      <div className="aspect-w-16 aspect-h-10 bg-slate-800/50 relative overflow-hidden">
         {!isImageLoaded && (
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700 animate-pulse" />
+          <div className="absolute inset-0 bg-slate-800 animate-pulse" />
         )}
-        
         <img
           src={imageUrl}
           alt={item.name}
-          loading="lazy" // [NÂNG CẤP] Lazy load native
+          loading="lazy"
           onLoad={() => setIsImageLoaded(true)}
-          className={`w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out ${
-            isImageLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
+          className={`w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
         />
-
-        {/* [NÂNG CẤP] Badge giảm giá hoặc Unit (Ví dụ hiển thị Unit ở góc) */}
-        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded border border-gray-600">
+        
+        {/* Unit Badge */}
+        <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">
           {item.unit}
         </div>
       </div>
 
-      {/* Nội dung */}
-      <div className="p-5">
+      {/* Content */}
+      <div className="p-5 relative">
         <h3 
-          className="text-lg font-bold text-white truncate group-hover:text-yellow-400 transition-colors" 
+          className="text-lg font-bold text-white truncate mb-1 group-hover:text-yellow-400 transition-colors" 
           title={item.name}
         >
           {item.name}
         </h3>
         
-        {/* Phần hiển thị giá */}
-        <div className="mt-4 space-y-1">
+        <div className="w-10 h-0.5 bg-slate-700 group-hover:bg-yellow-500 transition-colors duration-500 mb-4"></div>
+
+        {/* Price Section */}
+        <div className="space-y-2">
           {isCoinOnly && (
-            <>
-              <div className="flex items-center gap-2">
-                <span className="bg-yellow-500/20 text-yellow-300 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider">
-                  Coin Only
-                </span>
+            <div className="flex flex-col">
+              <span className="text-[10px] text-gray-400 font-bold uppercase">Giá Xu</span>
+              <div className="text-2xl font-extrabold text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.3)]">
+                {formatNumber(priceCoinNum)} <span className="text-sm font-medium">Xu</span>
               </div>
-              <div className="text-2xl font-extrabold text-yellow-400 drop-shadow-sm">
-                {formatNumber(priceCoinNum)} <span className="text-sm font-normal text-yellow-200">Xu</span>
-              </div>
-            </>
+            </div>
           )}
 
           {isUsdOnly && (
-             <>
-              <div className="flex items-center gap-2">
-                <span className="bg-green-500/20 text-green-300 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider">
-                  USD
-                </span>
-              </div>
-              <div className="text-2xl font-extrabold text-green-400 drop-shadow-sm">
+            <div className="flex flex-col">
+               <span className="text-[10px] text-gray-400 font-bold uppercase">Giá USD</span>
+               <div className="text-2xl font-extrabold text-green-400 drop-shadow-[0_0_10px_rgba(74,222,128,0.3)]">
                 ${formatNumber(priceUsdNum)}
               </div>
-            </>
+            </div>
           )}
 
           {hasBothPrices && (
-            <div className="flex flex-col">
-              <div className="flex items-baseline justify-between">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
                 <span className="text-xl font-bold text-green-400">${formatNumber(priceUsdNum)}</span>
-                <span className="text-xs text-gray-400">hoặc</span>
+                <span className="text-xs text-gray-500">hoặc</span>
               </div>
               <div className="text-lg font-bold text-yellow-400">
-                {formatNumber(priceCoinNum)} <span className="text-sm text-yellow-200">Xu</span>
+                {formatNumber(priceCoinNum)} Xu
               </div>
             </div>
           )}
         </div>
 
-        {/* [NÂNG CẤP] Button ảo (Call to Action) */}
-        <div className="mt-4 pt-3 border-t border-gray-700 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
-          <span className="text-sm text-gray-400 group-hover:text-white transition-colors">Xem chi tiết</span>
-          <div className="bg-yellow-500 text-black p-1.5 rounded-full">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-          </div>
+        {/* Action Button */}
+        <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">
+          <span className="text-xs font-medium text-gray-400 group-hover:text-white transition-colors">Xem chi tiết</span>
+          <button className="w-8 h-8 rounded-full bg-yellow-500 text-black flex items-center justify-center opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 shadow-lg hover:bg-yellow-400">
+            <ShoppingCart size={16} strokeWidth={2.5} />
+          </button>
         </div>
       </div>
     </div>

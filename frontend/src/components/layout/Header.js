@@ -13,94 +13,99 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // [ĐÃ SỬA] Xóa mục "Nạp Tiền"
   const menuItems = [
     { name: 'Trang Chủ', path: '/' },
     { name: 'Sản Phẩm', path: '/items' },
-    // { name: 'Nạp Tiền', path: '/deposit' }, <-- Đã xóa
     { name: 'Hỗ Trợ', path: '/support' },
   ];
 
-  const activeLinkStyle = "text-yellow-400 font-bold drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]";
-  const normalLinkStyle = "text-gray-300 hover:text-white hover:drop-shadow-[0_0_5px_rgba(255,255,255,0.5)] transition-all";
+  // Style cho link active và thường
+  const baseLinkStyle = "text-sm font-bold uppercase tracking-widest transition-all duration-300 px-3 py-2 rounded-lg relative group overflow-hidden";
+  const activeLinkStyle = "text-yellow-400 bg-white/5 shadow-[0_0_15px_rgba(250,204,21,0.3)]";
+  const normalLinkStyle = "text-gray-300 hover:text-white hover:bg-white/5";
 
   return (
     <motion.header
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isScrolled 
-          ? 'bg-slate-900/80 backdrop-blur-md border-b border-slate-700/50 py-3 shadow-lg' 
-          : 'bg-transparent py-5'
+          ? 'bg-slate-950/80 backdrop-blur-xl border-b border-white/10 py-2 shadow-2xl' 
+          : 'bg-transparent py-6'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         
         {/* LOGO */}
-        <Link to="/" className="flex items-center gap-2 group">
-          <div className="relative">
-            <div className="absolute -inset-1 bg-yellow-500 rounded-full blur opacity-25 group-hover:opacity-75 transition duration-500"></div>
-            <div className="relative bg-black p-2 rounded-full border border-yellow-500/50">
-              <Sparkles className="h-6 w-6 text-yellow-400" />
+        <Link to="/" className="flex items-center gap-3 group">
+          <div className="relative flex items-center justify-center">
+            <div className="absolute -inset-2 bg-yellow-500/30 rounded-full blur-lg group-hover:bg-yellow-500/50 transition-all duration-500"></div>
+            <div className="relative bg-gradient-to-br from-slate-900 to-black p-2.5 rounded-xl border border-yellow-500/30 group-hover:border-yellow-400 transition-all">
+              <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
             </div>
           </div>
-          <span className="text-2xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-300 to-yellow-500 drop-shadow-sm">
-            Tài Lộc <span className="text-white font-light">Shop</span>
-          </span>
+          <div className="flex flex-col">
+            <span className="text-2xl font-black tracking-tighter text-white uppercase leading-none drop-shadow-lg">
+              Tài Lộc <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-500">Shop</span>
+            </span>
+            <span className="text-[10px] text-gray-400 tracking-[0.2em] font-medium group-hover:text-yellow-200 transition-colors">
+              PREMIUM STORE
+            </span>
+          </div>
         </Link>
 
         {/* DESKTOP MENU */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-2 bg-black/20 backdrop-blur-md px-2 py-1.5 rounded-full border border-white/5">
           {menuItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
-              className={`text-sm uppercase tracking-wider ${
-                location.pathname === item.path ? activeLinkStyle : normalLinkStyle
-              }`}
+              className={`${baseLinkStyle} ${location.pathname === item.path ? activeLinkStyle : normalLinkStyle}`}
             >
-              {item.name}
+              <span className="relative z-10">{item.name}</span>
+              {/* Hiệu ứng hover gạch chân chạy */}
+              <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-yellow-500 to-transparent transform translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></span>
             </Link>
           ))}
         </nav>
 
         {/* ACTIONS */}
-        <div className="hidden md:flex items-center gap-4">
-          <Link to="/cart" className="relative p-2 text-gray-300 hover:text-yellow-400 transition-colors">
-            <ShoppingCart className="w-6 h-6" />
+        <div className="hidden md:flex items-center gap-5">
+          <Link to="/cart" className="relative group p-2">
+            <ShoppingCart className="w-6 h-6 text-gray-300 group-hover:text-yellow-400 transition-colors" />
             {items.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-lg animate-bounce">
+              <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg border border-slate-900">
                 {items.length}
               </span>
             )}
           </Link>
 
           {user ? (
-            <div className="flex items-center gap-3 pl-4 border-l border-gray-700">
+            <div className="flex items-center gap-3 pl-5 border-l border-white/10">
               <div className="text-right hidden lg:block">
-                <p className="text-xs text-gray-400">Chào,</p>
-                <p className="text-sm font-bold text-yellow-400 max-w-[100px] truncate">{user.inGameName}</p>
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider">Player</p>
+                <p className="text-sm font-bold text-yellow-400 truncate max-w-[120px] drop-shadow-md">{user.inGameName}</p>
               </div>
-              <Link to="/profile" className="p-2 bg-slate-800 hover:bg-slate-700 rounded-full border border-slate-600 transition-all">
-                <User className="w-5 h-5 text-blue-400" />
+              <Link to="/profile" className="p-2 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 hover:border-yellow-500/50 transition-all">
+                <User className="w-5 h-5 text-blue-300" />
               </Link>
-              <button onClick={logout} className="p-2 hover:text-red-400 transition-colors" title="Đăng xuất">
+              <button onClick={logout} className="p-2 hover:text-red-400 transition-colors">
                 <LogOut className="w-5 h-5" />
               </button>
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <Link to="/login" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
+              <Link to="/login" className="text-sm font-bold text-gray-300 hover:text-white transition-colors px-4">
                 Đăng nhập
               </Link>
               <Link 
                 to="/register" 
-                className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-400 hover:to-orange-500 text-black font-bold py-2 px-5 rounded-full shadow-[0_0_15px_rgba(234,179,8,0.3)] hover:shadow-[0_0_25px_rgba(234,179,8,0.5)] transition-all transform hover:-translate-y-0.5"
+                className="bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500 bg-[length:200%_auto] hover:bg-right transition-all duration-500 text-slate-900 font-extrabold py-2.5 px-6 rounded-full shadow-[0_0_20px_rgba(234,179,8,0.4)] hover:shadow-[0_0_30px_rgba(234,179,8,0.6)]"
               >
                 Đăng ký
               </Link>
@@ -108,47 +113,42 @@ export default function Header() {
           )}
         </div>
 
-        {/* MOBILE MENU TOGGLE */}
+        {/* MOBILE TOGGLE */}
         <button 
-          className="md:hidden p-2 text-gray-300"
+          className="md:hidden p-2 text-white"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >
           {isMobileMenuOpen ? <X /> : <Menu />}
         </button>
       </div>
 
-      {/* MOBILE NAV DROPDOWN */}
+      {/* MOBILE MENU */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-slate-900/95 backdrop-blur-xl border-b border-slate-700 overflow-hidden"
+            className="md:hidden bg-slate-900/95 backdrop-blur-xl border-b border-white/10"
           >
-            <div className="px-4 pt-2 pb-6 space-y-2">
+            <div className="px-4 py-6 space-y-4">
               {menuItems.map((item) => (
                 <Link
                   key={item.path}
                   to={item.path}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-slate-800"
+                  className="block px-4 py-3 rounded-xl bg-white/5 text-gray-200 hover:bg-white/10 hover:text-yellow-400 font-medium border border-transparent hover:border-white/10"
                 >
                   {item.name}
                 </Link>
               ))}
-              <div className="pt-4 mt-4 border-t border-slate-700">
-                 {!user ? (
-                   <div className="grid grid-cols-2 gap-4">
-                     <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="text-center py-2 rounded-lg bg-slate-800 text-white">Đăng nhập</Link>
-                     <Link to="/register" onClick={() => setIsMobileMenuOpen(false)} className="text-center py-2 rounded-lg bg-yellow-500 text-black font-bold">Đăng ký</Link>
-                   </div>
-                 ) : (
-                   <button onClick={() => {logout(); setIsMobileMenuOpen(false)}} className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-red-500/20 text-red-400 border border-red-500/50">
-                     <LogOut className="w-4 h-4" /> Đăng xuất
-                   </button>
-                 )}
-              </div>
+               {/* Mobile Auth */}
+               {!user && (
+                 <div className="grid grid-cols-2 gap-3 pt-2">
+                    <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="text-center py-3 rounded-xl bg-slate-800 text-white font-bold border border-slate-700">Đăng nhập</Link>
+                    <Link to="/register" onClick={() => setIsMobileMenuOpen(false)} className="text-center py-3 rounded-xl bg-yellow-500 text-slate-900 font-bold">Đăng ký</Link>
+                 </div>
+               )}
             </div>
           </motion.div>
         )}
