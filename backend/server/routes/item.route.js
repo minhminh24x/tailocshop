@@ -1,32 +1,22 @@
 // server/routes/item.route.js
 import express from 'express';
 import { itemController } from '../controllers/item.controller.js';
-
-// [ĐÃ SỬA] Import 'validate' không có dấu {}
 import validate from '../middleware/validate.js';
-
 import { itemValidation } from '../validations/index.js';
+// [QUAN TRỌNG] Import middleware bảo vệ
 import { protect, isAdmin } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
+// === ADMIN ROUTES (Cần bảo mật) ===
+// API lấy toàn bộ item cho Admin (bao gồm cả ẩn)
 router.get(
   '/admin/all',
-  // authMiddleware, // TODO: Bật các dòng này lên
-  // isAdmin,
+  protect, // Đã bật bảo vệ đăng nhập
+  isAdmin, // Đã bật bảo vệ quyền Admin
   itemController.getAllItemsAdmin
 );
 
-// === PUBLIC ROUTES ===
-router.get('/featured', itemController.getFeaturedItems);
-router.get('/', itemController.getAllItems);
-router.get(
-  '/:slug/:unit',
-  validate(itemValidation.getItemSchema),
-  itemController.getItem
-);
-
-// === ADMIN ROUTES ===
 router.post(
   '/',
   protect,
@@ -34,9 +24,6 @@ router.post(
   validate(itemValidation.createItemSchema),
   itemController.createItem
 );
-
-// (ADMIN) Lấy TẤT CẢ item (kể cả active=false)
-
 
 router.patch(
   '/:id',
@@ -52,6 +39,15 @@ router.delete(
   isAdmin,
   validate(itemValidation.deleteItemSchema),
   itemController.deleteItem
+);
+
+// === PUBLIC ROUTES (Để cuối để tránh trùng route) ===
+router.get('/featured', itemController.getFeaturedItems);
+router.get('/', itemController.getAllItems);
+router.get(
+  '/:slug/:unit',
+  validate(itemValidation.getItemSchema),
+  itemController.getItem
 );
 
 export default router;

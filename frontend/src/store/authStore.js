@@ -1,6 +1,5 @@
 // File: src/store/authStore.js
 import { create } from 'zustand';
-// [SỬA] Import 'persist' để lưu state khi F5
 import { persist, createJSONStorage } from 'zustand/middleware';
 import {
   loginUser,
@@ -10,17 +9,16 @@ import {
 import { getMyProfile } from '../services/userService.js';
 import toast from 'react-hot-toast';
 
-// [SỬA] Bọc 'create' bằng 'persist'
 export const useAuthStore = create(persist(
-  (set, get) => ({ // Thêm 'get' để gọi hàm nội bộ
+  (set, get) => ({
     user: null,
     nextVipLevel: null,
-    isLoading: false, // Dùng cho các hành động (login, register)
+    isLoading: false,
     error: null,
-    isAuthLoading: true, // Dùng cho việc tải trang ban đầu
+    isAuthLoading: true,
 
+    // Hàm này chỉ dùng khi F5 (Reload) trang web
     checkAuthStatus: async () => {
-      // Hàm này (getMyProfile) được gọi khi tải lại trang
       try {
         const { data } = await getMyProfile();
         set({
@@ -29,6 +27,7 @@ export const useAuthStore = create(persist(
           isAuthLoading: false
         });
       } catch (err) {
+        // Nếu check fail (token hết hạn...), set user về null
         set({ user: null, nextVipLevel: null, isAuthLoading: false });
       }
     },
@@ -36,48 +35,41 @@ export const useAuthStore = create(persist(
     login: async (credentials) => {
       set({ isLoading: true, error: null });
       try {
-        // 1. API login (authService) PHẢI trả về user data cơ bản
-        // bao gồm { id, email, role, mustChangePassword }
+        // 1. Gọi API đăng nhập
         const { data } = await loginUser(credentials);
 
-        // 2. Set user cơ bản vào state
+        // 2. Lưu ngay user vào state (Dữ liệu này từ Backend trả về đã đủ dùng)
         set({
           user: data.user,
           isLoading: false
         });
 
-        // 3. [FIX QUAN TRỌNG] Kiểm tra cờ đổi mật khẩu NGAY LẬP TỨC
+        // 3. Kiểm tra đổi mật khẩu
         if (data.user.mustChangePassword) {
           toast.success('Đăng nhập thành công! Bạn cần đổi mật khẩu.');
-          // Không cần gọi checkAuthStatus, chuyển thẳng đến trang profile
           return '/profile';
         }
 
-        // 4. Nếu KHÔNG phải đổi, lúc này mới gọi checkAuthStatus
-        // (Và Lỗi 1 ở backend cũng phải được fix)
-        await get().checkAuthStatus();
+        // --- [QUAN TRỌNG] ĐÃ XÓA ĐOẠN GỌI checkAuthStatus() Ở ĐÂY ---
+        // Không gọi lại checkAuthStatus vì cookie có thể chưa sẵn sàng
+        // và API login đã trả về đủ thông tin user rồi.
 
         toast.success('Đăng nhập thành công!');
 
-        // 5. Sau khi gọi checkAuthStatus()
-        await get().checkAuthStatus();
+        // 4. Lấy role từ dữ liệu vừa login để điều hướng
+        const loggedInUser = data.user; // Dùng trực tiếp biến data, không cần get().user
 
-        // 6. Lấy user cập nhật từ state
-        const loggedInUser = get().user;
-
-        // [FIX QUAN TRỌNG]: Nếu không lấy được user đầy đủ → quay về trang chủ
         if (!loggedInUser || !loggedInUser.role) {
-          console.warn("Không thể tải dữ liệu user từ checkAuthStatus");
-          toast.error('Không thể tải thông tin tài khoản.');
-          return '/'; // hoặc chuyển về '/login'
+          // Trường hợp hy hữu API không trả về role
+          return '/'; 
         }
 
-        // 7. Điều hướng dựa trên role
+        // 5. Điều hướng phân quyền
         switch (loggedInUser.role) {
           case 'ADMIN': return '/admin';
           case 'STAFF': return '/staff';
           case 'SUPPLIER': return '/supplier';
-          case 'CUSTOMER': return '/users'; // Bổ sung nếu cần
+          case 'CUSTOMER': return '/'; // Khách hàng về trang chủ
           default: return '/';
         }
 
@@ -85,12 +77,13 @@ export const useAuthStore = create(persist(
         const errorMsg = err.response?.data?.message || 'Lỗi khi đăng nhập';
         set({ error: errorMsg, isLoading: false });
         toast.error(errorMsg);
-        throw err;
+        // Ném lỗi để component bắt được nếu cần, 
+        // nhưng ở LoginPage bạn đang không try/catch nên return false/null sẽ an toàn hơn
+        return null; 
       }
     },
 
     register: async (userData) => {
-      // Logic register của bạn đã ổn
       set({ isLoading: true, error: null });
       try {
         await registerUser(userData);
@@ -109,23 +102,19 @@ export const useAuthStore = create(persist(
       set({ isLoading: true, error: null });
       try {
         await logoutUser();
-        // Xóa tất cả state
+        // Xóa sạch state
         set({ user: null, nextVipLevel: null, isLoading: false, error: null });
         toast.success('Đăng xuất thành công!');
       } catch (err) {
-        // Kể cả khi API lỗi, vẫn xóa state ở local
         set({ user: null, nextVipLevel: null, isLoading: false, error: null });
-        const errorMsg = err.response?.data?.message || 'Lỗi khi đăng xuất';
-        toast.error(errorMsg);
+        toast.error('Lỗi khi đăng xuất');
       }
     },
   }),
   {
-    // Cấu hình persist
-    name: 'auth-storage', // Tên của key trong localStorage
+    name: 'auth-storage',
     storage: createJSONStorage(() => localStorage),
   }
 ));
 
-// [SỬA] Dùng export default để nhất quán với project
 export default useAuthStore;
