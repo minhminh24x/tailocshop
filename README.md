@@ -33,3 +33,17 @@ Trước khi bắt đầu, hãy đảm bảo máy của bạn đã cài đặt:
 ```bash
 git clone [https://github.com/minhminh24x/tailocshop.git](https://github.com/minhminh24x/tailocshop.git)
 cd tailocshop
+
+---
+
+### 2. Thực hành quy trình Git (Action)
+
+Bạn hãy mở Terminal (VS Code) và gõ lần lượt các lệnh sau. Hãy làm chậm rãi để cảm nhận.
+
+**Bước 1: Cập nhật Project Board**
+* Vào GitHub, kéo thẻ **"[Docs] Update README Project Setup"** từ cột **Todo** sang **In Progress**.
+
+**Bước 2: Tạo nhánh mới (Checkout)**
+Tại terminal của dự án `tailocshop`:
+```bash
+git checkout -b docs/update-readme
