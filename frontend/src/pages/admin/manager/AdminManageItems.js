@@ -162,13 +162,7 @@ export default function AdminManageItems() {
                 <td className="py-3 px-4 text-center">
                   <StockStatusBadge quantity={item.stockQuantity} />
                 </td>
-                <td className="py-3 px-4 text-center">
-                  {item.isActive ? (
-                    <span className="px-2 py-1 text-xs font-semibold bg-green-700 text-green-100 rounded-full">Kích hoạt</span>
-                  ) : (
-                    <span className="px-2 py-1 text-xs font-semibold bg-red-700 text-red-100 rounded-full">Ẩn</span>
-                  )}
-                </td>
+                <td className="py-3 px-4 text-center">{item.isActive ? (<span className="px-2 py-1 text-xs font-semibold bg-green-700 text-green-100 rounded-full">Kích hoạt</span>) : (<span className="px-2 py-1 text-xs font-semibold bg-red-700 text-red-100 rounded-full">Ẩn</span>)}</td>
                 <td className="py-3 px-4 text-center">
                   <button
                     onClick={() => handleOpenEditModal(item)}

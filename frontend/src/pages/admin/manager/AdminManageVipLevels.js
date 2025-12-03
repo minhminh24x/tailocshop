@@ -1,11 +1,11 @@
 // File: frontend/src/pages/admin/manager/AdminManageVipLevels.js
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { 
-  getAllVipLevelsAdmin, 
-  createVipLevelAdmin, 
-  updateVipLevelAdmin, 
-  deleteVipLevelAdmin 
+import {
+  getAllVipLevelsAdmin,
+  createVipLevelAdmin,
+  updateVipLevelAdmin,
+  deleteVipLevelAdmin
 } from '../../../services/adminVipLevelService.js';
 import VipLevelModal from '../../../components/admin/VipLevelModal.js';
 
@@ -116,8 +116,8 @@ export default function AdminManageVipLevels() {
             </tr>
           </thead>
           <tbody className="bg-gray-800 divide-y divide-gray-700">
-            {vipLevels.map((level) => (
-              <tr key={level.id} className="hover:bg-gray-700">
+            {vipLevels.map((level, index) => (
+              <tr key={level.id || index} className="hover:bg-gray-700">
                 <td className="py-3 px-4 font-medium">{level.name}</td>
                 <td className="py-3 px-4 font-mono">{level.level}</td>
                 <td className="py-3 px-4 text-right font-mono text-green-400">{level.coinThreshold}</td>

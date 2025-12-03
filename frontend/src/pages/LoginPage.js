@@ -1,15 +1,15 @@
 // frontend/src/pages/LoginPage.js
 
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom'; // Thêm useLocation
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'react-hot-toast';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const location = useLocation(); // Lấy vị trí trang trước đó
-  const { login, isLoading, user } = useAuthStore(); // Lấy thêm user nếu store có trả về ngay
+  const location = useLocation();
+  const { login, isLoading } = useAuthStore();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -17,7 +17,6 @@ export default function LoginPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
 
-  // ... (Giữ nguyên phần handleChange) ...
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -32,31 +31,25 @@ export default function LoginPage() {
 
     try {
       // Gọi hàm login từ store
-      await login({ email, password });
+      // Hàm login trong store đã trả về path để redirect
+      const redirectPath = await login({ email, password });
 
-      toast.success("Đăng nhập thành công!");
+      if (redirectPath) {
+        // Kiểm tra nếu có trang trước đó cần quay lại (ví dụ bị đá ra khi vào cart)
+        const from = location.state?.from?.pathname;
 
-      // [SỬA LOGIC ĐIỀU HƯỚNG Ở ĐÂY]
-      // Lấy user mới nhất từ store (vì await login đã xong)
-      const currentUser = useAuthStore.getState().user;
-
-      // Kiểm tra nếu có trang trước đó cần quay lại (ví dụ bị đá ra khi vào cart)
-      const from = location.state?.from?.pathname;
-
-      if (currentUser?.role === 'ADMIN') {
-        navigate('/admin');
-      } else if (currentUser?.role === 'STAFF') {
-        navigate('/staff');
-      } else if (currentUser?.role === 'SUPPLIER') {
-        navigate('/supplier');
+        // Nếu là khách hàng (redirectPath là '/'), ưu tiên quay lại trang trước đó
+        if (redirectPath === '/' && from) {
+          navigate(from);
+        } else {
+          navigate(redirectPath);
+        }
       } else {
-        // Nếu là khách hàng, ưu tiên quay lại trang trước đó, nếu không thì về Home
-        navigate(from || '/');
+        // Nếu không trả về path (lỗi), không làm gì cả (đã toast error)
       }
 
     } catch (error) {
       console.error("Login error:", error);
-      // Lỗi đã được handle trong store và toast, nhưng có thể toast thêm ở đây nếu muốn
     }
   };
 

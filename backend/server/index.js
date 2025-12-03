@@ -34,16 +34,18 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // Cấu hình slowDown (Chống spam request)
 const authSlowDown = slowDown({
-  windowMs: 15 * 60 * 1000, 
-  delayAfter: 5,            
-  delayMs: () => 500,       
-  maxDelayMs: 3000,         
-  validate: { delayMs: false } 
+  windowMs: 15 * 60 * 1000,
+  delayAfter: 5,
+  delayMs: () => 500,
+  maxDelayMs: 3000,
+  validate: { delayMs: false }
 });
 
 // Danh sách origin cho phép
 const allowedOrigins = [
   'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
   'https://tailocshop.onrender.com',
   'https://tailocshop.vercel.app',
   'https://tailocshop-6qtp-iefejt9eu-minhminh24xs-projects.vercel.app'
@@ -65,7 +67,7 @@ app.use(
   })
 );
 // 1. Parse JSON (tăng giới hạn nếu cần)
-app.use(express.json({ limit: '10mb' })); 
+app.use(express.json({ limit: '10mb' }));
 
 // 2. Parse URL-encoded (quan trọng cho form submission thông thường)
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -77,10 +79,11 @@ app.use(cookieParser());
 app.use((req, res, next) => {
   console.log(`👉 [${req.method}] ${req.url}`);
   console.log('   Headers Content-Type:', req.headers['content-type']);
-  // Nếu body vẫn undefined thì log ra cảnh báo
-  if (req.body === undefined) {
+
+  // Chỉ cảnh báo body undefined với các method thường có body
+  if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body === undefined) {
     console.error('❌ CẢNH BÁO: req.body đang bị undefined!');
-  } else {
+  } else if (req.body && Object.keys(req.body).length > 0) {
     // Log body (ẩn password nếu có)
     const logBody = { ...req.body };
     if (logBody.password) logBody.password = '***HIDDEN***';
@@ -102,8 +105,8 @@ app.use('/api/supplier-submissions', supplierSubmissionRoutes);
 
 // Route test
 app.get('/api', (req, res) => {
-  res.status(200).json({ 
-    message: 'Chào mừng đến với Tài Lộc Shop API (Secured & Optimized)!' 
+  res.status(200).json({
+    message: 'Chào mừng đến với Tài Lộc Shop API (Secured & Optimized)!'
   });
 });
 
@@ -130,7 +133,7 @@ app.use((err, req, res, next) => {
     status: 'error',
     message,
     // [NÂNG CẤP] Chỉ hiện stack trace khi không phải production để bảo mật
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined 
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
 

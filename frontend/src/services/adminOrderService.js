@@ -3,7 +3,7 @@ import apiClient from './apiClient.js';
 
 // (ADMIN) Lấy tất cả đơn hàng
 export const getAllOrdersAdmin = () => {
-  return apiClient.get('/orders/admin/all');
+  return apiClient.get('/orders/admin'); // [FIX] Đã bỏ /all để khớp với backend
 };
 
 // (ADMIN) Lấy chi tiết 1 đơn hàng

@@ -3,14 +3,14 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 
 const AdminProtectedRoute = ({ children }) => {
-  const { user, isAuthenticated, isLoading } = useAuthStore();
+  const { user, isAuthLoading } = useAuthStore();
   const location = useLocation();
 
-  if (isLoading) {
+  if (isAuthLoading) {
     return <div className="flex justify-center items-center h-screen">Đang tải...</div>;
   }
 
-  if (!isAuthenticated || !user) {
+  if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
@@ -19,7 +19,7 @@ const AdminProtectedRoute = ({ children }) => {
   }
 
   // [QUAN TRỌNG]: Phải trả về children để AdminLayout được hiển thị
-  return children; 
+  return children;
 };
 
 export default AdminProtectedRoute;

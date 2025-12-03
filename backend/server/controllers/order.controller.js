@@ -51,13 +51,13 @@ const getOrderByIdAdmin = asyncHandler(async (req, res) => {
 const updateOrderAdmin = asyncHandler(async (req, res) => {
   const { id: orderId } = req.params;
   const adminUserId = req.user.id; // Lấy ID của Admin/Staff từ middleware 'protect'
-  
+
   const order = await orderService.updateOrderAdmin(
     orderId,
     req.body,
     adminUserId
   );
-  
+
   res.status(httpStatus.OK).send(order);
 });
 

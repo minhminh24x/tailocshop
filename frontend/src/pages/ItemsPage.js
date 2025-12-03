@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getAllItems } from '../services/itemService';
-import { getAllCategoriesAdmin } from '../services/adminCategoryService'; 
+import { getAllCategoriesAdmin } from '../services/adminCategoryService';
 import ItemCard from '../components/items/ItemCard';
 import { Search, Sparkles } from 'lucide-react';
 
@@ -13,7 +13,7 @@ export default function ItemsPage() {
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
-  const [sortOrder, setSortOrder] = useState('newest'); 
+  const [sortOrder, setSortOrder] = useState('newest');
 
   useEffect(() => {
     fetchData();
@@ -23,17 +23,17 @@ export default function ItemsPage() {
     try {
       const [itemsRes, catsRes] = await Promise.all([
         getAllItems(),
-        getAllCategoriesAdmin() 
+        getAllCategoriesAdmin()
       ]);
 
       // [SỬA LỖI QUAN TRỌNG]: Lấy dữ liệu từ .data của axios response
       // Kiểm tra an toàn: nếu API trả về object có field 'items' (phân trang) hoặc trả về mảng trực tiếp
       const rawItems = itemsRes.data;
       const validItems = Array.isArray(rawItems) ? rawItems : (rawItems.items || []);
-      
+
       setItems(validItems);
       setCategories(catsRes.data || []); // Category thường trả về mảng trực tiếp
-      
+
     } catch (error) {
       console.error("Failed to fetch items:", error);
     } finally {
@@ -64,7 +64,7 @@ export default function ItemsPage() {
 
   return (
     <div className="space-y-8">
-      
+
       {/* PAGE TITLE */}
       <div className="text-center space-y-2">
         <h1 className="text-4xl md:text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">
@@ -80,13 +80,13 @@ export default function ItemsPage() {
       {/* CONTROL BAR (FILTER & SEARCH) */}
       <div className="glass-panel p-4 rounded-2xl sticky top-24 z-30 shadow-xl transition-all duration-300">
         <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-          
+
           {/* Search */}
           <div className="relative w-full md:w-1/3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input 
-              type="text" 
-              placeholder="Tìm kiếm vật phẩm..." 
+            <input
+              type="text"
+              placeholder="Tìm kiếm vật phẩm..."
               className="w-full bg-slate-900/80 border border-gray-700 rounded-xl py-3 pl-10 text-white focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -95,7 +95,7 @@ export default function ItemsPage() {
 
           {/* Filters */}
           <div className="flex gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-            <select 
+            <select
               className="bg-slate-900/80 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 cursor-pointer hover:bg-slate-800 transition-colors"
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
@@ -106,7 +106,7 @@ export default function ItemsPage() {
               ))}
             </select>
 
-            <select 
+            <select
               className="bg-slate-900/80 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 cursor-pointer hover:bg-slate-800 transition-colors"
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
@@ -129,8 +129,8 @@ export default function ItemsPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredItems.map((item) => (
-            <Link key={item.id} to={`/items/${item.id}`} className="block h-full">
-               <ItemCard item={item} />
+            <Link key={item.id} to={`/items/${item.slug}/${item.unit}`} className="block h-full">
+              <ItemCard item={item} />
             </Link>
           ))}
         </div>

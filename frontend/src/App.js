@@ -8,6 +8,8 @@ import { useCurrencyStore } from './store/currencyStore';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 
+import { Toaster } from 'react-hot-toast';
+
 // Pages - Public
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -67,6 +69,7 @@ function App() {
 
   return (
     <div className="App min-h-screen text-gray-100 flex flex-col relative z-0">
+      <Toaster position="top-center" reverseOrder={false} />
       {/* Header khách hàng (ẩn khi vào dashboard) */}
       {!isDashboard && <Header />}
 
@@ -109,6 +112,10 @@ function App() {
             <Route path="vip-levels" element={<AdminManageVipLevels />} />
             <Route path="submissions" element={<AdminManageSubmissions />} />
             <Route path="submissions/:id" element={<AdminSubmissionDetailPage />} />
+            {/* [THÊM] Các route còn thiếu */}
+            <Route path="manage-customers" element={<AdminManageUsers type="CUSTOMER" />} />
+            <Route path="manage-users" element={<AdminManageUsers type="STAFF" />} />
+            <Route path="manage-submissions" element={<AdminManageSubmissions />} />
           </Route>
 
           {/* --- STAFF ROUTES --- */}

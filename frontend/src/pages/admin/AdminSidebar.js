@@ -36,24 +36,24 @@ export default function AdminSidebar() {
         <NavLink to="/admin/categories" className={getNavLinkClass}>
           🗂️ Quản lý Phân loại
         </NavLink>
-        
+
         {/* [SỬA] Dùng 'getNavLinkClass' và emoji */}
-        <NavLink to="/admin/timeslots" className={getNavLinkClass}>
+        <NavLink to="/admin/time-slots" className={getNavLinkClass}>
           🕒 Quản lý Khung giờ
         </NavLink>
 
         <NavLink to="/admin/manage-submissions" className={getNavLinkClass}>
           📊 Quản lý Kho
         </NavLink>
-        
+
         <NavLink to="/admin/manage-customers" className={getNavLinkClass}>
           👥 Quản lý Khách hàng
         </NavLink>
-        
+
         <NavLink to="/admin/manage-users" className={getNavLinkClass}>
           📊 Quản lý Nhân sự
         </NavLink>
-        
+
         <NavLink to="/admin/rates" className={getNavLinkClass}>
           💱 Quản lý Tỷ giá
         </NavLink>
@@ -62,7 +62,7 @@ export default function AdminSidebar() {
         <NavLink to="/admin/vip-levels" className={getNavLinkClass}>
           ⭐ Quản lý Cấp VIP
         </NavLink>
-        
+
         {/* (Bạn có thể thêm các link khác ở đây sau) */}
 
       </nav>
