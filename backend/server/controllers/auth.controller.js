@@ -8,13 +8,18 @@ import jwt from 'jsonwebtoken';
 // =============================================
 
 export const register = async (req, res) => {
-  // 1. Lấy dữ liệu từ 'body' của request
-  const { email, password, inGameName } = req.body;
+ const { email, password } = req.body || {}; 
 
   try {
-    // 2. Kiểm tra dữ liệu đầu vào (đơn giản)
-    if (!email || !password || !inGameName) {
-      return res.status(400).json({ message: 'Vui lòng cung cấp đủ thông tin' });
+    // 2. Kiểm tra dữ liệu đầu vào
+    if (!email || !password) {
+      // Log ra để debug xem server nhận được gì
+      console.log('Login failed - Body received:', req.body); 
+      console.log('Login failed - Content-Type:', req.headers['content-type']);
+
+      return res
+        .status(400)
+        .json({ message: 'Vui lòng cung cấp email và mật khẩu' });
     }
 
     // 3. Kiểm tra xem email hoặc inGameName đã tồn tại chưa
@@ -61,17 +66,20 @@ export const register = async (req, res) => {
 // HÀM LOGIN MỚI (ĐÃ SỬA COOKIE)
 // =============================================
 export const login = async (req, res) => {
-  // 1. Lấy dữ liệu từ 'body'
-  const { email, password } = req.body;
+  const { email, password } = req.body || {}; 
 
   try {
     // 2. Kiểm tra dữ liệu đầu vào
     if (!email || !password) {
+      // Log ra để debug xem server nhận được gì
+      console.log('Login failed - Body received:', req.body); 
+      console.log('Login failed - Content-Type:', req.headers['content-type']);
+
       return res
         .status(400)
         .json({ message: 'Vui lòng cung cấp email và mật khẩu' });
     }
-
+    
     // 3. Tìm người dùng bằng email
     const user = await prisma.user.findUnique({
       where: { email: email },

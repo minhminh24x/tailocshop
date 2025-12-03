@@ -32,8 +32,8 @@ export default function LoginPage() {
 
     try {
       // Gọi hàm login từ store
-      await login(email, password);
-      
+      await login({ email, password });
+
       toast.success("Đăng nhập thành công!");
 
       // [SỬA LOGIC ĐIỀU HƯỚNG Ở ĐÂY]
@@ -64,7 +64,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
       <div className="max-w-md w-full bg-gray-800 rounded-lg shadow-lg p-8">
         <h2 className="text-3xl font-bold text-center text-white mb-6">Đăng Nhập</h2>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Email Input */}
           <div>

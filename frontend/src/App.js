@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
-import { useCartStore } from './store/cartStore'; 
+import { useCartStore } from './store/cartStore';
 import { useCurrencyStore } from './store/currencyStore';
 
 // Layout Components
@@ -75,16 +75,17 @@ function App() {
           {/* --- PUBLIC ROUTES --- */}
           <Route path="/" element={<HomePage />} />
           <Route path="/items" element={<ItemsPage />} />
-          
+
           {/* [ĐÃ SỬA] Route này phải khớp với ItemDetailPage (slug + unit) */}
           <Route path="/items/:slug/:unit" element={<ItemDetailPage />} />
-          
+
           <Route path="/support" element={<SupportPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
           {/* --- CUSTOMER ROUTES --- */}
-          <Route path="/cart" element={<UserProtectedRoute><CartPage /></UserProtectedRoute>} />
+          {/* [SỬA] Cho phép khách vãng lai xem giỏ hàng */}
+          <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<UserProtectedRoute><CheckoutPage /></UserProtectedRoute>} />
           <Route path="/profile" element={<UserProtectedRoute><UserProfilePage /></UserProtectedRoute>} />
           <Route path="/my-orders" element={<UserProtectedRoute><MyOrdersPage /></UserProtectedRoute>} />
@@ -94,6 +95,8 @@ function App() {
           {/* AdminLayout sẽ chứa Sidebar/HeaderAdmin */}
           <Route path="/admin" element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>
             <Route index element={<AdminDashboard />} />
+            {/* [SỬA] Thêm route dashboard để khớp với sidebar */}
+            <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="users" element={<AdminManageUsers />} />
             <Route path="users/:userId" element={<AdminCustomerDetailPage />} />
             <Route path="categories" element={<AdminManageCategories />} />
@@ -115,7 +118,7 @@ function App() {
 
           {/* --- SUPPLIER ROUTES --- */}
           <Route path="/supplier" element={<SupplierProtectedRoute><SupplierLayout /></SupplierProtectedRoute>}>
-             <Route index element={<div className="p-6 text-gray-800"><h1>Supplier Dashboard (Đang cập nhật)</h1></div>} />
+            <Route index element={<div className="p-6 text-gray-800"><h1>Supplier Dashboard (Đang cập nhật)</h1></div>} />
           </Route>
 
         </Routes>

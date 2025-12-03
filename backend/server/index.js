@@ -24,14 +24,12 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// [NÂNG CẤP] 1. Security Headers (Bảo mật HTTP)
 app.use(helmet());
 
-// [NÂNG CẤP] 2. Gzip Compression (Tăng tốc độ tải API)
+// [NÂNG CẤP] 2. Compression
 app.use(compression());
 
-// [NÂNG CẤP] 3. Logging (Theo dõi request tốt hơn)
-// Chỉ log ngắn gọn ở production, chi tiết ở development
+// [NÂNG CẤP] 3. Logging
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // Cấu hình slowDown (Chống spam request)
@@ -66,9 +64,30 @@ app.use(
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
+// 1. Parse JSON (tăng giới hạn nếu cần)
+app.use(express.json({ limit: '10mb' })); 
 
-app.use(express.json());
+// 2. Parse URL-encoded (quan trọng cho form submission thông thường)
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// 3. Cookie Parser
 app.use(cookieParser());
+
+// 4. [DEBUG MIDDLEWARE] - Log request để kiểm tra (Xóa khi deploy production)
+app.use((req, res, next) => {
+  console.log(`👉 [${req.method}] ${req.url}`);
+  console.log('   Headers Content-Type:', req.headers['content-type']);
+  // Nếu body vẫn undefined thì log ra cảnh báo
+  if (req.body === undefined) {
+    console.error('❌ CẢNH BÁO: req.body đang bị undefined!');
+  } else {
+    // Log body (ẩn password nếu có)
+    const logBody = { ...req.body };
+    if (logBody.password) logBody.password = '***HIDDEN***';
+    console.log('   Body:', logBody);
+  }
+  next();
+});
 
 // ✅ API Routes
 app.use('/api/auth', authSlowDown, authRoutes);
