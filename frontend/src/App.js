@@ -43,7 +43,12 @@ import AdminSubmissionDetailPage from './pages/admin/manager/AdminSubmissionDeta
 
 // Pages - Staff & Supplier
 import StaffLayout from './pages/staff/StaffLayout';
+import StaffDashboard from './pages/staff/StaffDashboard';
+import StaffOrderManagement from './pages/staff/StaffOrderManagement';
 import SupplierLayout from './pages/supplier/SupplierLayout';
+import SupplierDashboard from './pages/supplier/SupplierDashboard';
+import SupplierCreateSubmission from './pages/supplier/SupplierCreateSubmission';
+import SupplierMySubmissions from './pages/supplier/SupplierMySubmissions';
 
 // Auth Guards
 import UserProtectedRoute from './components/auth/UserProtectedRoute';
@@ -120,12 +125,17 @@ function App() {
 
           {/* --- STAFF ROUTES --- */}
           <Route path="/staff" element={<StaffProtectedRoute><StaffLayout /></StaffProtectedRoute>}>
-            <Route index element={<div className="p-6 text-gray-800"><h1>Staff Dashboard (Đang cập nhật)</h1></div>} />
+            <Route index element={<StaffDashboard />} />
+            <Route path="dashboard" element={<StaffDashboard />} />
+            <Route path="orders" element={<StaffOrderManagement />} />
           </Route>
 
           {/* --- SUPPLIER ROUTES --- */}
           <Route path="/supplier" element={<SupplierProtectedRoute><SupplierLayout /></SupplierProtectedRoute>}>
-            <Route index element={<div className="p-6 text-gray-800"><h1>Supplier Dashboard (Đang cập nhật)</h1></div>} />
+            <Route index element={<SupplierDashboard />} />
+            <Route path="dashboard" element={<SupplierDashboard />} />
+            <Route path="create-submission" element={<SupplierCreateSubmission />} />
+            <Route path="my-submissions" element={<SupplierMySubmissions />} />
           </Route>
 
         </Routes>

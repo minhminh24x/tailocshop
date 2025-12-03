@@ -1,8 +1,9 @@
 // File: frontend/src/pages/admin/manager/AdminManageSubmissions.js
 import React, { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { getSubmissions } from '../../../services/supplierSubmissionService';
+import { formatNumber } from '../../../utils/formatNumber';
 
 export default function AdminManageSubmissions() {
   const [submissions, setSubmissions] = useState([]);
@@ -24,16 +25,25 @@ export default function AdminManageSubmissions() {
     fetchSubmissions();
   }, [statusFilter]);
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'PENDING': return 'bg-yellow-600 text-white';
+      case 'APPROVED': return 'bg-green-600 text-white';
+      case 'REJECTED': return 'bg-red-600 text-white';
+      default: return 'bg-gray-600 text-white';
+    }
+  };
+
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Quản lý Nhập kho</h1>
-      
-      <div className="mb-4">
-        <label className="text-sm font-medium text-gray-700">Lọc theo trạng thái:</label>
+      <h1 className="text-3xl font-bold text-white mb-6">Quản lý Nhập kho</h1>
+
+      <div className="mb-6">
+        <label className="text-sm font-medium text-gray-300 mr-3">Lọc theo trạng thái:</label>
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)} //
-          className="ml-2 p-2 border rounded-lg bg-white"
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="p-2 border border-gray-600 rounded-lg bg-gray-700 text-white focus:ring-2 focus:ring-pink-500"
         >
           <option value="">Tất cả</option>
           <option value="PENDING">Đang chờ duyệt</option>
@@ -41,40 +51,53 @@ export default function AdminManageSubmissions() {
           <option value="REJECTED">Đã từ chối</option>
         </select>
       </div>
-      
+
       {loading ? (
-        <p>Đang tải...</p>
+        <p className="text-gray-400">Đang tải...</p>
       ) : (
-        <div className="bg-white shadow rounded-lg overflow-x-auto text-gray-900">
-          <table className="min-w-full">
-            <thead className="bg-gray-100">
+        <div className="bg-gray-900 shadow-lg rounded-lg overflow-hidden border border-gray-700">
+          <table className="min-w-full text-white">
+            <thead className="bg-gray-800">
               <tr>
                 <th className="p-4 text-left">Ngày tạo</th>
                 <th className="p-4 text-left">Supplier</th>
-                <th className="p-4 text-left">Trạng thái</th>
-                <th className="p-4 text-left">Tổng giá trị (Coin)</th>
+                <th className="p-4 text-center">Trạng thái</th>
+                <th className="p-4 text-center">Tổng giá trị (Xu)</th>
                 <th className="p-4 text-left">Người duyệt</th>
-                <th className="p-4 text-left">Chi tiết</th>
+                <th className="p-4 text-center">Hành động</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-700">
               {submissions.map((sub) => (
-                <tr key={sub.id} className="border-b hover:bg-gray-50">
-                  <td className="p-4">{new Date(sub.createdAt).toLocaleDateString()}</td>
-                  <td className="p-4">{sub.supplier?.inGameName || 'N/A'}</td>
-                  <td className="p-4">{sub.status}</td>
-                  <td className="p-4">{sub.totalValueCoin}</td>
-                  <td className="p-4">{sub.approvedBy?.inGameName || 'N/A'}</td>
-                  <td className="p-4">
+                <tr key={sub.id} className="hover:bg-gray-800">
+                  <td className="p-4 text-sm text-gray-300">{new Date(sub.createdAt).toLocaleDateString()}</td>
+                  <td className="p-4 font-medium">{sub.supplier?.inGameName || 'N/A'}</td>
+                  <td className="p-4 text-center">
+                    <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(sub.status)}`}>
+                      {sub.status}
+                    </span>
+                  </td>
+                  <td className="p-4 text-center font-bold text-yellow-400">
+                    {formatNumber(sub.totalValueCoin)}
+                  </td>
+                  <td className="p-4 text-sm text-gray-400">{sub.approvedBy?.inGameName || '---'}</td>
+                  <td className="p-4 text-center">
                     <Link
-                      to={`/admin/submission/${sub.id}`}
-                      className="text-blue-600 hover:underline"
+                      to={`/admin/submissions/${sub.id}`}
+                      className="text-blue-400 hover:text-blue-300 hover:underline text-sm font-medium"
                     >
-                      {sub.status === 'PENDING' ? 'Duyệt phiếu' : 'Xem'}
+                      {sub.status === 'PENDING' ? 'Duyệt phiếu' : 'Xem chi tiết'}
                     </Link>
                   </td>
                 </tr>
               ))}
+              {submissions.length === 0 && (
+                <tr>
+                  <td colSpan="6" className="text-center py-8 text-gray-500">
+                    Không có phiếu nhập nào.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

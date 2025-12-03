@@ -7,7 +7,8 @@ const StaffSidebar = () => {
   const logout = useAuthStore((state) => state.logout);
 
   const menuItems = [
-    { name: 'Quản lý Đơn hàng', path: '/staff/manage-orders', icon: <i className="fas fa-receipt w-6"></i> },
+    { name: 'Tổng quan', path: '/staff/dashboard', icon: <i className="fas fa-home w-6"></i> },
+    { name: 'Quản lý Đơn hàng', path: '/staff/orders', icon: <i className="fas fa-receipt w-6"></i> },
     { name: 'Quản lý Nhập kho', path: '/staff/manage-submissions', icon: <i className="fas fa-dolly w-6"></i> },
   ];
 
@@ -22,8 +23,7 @@ const StaffSidebar = () => {
             key={item.name}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center p-3 rounded-lg hover:bg-gray-700 ${
-                isActive ? 'bg-blue-600' : ''
+              `flex items-center p-3 rounded-lg hover:bg-gray-700 ${isActive ? 'bg-blue-600' : ''
               }`
             }
           >
