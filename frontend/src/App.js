@@ -43,6 +43,7 @@ import AdminManageVipLevels from './pages/admin/manager/AdminManageVipLevels';
 import AdminManageSubmissions from './pages/admin/manager/AdminManageSubmissions';
 import AdminSubmissionDetailPage from './pages/admin/manager/AdminSubmissionDetailPage';
 import AdminManageVouchers from './pages/admin/manager/AdminManageVouchers';
+import AdminExportData from './pages/admin/manager/AdminExportData';
 
 // Pages - Customer (Phase 3)
 import WishlistPage from './pages/WishlistPage';
@@ -131,6 +132,7 @@ function App() {
             <Route path="manage-users" element={<AdminManageUsers type="STAFF" />} />
             <Route path="manage-submissions" element={<AdminManageSubmissions />} />
             <Route path="vouchers" element={<AdminManageVouchers />} />
+            <Route path="export" element={<AdminExportData />} />
           </Route>
 
           {/* --- STAFF ROUTES --- */}

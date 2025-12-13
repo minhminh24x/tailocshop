@@ -2,6 +2,7 @@
 import prisma from '../lib/prisma.js';
 import ApiError from '../utils/ApiError.js';
 import httpStatus from 'http-status';
+import { emitNewOrder, emitOrderStatusChange, emitLowStockAlert } from '../lib/socket.js';
 
 // === HÀM HELPER (Giữ nguyên) ===
 const updateUserVipLevel = async (tx, userId, newTotalSpent) => {
@@ -232,6 +233,13 @@ const createOrder = async (userId, orderData) => {
 
       return createdOrder;
     });
+
+    // [THÊM] Emit real-time event for new order
+    try {
+      emitNewOrder(newOrder);
+    } catch (e) {
+      console.error('[Socket.io] Failed to emit new order:', e.message);
+    }
 
     return newOrder;
 
@@ -549,10 +557,22 @@ const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
       }
     }
 
-    return tx.order.update({
+    const updatedOrder = await tx.order.update({
       where: { id: orderId },
       data: updateData,
     });
+
+    // [THÊM] Emit real-time event for order status change
+    try {
+      emitOrderStatusChange({
+        ...updatedOrder,
+        customerUserId: order.customerUserId
+      });
+    } catch (e) {
+      console.error('[Socket.io] Failed to emit order status:', e.message);
+    }
+
+    return updatedOrder;
   });
 };
 

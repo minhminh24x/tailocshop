@@ -1,5 +1,6 @@
 // server/index.js
 import express from 'express';
+import http from 'http';
 import cors from 'cors';
 import slowDown from 'express-slow-down';
 import dotenv from 'dotenv';
@@ -9,6 +10,9 @@ import httpStatus from 'http-status';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
+
+// [THÊM] Socket.io
+import { initSocket } from './lib/socket.js';
 
 import authRoutes from './routes/auth.route.js';
 import userRoutes from './routes/user.route.js';
@@ -26,9 +30,16 @@ import wishlistRoutes from './routes/wishlist.route.js';
 import reviewRoutes from './routes/review.route.js';
 import voucherRoutes from './routes/voucher.route.js';
 
+// [THÊM] Phase 4 routes
+import exportRoutes from './routes/export.route.js';
+
 dotenv.config();
 const app = express();
+const server = http.createServer(app); // [THÊM] HTTP server for Socket.io
 const PORT = process.env.PORT || 8080;
+
+// [THÊM] Initialize Socket.io
+initSocket(server);
 
 app.use(helmet());
 
@@ -115,6 +126,9 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/vouchers', voucherRoutes);
 
+// [THÊM] Phase 4 API Routes
+app.use('/api/export', exportRoutes);
+
 // Route test
 app.get('/api', (req, res) => {
   res.status(200).json({
@@ -157,6 +171,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
+// [SỬA] Sử dụng server thay vì app để hỗ trợ Socket.io
+server.listen(PORT, () => {
   console.log(`✅ Backend server đang chạy tại http://localhost:${PORT}`);
+  console.log(`🔌 Socket.io đã sẵn sàng`);
 });
