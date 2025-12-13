@@ -42,6 +42,10 @@ import AdminManageRates from './pages/admin/manager/AdminManageRates';
 import AdminManageVipLevels from './pages/admin/manager/AdminManageVipLevels';
 import AdminManageSubmissions from './pages/admin/manager/AdminManageSubmissions';
 import AdminSubmissionDetailPage from './pages/admin/manager/AdminSubmissionDetailPage';
+import AdminManageVouchers from './pages/admin/manager/AdminManageVouchers';
+
+// Pages - Customer (Phase 3)
+import WishlistPage from './pages/WishlistPage';
 
 // Pages - Staff & Supplier
 import StaffLayout from './pages/staff/StaffLayout';
@@ -102,6 +106,7 @@ function App() {
           <Route path="/profile" element={<UserProtectedRoute><UserProfilePage /></UserProtectedRoute>} />
           <Route path="/my-orders" element={<UserProtectedRoute><MyOrdersPage /></UserProtectedRoute>} />
           <Route path="/my-orders/:id" element={<UserProtectedRoute><MyOrderDetailPage /></UserProtectedRoute>} />
+          <Route path="/wishlist" element={<UserProtectedRoute><WishlistPage /></UserProtectedRoute>} />
 
           {/* --- ADMIN ROUTES --- */}
           {/* AdminLayout sẽ chứa Sidebar/HeaderAdmin */}
@@ -125,6 +130,7 @@ function App() {
             <Route path="manage-customers" element={<AdminManageUsers type="CUSTOMER" />} />
             <Route path="manage-users" element={<AdminManageUsers type="STAFF" />} />
             <Route path="manage-submissions" element={<AdminManageSubmissions />} />
+            <Route path="vouchers" element={<AdminManageVouchers />} />
           </Route>
 
           {/* --- STAFF ROUTES --- */}

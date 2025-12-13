@@ -97,6 +97,10 @@ model User {
   inventoryLogs        InventoryLog[]
   supplierSubmissions  SupplierSubmission[]   @relation("SupplierSubmissions") // Phiếu Supplier tạo
   approvedSubmissions  SupplierSubmission[]   @relation("AdminApprovedSubmissions") // Phiếu Admin duyệt
+  
+  // [THÊM] Phase 3 relations
+  wishlists            Wishlist[]
+  reviews              Review[]
 
   @@index([inGameName])
   @@map("users")
@@ -151,6 +155,10 @@ model Item {
   orderDetails              OrderDetail[]
   inventoryLogs             InventoryLog[]
   supplierSubmissionDetails SupplierSubmissionDetail[]
+  
+  // [THÊM] Phase 3 relations
+  wishlists                 Wishlist[]
+  reviews                   Review[]
 
   @@unique([slug, unit]) // UNIQUE(slug, unit)
   @@index([categoryId])
@@ -339,4 +347,82 @@ model SupplierSubmissionDetail {
   finalPricePerUnitCoin     Decimal  @map("final_price_per_unit_coin") @db.Decimal(12, 2)
 
   @@map("supplier_submission_details")
+}
+
+//==============================================================
+// Cụm 5: Phase 3 - Enhancement Features
+//==============================================================
+
+// Wishlist - Danh sách yêu thích
+model Wishlist {
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  itemId String @map("item_id") @db.Uuid
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([userId, itemId]) // Mỗi user chỉ có thể thêm 1 item 1 lần
+  @@index([userId])
+  @@map("wishlists")
+}
+
+// Review - Đánh giá sản phẩm
+model Review {
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  itemId String @map("item_id") @db.Uuid
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  rating  Int    // 1-5 sao
+  comment String? @db.Text
+
+  isApproved Boolean @default(false) @map("is_approved") // Admin duyệt review
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([userId, itemId]) // Mỗi user chỉ review 1 item 1 lần
+  @@index([itemId])
+  @@index([isApproved])
+  @@map("reviews")
+}
+
+// Voucher - Mã giảm giá
+model Voucher {
+  id String @id @default(uuid()) @db.Uuid
+
+  code        String   @unique @db.VarChar(50)
+  description String?  @db.VarChar(255)
+  
+  discountType   VoucherDiscountType @default(PERCENTAGE) @map("discount_type")
+  discountValue  Decimal @map("discount_value") @db.Decimal(12, 2) // % hoặc số tiền
+  
+  minOrderValue  Decimal? @map("min_order_value") @db.Decimal(12, 2) // Giá trị đơn hàng tối thiểu
+  maxDiscount    Decimal? @map("max_discount") @db.Decimal(12, 2) // Giảm tối đa (cho %)
+  
+  usageLimit     Int?     @map("usage_limit") // Số lần sử dụng tối đa
+  usedCount      Int      @default(0) @map("used_count") // Số lần đã sử dụng
+  
+  isActive       Boolean  @default(true) @map("is_active")
+  startDate      DateTime? @map("start_date") @db.Timestamptz
+  endDate        DateTime? @map("end_date") @db.Timestamptz
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([code])
+  @@index([isActive])
+  @@map("vouchers")
+}
+
+enum VoucherDiscountType {
+  PERCENTAGE // Giảm theo %
+  FIXED_COIN // Giảm số xu cố định
 }

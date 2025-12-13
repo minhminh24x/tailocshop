@@ -21,6 +21,11 @@ import currencyRoutes from './routes/currency.route.js';
 import supplierSubmissionRoutes from './routes/supplierSubmission.route.js';
 import statsRoutes from './routes/stats.route.js';
 
+// [THÊM] Phase 3 routes
+import wishlistRoutes from './routes/wishlist.route.js';
+import reviewRoutes from './routes/review.route.js';
+import voucherRoutes from './routes/voucher.route.js';
+
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -104,6 +109,11 @@ app.use('/api/vip-levels', vipLevelRoutes);
 app.use('/api/rates', currencyRoutes);
 app.use('/api/supplier-submissions', supplierSubmissionRoutes);
 app.use('/api/stats', statsRoutes);
+
+// [THÊM] Phase 3 API Routes
+app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/vouchers', voucherRoutes);
 
 // Route test
 app.get('/api', (req, res) => {
