@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useCartStore } from '../../store/cartStore';
-import { Menu, X, ShoppingCart, User, LogOut, Sparkles } from 'lucide-react';
+import { Menu, X, ShoppingCart, User, LogOut, Sparkles, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Header() {
@@ -33,14 +33,13 @@ export default function Header() {
     <motion.header
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isScrolled 
-          ? 'bg-slate-950/80 backdrop-blur-xl border-b border-white/10 py-2 shadow-2xl' 
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
+          ? 'bg-slate-950/80 backdrop-blur-xl border-b border-white/10 py-2 shadow-2xl'
           : 'bg-transparent py-6'
-      }`}
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-        
+
         {/* LOGO */}
         <Link to="/" className="flex items-center gap-3 group">
           <div className="relative flex items-center justify-center">
@@ -85,6 +84,13 @@ export default function Header() {
             )}
           </Link>
 
+          {/* [THÊM] Wishlist link - chỉ hiển khi đã đăng nhập */}
+          {user && (
+            <Link to="/wishlist" className="relative group p-2" title="Danh sách yêu thích">
+              <Heart className="w-6 h-6 text-gray-300 group-hover:text-pink-400 transition-colors" />
+            </Link>
+          )}
+
           {user ? (
             <div className="flex items-center gap-3 pl-5 border-l border-white/10">
               <div className="text-right hidden lg:block">
@@ -103,8 +109,8 @@ export default function Header() {
               <Link to="/login" className="text-sm font-bold text-gray-300 hover:text-white transition-colors px-4">
                 Đăng nhập
               </Link>
-              <Link 
-                to="/register" 
+              <Link
+                to="/register"
                 className="bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500 bg-[length:200%_auto] hover:bg-right transition-all duration-500 text-slate-900 font-extrabold py-2.5 px-6 rounded-full shadow-[0_0_20px_rgba(234,179,8,0.4)] hover:shadow-[0_0_30px_rgba(234,179,8,0.6)]"
               >
                 Đăng ký
@@ -114,7 +120,7 @@ export default function Header() {
         </div>
 
         {/* MOBILE TOGGLE */}
-        <button 
+        <button
           className="md:hidden p-2 text-white"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >
@@ -142,13 +148,13 @@ export default function Header() {
                   {item.name}
                 </Link>
               ))}
-               {/* Mobile Auth */}
-               {!user && (
-                 <div className="grid grid-cols-2 gap-3 pt-2">
-                    <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="text-center py-3 rounded-xl bg-slate-800 text-white font-bold border border-slate-700">Đăng nhập</Link>
-                    <Link to="/register" onClick={() => setIsMobileMenuOpen(false)} className="text-center py-3 rounded-xl bg-yellow-500 text-slate-900 font-bold">Đăng ký</Link>
-                 </div>
-               )}
+              {/* Mobile Auth */}
+              {!user && (
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="text-center py-3 rounded-xl bg-slate-800 text-white font-bold border border-slate-700">Đăng nhập</Link>
+                  <Link to="/register" onClick={() => setIsMobileMenuOpen(false)} className="text-center py-3 rounded-xl bg-yellow-500 text-slate-900 font-bold">Đăng ký</Link>
+                </div>
+              )}
             </div>
           </motion.div>
         )}

@@ -3,10 +3,10 @@ import { useCartStore } from '../store/cartStore.js';
 import { useAuthStore } from '../store/authStore.js';
 import { useNavigate } from 'react-router-dom';
 import { createOrder } from '../services/orderService.js';
+import { validateVoucher } from '../services/voucherService.js';
 import toast from 'react-hot-toast';
 import apiClient from '../services/apiClient.js';
-import { FaCoins } from 'react-icons/fa';
-import { FaDollarSign } from 'react-icons/fa';
+import { FaCoins, FaDollarSign, FaTicketAlt } from 'react-icons/fa';
 import { formatNumber } from '../utils/formatNumber.js';
 
 export default function CheckoutPage() {
@@ -23,6 +23,11 @@ export default function CheckoutPage() {
   const [isLoadingTimeSlots, setIsLoadingTimeSlots] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // [THÊM] Voucher state
+  const [voucherCode, setVoucherCode] = useState('');
+  const [voucherData, setVoucherData] = useState(null); // { voucher, discountAmount }
+  const [isValidatingVoucher, setIsValidatingVoucher] = useState(false);
 
   // === Tải khung giờ ===
   useEffect(() => {
@@ -118,6 +123,33 @@ export default function CheckoutPage() {
       originalCoinTotal: originalCoinTotal
     };
   }, [items, paymentMethod, vipLevel]);
+
+  // [THÊM] Handler áp dụng voucher
+  const handleApplyVoucher = async () => {
+    if (!voucherCode.trim()) return;
+
+    // Tính tổng xu để validate
+    const totalXu = orderSummary.totalXuEquivalent;
+
+    try {
+      setIsValidatingVoucher(true);
+      const { data } = await validateVoucher(voucherCode, totalXu);
+      setVoucherData(data);
+      toast.success(`Áp dụng mã ${data.voucher.code} thành công!`);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Mã không hợp lệ');
+      setVoucherData(null);
+    } finally {
+      setIsValidatingVoucher(false);
+    }
+  };
+
+  // [THÊM] Handler hủy voucher
+  const handleRemoveVoucher = () => {
+    setVoucherData(null);
+    setVoucherCode('');
+    toast.success('Đã hủy mã giảm giá');
+  };
 
   // === [SỬA] Xử lý submit (Gửi currencyAtPurchase cho từng item) ===
   const handleSubmit = async (e) => {
@@ -278,6 +310,48 @@ export default function CheckoutPage() {
                     </span>
                   </label>
                 </div>
+              </div>
+
+              {/* [THÊM] Voucher Input */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <FaTicketAlt className="inline mr-2" />
+                  Mã giảm giá (tùy chọn)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={voucherCode}
+                    onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                    className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white uppercase focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    placeholder="Nhập mã giảm giá"
+                    disabled={!!voucherData}
+                  />
+                  {!voucherData ? (
+                    <button
+                      type="button"
+                      onClick={handleApplyVoucher}
+                      disabled={!voucherCode.trim() || isValidatingVoucher}
+                      className="px-4 py-2 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition"
+                    >
+                      {isValidatingVoucher ? 'Đang kiểm tra...' : 'Áp dụng'}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleRemoveVoucher}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition"
+                    >
+                      Hủy
+                    </button>
+                  )}
+                </div>
+                {voucherData && (
+                  <div className="mt-2 p-3 bg-green-900/50 text-green-400 rounded-lg text-sm">
+                    ✅ Đã áp dụng mã <strong>{voucherData.voucher.code}</strong>:
+                    Giảm <strong>{formatNumber(voucherData.discountAmount)} Xu</strong>
+                  </div>
+                )}
               </div>
 
               {/* Cảnh báo làm tròn Xu */}

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { formatNumber } from '../../utils/formatNumber.js';
 import { ShoppingCart } from 'lucide-react';
+import WishlistButton from '../item/WishlistButton.js';
 
-const MIN_USD_DISPLAY_THRESHOLD = 1.00; 
+const MIN_USD_DISPLAY_THRESHOLD = 1.00;
 
 export default function ItemCard({ item }) {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -13,12 +14,12 @@ export default function ItemCard({ item }) {
 
   const isUsdAvailable = priceUsdNum >= MIN_USD_DISPLAY_THRESHOLD;
   const isCoinOnly = priceCoinNum > 0 && !isUsdAvailable;
-  const isUsdOnly = isUsdAvailable && priceCoinNum <= 0; 
+  const isUsdOnly = isUsdAvailable && priceCoinNum <= 0;
   const hasBothPrices = priceCoinNum > 0 && isUsdAvailable;
 
   return (
     <div className="group relative bg-slate-900/40 backdrop-blur-md rounded-2xl overflow-hidden border border-white/5 hover:border-yellow-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)]">
-      
+
       {/* Hiệu ứng Glow phía sau khi hover */}
       <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/0 to-yellow-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
@@ -34,22 +35,27 @@ export default function ItemCard({ item }) {
           onLoad={() => setIsImageLoaded(true)}
           className={`w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
         />
-        
+
         {/* Unit Badge */}
         <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">
           {item.unit}
+        </div>
+
+        {/* [THÊM] Wishlist Button */}
+        <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <WishlistButton itemId={item.id} size="sm" />
         </div>
       </div>
 
       {/* Content */}
       <div className="p-5 relative">
-        <h3 
-          className="text-lg font-bold text-white truncate mb-1 group-hover:text-yellow-400 transition-colors" 
+        <h3
+          className="text-lg font-bold text-white truncate mb-1 group-hover:text-yellow-400 transition-colors"
           title={item.name}
         >
           {item.name}
         </h3>
-        
+
         <div className="w-10 h-0.5 bg-slate-700 group-hover:bg-yellow-500 transition-colors duration-500 mb-4"></div>
 
         {/* Price Section */}
@@ -65,8 +71,8 @@ export default function ItemCard({ item }) {
 
           {isUsdOnly && (
             <div className="flex flex-col">
-               <span className="text-[10px] text-gray-400 font-bold uppercase">Giá USD</span>
-               <div className="text-2xl font-extrabold text-green-400 drop-shadow-[0_0_10px_rgba(74,222,128,0.3)]">
+              <span className="text-[10px] text-gray-400 font-bold uppercase">Giá USD</span>
+              <div className="text-2xl font-extrabold text-green-400 drop-shadow-[0_0_10px_rgba(74,222,128,0.3)]">
                 ${formatNumber(priceUsdNum)}
               </div>
             </div>
