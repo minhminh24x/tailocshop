@@ -1,14 +1,23 @@
 // File: frontend/src/components/admin/TimeSlotModal.js
 import React, { useState, useEffect } from 'react';
 
-// Lấy từ schema.prisma
-const DAYS_OF_WEEK = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY", "ALL"];
+// Sử dụng Int cho dayOfWeek (0=CN, 1=T2, ...)
+const DAYS_OF_WEEK = [
+  { value: 1, label: 'Thứ 2' },
+  { value: 2, label: 'Thứ 3' },
+  { value: 3, label: 'Thứ 4' },
+  { value: 4, label: 'Thứ 5' },
+  { value: 5, label: 'Thứ 6' },
+  { value: 6, label: 'Thứ 7' },
+  { value: 0, label: 'Chủ Nhật' },
+];
 
 const initialState = {
   startTime: '08:00',
   endTime: '12:00',
-  dayOfWeek: 'ALL',
+  dayOfWeek: 1, // Default Thứ 2
   isActive: true,
+  displayText: '', // Thêm displayText vì backend yêu cầu
 };
 
 export default function TimeSlotModal({ isOpen, onClose, onSave, timeSlotToEdit }) {
@@ -19,10 +28,11 @@ export default function TimeSlotModal({ isOpen, onClose, onSave, timeSlotToEdit 
     if (isOpen) {
       if (timeSlotToEdit) {
         setFormData({
-          startTime: timeSlotToEdit.startTime,
-          endTime: timeSlotToEdit.endTime,
-          dayOfWeek: timeSlotToEdit.dayOfWeek,
-          isActive: timeSlotToEdit.isActive,
+          startTime: timeSlotToEdit.startTime || '',
+          endTime: timeSlotToEdit.endTime || '',
+          dayOfWeek: timeSlotToEdit.dayOfWeek ?? 1,
+          isActive: timeSlotToEdit.isActive ?? true,
+          displayText: timeSlotToEdit.displayText || '',
         });
       } else {
         setFormData(initialState);
@@ -34,21 +44,25 @@ export default function TimeSlotModal({ isOpen, onClose, onSave, timeSlotToEdit 
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === 'checkbox' ? checked : (name === 'dayOfWeek' ? parseInt(value) : value),
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Đảm bảo gửi đúng định dạng HH:mm
+
+    // Tự động tạo displayText nếu chưa có
+    const dayLabel = DAYS_OF_WEEK.find(d => d.value === formData.dayOfWeek)?.label || '';
+    const autoDisplayText = `${dayLabel} (${formData.startTime} - ${formData.endTime})`;
+
     const timeSlotData = {
       ...formData,
-      startTime: formData.startTime.slice(0, 5), // "HH:mm"
-      endTime: formData.endTime.slice(0, 5),     // "HH:mm"
+      startTime: formData.startTime.slice(0, 5),
+      endTime: formData.endTime.slice(0, 5),
+      displayText: formData.displayText || autoDisplayText,
     };
-    
+
     await onSave(timeSlotData);
     setIsLoading(false);
   };
@@ -64,7 +78,7 @@ export default function TimeSlotModal({ isOpen, onClose, onSave, timeSlotToEdit 
           <h3 className="text-2xl font-bold text-white mb-6">
             {timeSlotToEdit ? 'Chỉnh sửa Khung giờ' : 'Tạo Khung giờ mới'}
           </h3>
-          
+
           <div className="grid grid-cols-2 gap-4">
             {/* Giờ bắt đầu */}
             <div>
@@ -82,7 +96,7 @@ export default function TimeSlotModal({ isOpen, onClose, onSave, timeSlotToEdit 
                 required disabled={isLoading} />
             </div>
           </div>
-          
+
           {/* Ngày trong tuần */}
           <div className="mt-4">
             <label htmlFor="dayOfWeek" className="block text-sm font-medium text-gray-300 mb-2">Ngày áp dụng</label>
@@ -90,9 +104,18 @@ export default function TimeSlotModal({ isOpen, onClose, onSave, timeSlotToEdit 
               className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
               disabled={isLoading} required>
               {DAYS_OF_WEEK.map(day => (
-                <option key={day} value={day}>{day}</option>
+                <option key={day.value} value={day.value}>{day.label}</option>
               ))}
             </select>
+          </div>
+
+          {/* Display Text (Optional) */}
+          <div className="mt-4">
+            <label htmlFor="displayText" className="block text-sm font-medium text-gray-300 mb-2">Tên hiển thị (Tự động nếu để trống)</label>
+            <input type="text" id="displayText" name="displayText" value={formData.displayText} onChange={handleChange}
+              placeholder="Ví dụ: Thứ 2 (08:00 - 12:00)"
+              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
+              disabled={isLoading} />
           </div>
 
           {/* Kích hoạt */}

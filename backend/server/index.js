@@ -19,6 +19,7 @@ import orderRoutes from './routes/order.route.js';
 import vipLevelRoutes from './routes/vipLevel.route.js';
 import currencyRoutes from './routes/currency.route.js';
 import supplierSubmissionRoutes from './routes/supplierSubmission.route.js';
+import statsRoutes from './routes/stats.route.js';
 
 dotenv.config();
 const app = express();
@@ -102,11 +103,20 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/vip-levels', vipLevelRoutes);
 app.use('/api/rates', currencyRoutes);
 app.use('/api/supplier-submissions', supplierSubmissionRoutes);
+app.use('/api/stats', statsRoutes);
 
 // Route test
 app.get('/api', (req, res) => {
   res.status(200).json({
     message: 'Chào mừng đến với Tài Lộc Shop API (Secured & Optimized)!'
+  });
+});
+
+// [THÊM] 404 Handler - Xử lý route không tồn tại
+app.use('*', (req, res, next) => {
+  res.status(404).json({
+    status: 'error',
+    message: `Route ${req.originalUrl} không tồn tại`
   });
 });
 

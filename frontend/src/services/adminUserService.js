@@ -2,19 +2,22 @@
 import apiClient from './apiClient';
 
 /**
- * Lấy danh sách user (lọc theo role)
- * @param {Array<string>} roles (VD: ['STAFF', 'SUPPLIER'])
+ * [NÂNG CẤP] Lấy danh sách user với pagination và filter
+ * @param {object} params - { page, limit, roles, search }
+ * @returns {Promise<{data: User[], pagination: object}>}
  */
-export const getUsers = async (roles = []) => {
+export const getUsers = async (params = {}) => {
   try {
-    const params = new URLSearchParams();
-    if (roles.length > 0) {
-      params.append('roles', roles.join(','));
+    // Convert roles array to comma-separated string if needed
+    const queryParams = { ...params };
+    if (Array.isArray(params.roles)) {
+      queryParams.roles = params.roles.join(',');
     }
-    const { data } = await apiClient.get('/users', { params });
+
+    const { data } = await apiClient.get('/users', { params: queryParams });
     return data;
   } catch (error) {
-    throw error.response.data;
+    throw error.response?.data || error;
   }
 };
 
@@ -27,7 +30,7 @@ export const getUserDetail = async (userId) => {
     const { data } = await apiClient.get(`/users/${userId}`);
     return data;
   } catch (error) {
-    throw error.response.data;
+    throw error.response?.data || error;
   }
 };
 
@@ -40,6 +43,6 @@ export const createUser = async (userData) => {
     const { data } = await apiClient.post('/users', userData);
     return data;
   } catch (error) {
-    throw error.response.data;
+    throw error.response?.data || error;
   }
 };

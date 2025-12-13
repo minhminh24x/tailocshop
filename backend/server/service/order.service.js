@@ -15,7 +15,7 @@ const updateUserVipLevel = async (tx, userId, newTotalSpent) => {
   for (const level of allVipLevels) {
     if (newTotalSpent >= level.coinThreshold) {
       newVipLevelInt = level.level; // Lấy level (là @id)
-      break; 
+      break;
     }
   }
 
@@ -54,7 +54,7 @@ const createOrder = async (userId, orderData) => {
   // 2. Bắt đầu GIAO DỊCH
   try {
     const newOrder = await prisma.$transaction(async (tx) => {
-      
+
       // [LOGIC TẠO MÃ ĐƠN HÀNG] (Giữ nguyên)
       const now = new Date();
       const vietnamTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
@@ -73,7 +73,7 @@ const createOrder = async (userId, orderData) => {
         newSequence = parseInt(lastSequenceStr, 10) + 1;
       }
       const newOrderNumber = `${datePrefix}${newSequence.toString().padStart(4, '0')}`;
-      
+
       // 2.1. Lấy thông tin User (vẫn cần để tính discount)
       const user = await tx.user.findFirstOrThrow({
         where: { id: userId },
@@ -86,7 +86,7 @@ const createOrder = async (userId, orderData) => {
         where: { id: { in: itemIds } },
       });
       const xuToUsdRateEntry = await tx.currencyExchangeRate.findUnique({
-        where: { rateType: 'XU_TO_USD' }, 
+        where: { rateType: 'XU_TO_USD' },
       });
       if (!xuToUsdRateEntry || !xuToUsdRateEntry.rate) {
         throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Lỗi hệ thống: Không tìm thấy tỷ giá XU sang USD.');
@@ -97,9 +97,9 @@ const createOrder = async (userId, orderData) => {
       let subTotalCoin = 0;
       let subTotalUsd = 0;
       const orderDetailsData = [];
-      
+
       // [SỬA ĐỔI] Chúng ta cần một mảng riêng để cập nhật kho
-      const itemsToUpdateStock = []; 
+      const itemsToUpdateStock = [];
 
       for (const cartItem of items) {
         const dbItem = dbItems.find((item) => item.id === cartItem.itemId);
@@ -115,7 +115,7 @@ const createOrder = async (userId, orderData) => {
         const hasCoinPrice = dbItem.priceCoin !== null;
         const hasUsdPrice = dbItem.priceUsd !== null;
         let price = 0;
-        let currencyForThisItem = 'COIN'; 
+        let currencyForThisItem = 'COIN';
         if (preferredCurrency === 'USD' && hasUsdPrice) {
           price = parseFloat(dbItem.priceUsd);
           currencyForThisItem = 'USD';
@@ -125,7 +125,7 @@ const createOrder = async (userId, orderData) => {
           currencyForThisItem = 'COIN';
           subTotalCoin += (price * cartItem.quantity);
         } else {
-           throw new ApiError(httpStatus.BAD_REQUEST, `Vật phẩm "${dbItem.name}" không có thông tin giá XU.`);
+          throw new ApiError(httpStatus.BAD_REQUEST, `Vật phẩm "${dbItem.name}" không có thông tin giá XU.`);
         }
 
         const lineTotal = price * cartItem.quantity;
@@ -134,7 +134,7 @@ const createOrder = async (userId, orderData) => {
           quantity: cartItem.quantity,
           priceAtPurchase: price,
           unitAtPurchase: dbItem.unit,
-          currencyAtPurchase: currencyForThisItem, 
+          currencyAtPurchase: currencyForThisItem,
           totalLineAmount: lineTotal,
         });
 
@@ -144,9 +144,9 @@ const createOrder = async (userId, orderData) => {
           quantityToDecrement: cartItem.quantity,
         });
       }
-      
+
       // ... (Kiểm tra timeSlot giữ nguyên)
-       if (deliveryTimeSlotId !== "00000000-0000-0000-0000-000000000000") {
+      if (deliveryTimeSlotId !== "00000000-0000-0000-0000-000000000000") {
         const timeSlot = await tx.deliveryTimeSlot.findFirst({
           where: { id: deliveryTimeSlotId, isActive: true }
         });
@@ -154,7 +154,7 @@ const createOrder = async (userId, orderData) => {
           throw new ApiError(httpStatus.BAD_REQUEST, 'Khung giờ bạn chọn không còn hợp lệ. Vui lòng chọn lại.');
         }
       }
-      
+
       // 2.4. Tính toán tổng đơn hàng (Giữ nguyên)
       const vipDiscountPercent = user.vipLevel.discountPercent || 0;
       const vipDiscountAmountCoin = subTotalCoin * (vipDiscountPercent / 100);
@@ -175,6 +175,8 @@ const createOrder = async (userId, orderData) => {
           totalAmountCoin: totalAmountCoin,
           subTotalUsd: subTotalUsd,
           totalAmountUsd: totalAmountUsd,
+          // [THÊM] Timeline: Set pendingAt khi tạo đơn
+          pendingAt: new Date(),
           orderDetails: {
             createMany: {
               data: orderDetailsData,
@@ -189,7 +191,7 @@ const createOrder = async (userId, orderData) => {
 
       // 2.6. [NÂNG CẤP] THỰC THI CẬP NHẬT TỒN KHO VÀ GHI LOG KHO
       const itemUpdateOps = [];
-      
+
       // Tạo các lệnh cập nhật kho
       for (const item of itemsToUpdateStock) {
         itemUpdateOps.push(
@@ -200,7 +202,7 @@ const createOrder = async (userId, orderData) => {
           })
         );
       }
-      
+
       // Chạy cập nhật kho
       const updatedItems = await Promise.all(itemUpdateOps);
 
@@ -208,7 +210,7 @@ const createOrder = async (userId, orderData) => {
       const logCreationOps = updatedItems.map((updatedItem) => {
         // Lấy lại thông tin từ orderDetails để đảm bảo
         const detail = createdOrder.orderDetails.find(d => d.itemId === updatedItem.id);
-        
+
         return tx.inventoryLog.create({
           data: {
             itemId: updatedItem.id,
@@ -220,7 +222,7 @@ const createOrder = async (userId, orderData) => {
           }
         });
       });
-      
+
       // Chạy ghi log kho
       await Promise.all(logCreationOps);
 
@@ -238,7 +240,7 @@ const createOrder = async (userId, orderData) => {
     if (error instanceof ApiError) {
       throw error;
     }
-    if (error.code === 'P2025'|| error.code === 'P2018' ) {
+    if (error.code === 'P2025' || error.code === 'P2018') {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Lỗi hệ thống: Không tìm thấy khung giờ giao hàng mặc định.');
     }
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, `Không thể tạo đơn hàng: ${error.message}`);
@@ -253,16 +255,16 @@ const getMyOrders = async (userId) => {
   return prisma.order.findMany({
     where: { customerUserId: userId },
     orderBy: { createdAt: 'desc' },
-    select: { 
+    select: {
       id: true,
-      
+
       // [THÊM DÒNG NÀY]
-      orderNumber: true, 
+      orderNumber: true,
 
       status: true,
       paymentStatus: true,
-      totalAmountCoin: true, 
-      totalAmountUsd: true,  
+      totalAmountCoin: true,
+      totalAmountUsd: true,
       createdAt: true,
     },
   });
@@ -277,14 +279,14 @@ const getMyOrderById = async (orderId, userId) => {
   const order = await prisma.order.findUnique({
     where: {
       id: orderId,
-      customerUserId: userId, 
+      customerUserId: userId,
     },
     // [SỬA] Dùng 'include' sẽ tự động lấy 'orderNumber'
     include: {
-      deliveryTimeSlot: true, 
+      deliveryTimeSlot: true,
       orderDetails: {
         include: {
-          item: { 
+          item: {
             select: { id: true, name: true, thumbnailImageUrl: true }
           }
         }
@@ -299,18 +301,65 @@ const getMyOrderById = async (orderId, userId) => {
 };
 
 /**
- * [MỚI] Lấy TẤT CẢ đơn hàng (cho Admin)
+ * [NÂNG CẤP] Lấy đơn hàng (cho Admin) với Pagination và Filter
+ * @param {object} query - { page, limit, status, paymentStatus, fromDate, toDate }
  */
-const getAllOrdersAdmin = async () => {
-  return prisma.order.findMany({
+const getAllOrdersAdmin = async (query = {}) => {
+  const {
+    page = 1,
+    limit = 20,
+    status,
+    paymentStatus,
+    fromDate,
+    toDate,
+  } = query;
+
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const take = parseInt(limit);
+
+  // Build where clause
+  const where = {};
+  if (status) {
+    where.status = status;
+  }
+  if (paymentStatus) {
+    where.paymentStatus = paymentStatus;
+  }
+  if (fromDate || toDate) {
+    where.createdAt = {};
+    if (fromDate) {
+      where.createdAt.gte = new Date(fromDate);
+    }
+    if (toDate) {
+      where.createdAt.lte = new Date(toDate);
+    }
+  }
+
+  // Get total count for pagination
+  const total = await prisma.order.count({ where });
+
+  // Get paginated orders
+  const orders = await prisma.order.findMany({
+    where,
     orderBy: { createdAt: 'desc' },
-    // [SỬA] Dùng 'include' sẽ tự động lấy 'orderNumber'
+    skip,
+    take,
     include: {
-      customer: { 
+      customer: {
         select: { inGameName: true, email: true }
       }
     }
   });
+
+  return {
+    data: orders,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total,
+      totalPages: Math.ceil(total / take),
+    }
+  };
 };
 
 /**
@@ -322,16 +371,16 @@ const getOrderByIdAdmin = async (orderId) => {
     where: { id: orderId },
     // [SỬA] Dùng 'include' sẽ tự động lấy 'orderNumber'
     include: {
-      customer: { 
+      customer: {
         select: { id: true, inGameName: true, email: true, vipLevelInt: true }
       },
-      staff: { 
+      staff: {
         select: { id: true, inGameName: true }
       },
       deliveryTimeSlot: true,
       orderDetails: {
         include: {
-          item: { 
+          item: {
             select: { id: true, name: true, thumbnailImageUrl: true }
           }
         }
@@ -381,7 +430,7 @@ const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
 
   // 3. Bắt đầu GIAO DỊCH để đảm bảo toàn vẹn dữ liệu
   return prisma.$transaction(async (tx) => {
-    
+
     // 4. [YÊU CẦU] XỬ LÝ LOGIC HỦY ĐƠN (HOÀN KHO)
     // Chỉ chạy khi trạng thái MỚI là CANCELLED
     if (status === 'CANCELLED') {
@@ -398,7 +447,7 @@ const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
           })
         );
       }
-      
+
       const updatedItems = await Promise.all(itemUpdates);
 
       // Ghi log việc hoàn kho này
@@ -445,9 +494,9 @@ const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
           // Nếu lỗi tỷ giá, chúng ta rollback transaction
           throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Lỗi hệ thống: Tỷ giá XU sang USD không hợp lệ. Không thể cộng điểm VIP.');
         }
-        
+
         const conversionRate = parseFloat(xuToUsdRateEntry.rate);
-        
+
         // Tính tổng chi tiêu quy đổi
         const usdSpentInCoinValue = parseFloat(order.totalAmountUsd) / conversionRate; //
         const totalEquivalentSpent = parseFloat(order.totalAmountCoin) + usdSpentInCoinValue; //
@@ -463,7 +512,7 @@ const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
             },
             select: { totalSpentCoin: true },
           });
-          
+
           // Cập nhật lại cấp VIP
           await updateUserVipLevel(tx, order.customerUserId, updatedUser.totalSpentCoin);
         }
@@ -471,13 +520,38 @@ const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
     }
 
     // 6. Cập nhật trạng thái cuối cùng cho đơn hàng
+    // [THÊM] Xây dựng data object với timeline
+    const updateData = {
+      status: status,
+      paymentStatus: paymentStatus,
+      staffUserId: adminUserId, // Ghi lại admin đã xử lý
+    };
+
+    // [THÊM] Set timeline timestamp dựa trên status mới
+    if (status) {
+      const now = new Date();
+      switch (status) {
+        case 'PENDING':
+          updateData.pendingAt = now;
+          break;
+        case 'PREPARING':
+          updateData.preparingAt = now;
+          break;
+        case 'READY_FOR_DELIVERY':
+          updateData.readyForDeliveryAt = now;
+          break;
+        case 'COMPLETED':
+          updateData.completedAt = now;
+          break;
+        case 'CANCELLED':
+          updateData.cancelledAt = now;
+          break;
+      }
+    }
+
     return tx.order.update({
       where: { id: orderId },
-      data: {
-        status: status, 
-        paymentStatus: paymentStatus, 
-        staffUserId: adminUserId, // Ghi lại admin đã xử lý
-      },
+      data: updateData,
     });
   });
 };

@@ -1,9 +1,13 @@
 // File: frontend/src/services/adminOrderService.js
 import apiClient from './apiClient.js';
 
-// (ADMIN) Lấy tất cả đơn hàng
-export const getAllOrdersAdmin = () => {
-  return apiClient.get('/orders/admin'); // [FIX] Đã bỏ /all để khớp với backend
+/**
+ * [NÂNG CẤP] (ADMIN) Lấy đơn hàng với pagination và filter
+ * @param {object} params - { page, limit, status, paymentStatus, fromDate, toDate }
+ * @returns {Promise<{data: Order[], pagination: object}>}
+ */
+export const getAllOrdersAdmin = (params = {}) => {
+  return apiClient.get('/orders/admin', { params });
 };
 
 // (ADMIN) Lấy chi tiết 1 đơn hàng

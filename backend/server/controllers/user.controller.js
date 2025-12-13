@@ -13,10 +13,11 @@ const adminCreateUser = asyncHandler(async (req, res) => {
   res.status(httpStatus.CREATED).send(user);
 });
 
+// [NÂNG CẤP] Hỗ trợ pagination và search
 const adminGetUsers = asyncHandler(async (req, res) => {
-  const roles = req.query.roles ? req.query.roles.split(',') : [];
-  const users = await userService.adminGetUsers(roles);
-  res.status(httpStatus.OK).send(users);
+  // Truyền toàn bộ query params: page, limit, roles, search
+  const result = await userService.adminGetUsers(req.query);
+  res.status(httpStatus.OK).send(result);
 });
 
 const adminGetUserDetail = asyncHandler(async (req, res) => {
@@ -88,17 +89,17 @@ const getMyProfile = asyncHandler(async (req, res) => {
       // [FIX] Dùng ternary (toán tử 3 ngôi) để an toàn nếu user.vipLevel là null
       vipLevel: user.vipLevel
         ? {
-            ...user.vipLevel,
-            requiredCoins: user.vipLevel.coinThreshold,
-          }
+          ...user.vipLevel,
+          requiredCoins: user.vipLevel.coinThreshold,
+        }
         : null,
     },
     // [FIX] Dùng ternary để an toàn nếu nextVipLevel là null
     nextVipLevel: nextVipLevel
       ? {
-          ...nextVipLevel,
-          requiredCoins: nextVipLevel.coinThreshold,
-        }
+        ...nextVipLevel,
+        requiredCoins: nextVipLevel.coinThreshold,
+      }
       : null,
   });
 });

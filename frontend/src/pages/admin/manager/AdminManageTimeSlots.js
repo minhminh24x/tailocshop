@@ -1,11 +1,11 @@
 // File: frontend/src/pages/admin/manager/AdminManageTimeSlots.js
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { 
-  getAllTimeSlotsAdmin, 
-  createTimeSlotAdmin, 
-  updateTimeSlotAdmin, 
-  deleteTimeSlotAdmin 
+import {
+  getAllTimeSlotsAdmin,
+  createTimeSlotAdmin,
+  updateTimeSlotAdmin,
+  deleteTimeSlotAdmin
 } from '../../../services/adminTimeSlotService.js';
 import TimeSlotModal from '../../../components/admin/TimeSlotModal.js';
 
@@ -119,7 +119,9 @@ export default function AdminManageTimeSlots() {
           <tbody className="bg-gray-800 divide-y divide-gray-700">
             {timeSlots.map((slot) => (
               <tr key={slot.id} className="hover:bg-gray-700">
-                <td className="py-3 px-4 font-medium">{slot.dayOfWeek}</td>
+                <td className="py-3 px-4 font-medium">
+                  {['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'][slot.dayOfWeek] || slot.dayOfWeek}
+                </td>
                 <td className="py-3 px-4 font-mono">{slot.startTime}</td>
                 <td className="py-3 px-4 font-mono">{slot.endTime}</td>
                 <td className="py-3 px-4 text-center">

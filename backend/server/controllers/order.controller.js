@@ -31,10 +31,11 @@ const getMyOrderById = asyncHandler(async (req, res) => {
   res.status(httpStatus.OK).send(order);
 });
 
-// (Dành cho Admin)
+// [NÂNG CẤP] Dành cho Admin - Hỗ trợ pagination và filter
 const getAllOrdersAdmin = asyncHandler(async (req, res) => {
-  const orders = await orderService.getAllOrdersAdmin();
-  res.status(httpStatus.OK).send(orders);
+  // Truyền query params: page, limit, status, paymentStatus, fromDate, toDate
+  const result = await orderService.getAllOrdersAdmin(req.query);
+  res.status(httpStatus.OK).send(result);
 });
 
 // (Dành cho Admin)

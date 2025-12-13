@@ -19,7 +19,8 @@ const createDeliveryTimeSlot = async (timeSlotBody) => {
 const getAllDeliveryTimeSlots = async () => {
   return prisma.deliveryTimeSlot.findMany({
     orderBy: [
-      { displayText: 'asc' }
+      { dayOfWeek: 'asc' },
+      { startTime: 'asc' },
     ],
   });
 };
@@ -30,13 +31,14 @@ const getAllDeliveryTimeSlots = async () => {
  */
 const getPublicDeliveryTimeSlots = async () => {
   return prisma.deliveryTimeSlot.findMany({
-    where: { 
+    where: {
       isActive: true,
       // Bỏ qua slot MẶC ĐỊNH (dùng khi không có slot nào)
-      id: { not: "00000000-0000-0000-0000-000000000000" } 
+      id: { not: "00000000-0000-0000-0000-000000000000" }
     },
     orderBy: [
-      { displayText: 'asc' }, // ✅ Đổi từ startTime → displayText
+      { dayOfWeek: 'asc' },
+      { startTime: 'asc' },
     ],
   });
 };
@@ -71,9 +73,9 @@ const updateDeliveryTimeSlotById = async (id, updateBody) => {
  */
 const deleteDeliveryTimeSlotById = async (id) => {
   await getDeliveryTimeSlotById(id); // Kiểm tra tồn tại
-  
+
   // TODO: Kiểm tra xem có đơn hàng nào đang dùng slot này không
-  
+
   await prisma.deliveryTimeSlot.delete({
     where: { id },
   });

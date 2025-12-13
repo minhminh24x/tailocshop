@@ -1,28 +1,29 @@
-// src/services/authService.js
+// File: frontend/src/services/authService.js
 import apiClient from './apiClient.js';
 
 /**
- * Gọi API đăng ký
- * @param {object} userData - { email, password, inGameName }
+ * Yêu cầu đặt lại mật khẩu (gửi email)
+ * @param {string} email 
  */
-export const registerUser = (userData) => {
-  // POST đến /api/auth/register
-  return apiClient.post('/auth/register', userData);
+export const forgotPassword = (email) => {
+  return apiClient.post('/auth/forgot-password', { email });
 };
 
 /**
- * Gọi API đăng nhập
- * @param {object} credentials - { email, password }
+ * Đặt lại mật khẩu với token
+ * @param {string} token - Token từ email
+ * @param {string} email - Email người dùng 
+ * @param {string} newPassword - Mật khẩu mới
  */
-export const loginUser = (credentials) => {
-  // POST đến /api/auth/login
-  return apiClient.post('/auth/login', credentials);
+export const resetPassword = (token, email, newPassword) => {
+  return apiClient.post('/auth/reset-password', { token, email, newPassword });
 };
 
 /**
- * Gọi API đăng xuất
+ * Kiểm tra token có hợp lệ không
+ * @param {string} token 
+ * @param {string} email 
  */
-export const logoutUser = () => {
-  // POST đến /api/auth/logout
-  return apiClient.post('/auth/logout');
+export const verifyResetToken = (token, email) => {
+  return apiClient.post('/auth/verify-reset-token', { token, email });
 };

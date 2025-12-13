@@ -8,18 +8,18 @@ import jwt from 'jsonwebtoken';
 // =============================================
 
 export const register = async (req, res) => {
- const { email, password } = req.body || {}; 
+  // [FIX] Thêm inGameName vào destructuring
+  const { email, password, inGameName } = req.body || {}; 
 
   try {
-    // 2. Kiểm tra dữ liệu đầu vào
-    if (!email || !password) {
-      // Log ra để debug xem server nhận được gì
-      console.log('Login failed - Body received:', req.body); 
-      console.log('Login failed - Content-Type:', req.headers['content-type']);
+    // 2. Kiểm tra dữ liệu đầu vào - [FIX] Thêm validation cho inGameName
+    if (!email || !password || !inGameName) {
+      console.log('Register failed - Body received:', req.body); 
+      console.log('Register failed - Content-Type:', req.headers['content-type']);
 
       return res
         .status(400)
-        .json({ message: 'Vui lòng cung cấp email và mật khẩu' });
+        .json({ message: 'Vui lòng cung cấp email, mật khẩu và tên trong game' });
     }
 
     // 3. Kiểm tra xem email hoặc inGameName đã tồn tại chưa

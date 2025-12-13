@@ -9,16 +9,16 @@ export default function StaffOrderManagement() {
     const [isLoading, setIsLoading] = useState(true);
     const [filterStatus, setFilterStatus] = useState('ALL');
 
-    // Hàm tải đơn hàng (Giả định có API endpoint này)
-    // Nếu chưa có API riêng cho staff, có thể dùng API admin hoặc tạo mới
+    // Hàm tải đơn hàng
     const fetchOrders = async () => {
         setIsLoading(true);
         try {
-            // Tạm thời dùng endpoint admin nếu staff có quyền, hoặc endpoint riêng
-            // Ở đây giả định endpoint: /orders/staff/assigned hoặc /orders/admin (nếu staff đc quyền xem hết)
-            // Để đơn giản, ta sẽ dùng /orders/admin nhưng lọc ở frontend hoặc backend
-            const response = await apiClient.get('/orders/admin');
-            setOrders(response.data);
+            // Gọi API admin với filter status pending/preparing để lấy đơn cần xử lý
+            const response = await apiClient.get('/orders/admin', {
+                params: { limit: 100 } // Lấy nhiều đơn hàng để staff xử lý
+            });
+            // [FIX] API giờ trả về { data: [...], pagination: {...} }
+            setOrders(response.data.data || []);
         } catch (error) {
             toast.error('Không thể tải danh sách đơn hàng');
         } finally {
@@ -68,8 +68,8 @@ export default function StaffOrderManagement() {
                         key={status}
                         onClick={() => setFilterStatus(status)}
                         className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap ${filterStatus === status
-                                ? 'bg-pink-600 text-white'
-                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            ? 'bg-pink-600 text-white'
+                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                             }`}
                     >
                         {status === 'ALL' ? 'Tất cả' : status}

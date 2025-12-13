@@ -117,7 +117,7 @@ export default function AdminManageVipLevels() {
           </thead>
           <tbody className="bg-gray-800 divide-y divide-gray-700">
             {vipLevels.map((level, index) => (
-              <tr key={level.id || index} className="hover:bg-gray-700">
+              <tr key={level.level} className="hover:bg-gray-700">
                 <td className="py-3 px-4 font-medium">{level.name}</td>
                 <td className="py-3 px-4 font-mono">{level.level}</td>
                 <td className="py-3 px-4 text-right font-mono text-green-400">{level.coinThreshold}</td>
@@ -130,9 +130,9 @@ export default function AdminManageVipLevels() {
                     Sửa
                   </button>
                   {/* Không cho xóa VIP 0 */}
-                  {level.minSpent > 0 && (
+                  {level.level > 0 && parseFloat(level.coinThreshold) > 0 && (
                     <button
-                      onClick={() => handleDeleteVipLevel(level.id)}
+                      onClick={() => handleDeleteVipLevel(level.level)}
                       className="bg-red-600 hover:bg-red-700 text-white text-sm py-1 px-3 rounded-md"
                     >
                       Xóa

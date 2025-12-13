@@ -26,25 +26,26 @@ router
     vipLevelController.getAllVipLevels // Admin cũng dùng route này
   );
 
+// [FIX] Đổi từ /:id sang /:level vì VipLevel dùng level làm @id
 router
-  .route('/:id')
+  .route('/:level')
   .get(
     protect,
     authorize('ADMIN'),
     validate(authValidation.vipLevelValidation.getVipLevel),
-    vipLevelController.getVipLevelById
+    vipLevelController.getVipLevelByLevel
   )
   .patch(
     protect,
     authorize('ADMIN'),
     validate(authValidation.vipLevelValidation.updateVipLevel),
-    vipLevelController.updateVipLevelById
+    vipLevelController.updateVipLevelByLevel
   )
   .delete(
     protect,
     authorize('ADMIN'),
     validate(authValidation.vipLevelValidation.deleteVipLevel),
-    vipLevelController.deleteVipLevelById
+    vipLevelController.deleteVipLevelByLevel
   );
 
 export default router;

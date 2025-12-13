@@ -59,40 +59,44 @@ enum StockReason {
 //==============================================================
 
 model VipLevel {
-  level           Int      @id // level là PRIMARY KEY
-  name            String   @db.VarChar(100)
-  coinThreshold   Decimal  @map("coin_threshold") @db.Decimal(12, 2)
-  discountPercent Int      @default(0) @map("discount_percent")
+  level           Int     @id // level là PRIMARY KEY
+  name            String  @db.VarChar(100)
+  coinThreshold   Decimal @map("coin_threshold") @db.Decimal(12, 2)
+  discountPercent Int     @default(0) @map("discount_percent")
 
   // Quan hệ: Một cấp VIP có nhiều User
-  users           User[]
+  users User[]
 
   @@map("vip_levels")
 }
 
 model User {
-  id             String    @id @default(uuid()) @db.Uuid
-  email          String    @unique @db.VarChar(255)
-  passwordHash   String    @map("password_hash")
-  inGameName     String    @unique @map("in_game_name") @db.VarChar(100)
-  role           UserRole  @default(CUSTOMER)
-  totalSpentCoin Decimal   @default(0) @map("total_spent_coin") @db.Decimal(12, 2)
-  mustChangePassword Boolean @default(true) @map("must_change_password")
-  
-  // Quan hệ với VipLevel
-  vipLevelInt    Int       @default(0) @map("vip_level")
-  vipLevel       VipLevel  @relation(fields: [vipLevelInt], references: [level])
+  id                 String   @id @default(uuid()) @db.Uuid
+  email              String   @unique @db.VarChar(255)
+  passwordHash       String   @map("password_hash")
+  inGameName         String   @unique @map("in_game_name") @db.VarChar(100)
+  role               UserRole @default(CUSTOMER)
+  totalSpentCoin     Decimal  @default(0) @map("total_spent_coin") @db.Decimal(12, 2)
+  mustChangePassword Boolean  @default(true) @map("must_change_password")
 
-  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz // <-- ĐÃ SỬA
-  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz // <-- ĐÃ SỬA
+  // [THÊM] Password Reset Fields
+  passwordResetToken  String?   @map("password_reset_token") @db.VarChar(255)
+  passwordResetExpiry DateTime? @map("password_reset_expiry") @db.Timestamptz
+
+  // Quan hệ với VipLevel
+  vipLevelInt Int      @default(0) @map("vip_level")
+  vipLevel    VipLevel @relation(fields: [vipLevelInt], references: [level])
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   // Quan hệ ngược (Back-relations)
-  updatedExchangeRates   CurrencyExchangeRate[]
-  orders                 Order[]                @relation("CustomerOrders") // Đơn hàng của Customer
-  handledOrders          Order[]                @relation("StaffHandledOrders") // Đơn hàng Staff xử lý
-  inventoryLogs          InventoryLog[]
-  supplierSubmissions    SupplierSubmission[]   @relation("SupplierSubmissions") // Phiếu Supplier tạo
-  approvedSubmissions    SupplierSubmission[]   @relation("AdminApprovedSubmissions") // Phiếu Admin duyệt
+  updatedExchangeRates CurrencyExchangeRate[]
+  orders               Order[]                @relation("CustomerOrders") // Đơn hàng của Customer
+  handledOrders        Order[]                @relation("StaffHandledOrders") // Đơn hàng Staff xử lý
+  inventoryLogs        InventoryLog[]
+  supplierSubmissions  SupplierSubmission[]   @relation("SupplierSubmissions") // Phiếu Supplier tạo
+  approvedSubmissions  SupplierSubmission[]   @relation("AdminApprovedSubmissions") // Phiếu Admin duyệt
 
   @@index([inGameName])
   @@map("users")
@@ -103,17 +107,17 @@ model User {
 //==============================================================
 
 model Category {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String   @db.VarChar(255)
-  slug      String   @unique @db.VarChar(255)
-  
+  id   String @id @default(uuid()) @db.Uuid
+  name String @db.VarChar(255)
+  slug String @unique @db.VarChar(255)
+
   // Quan hệ tự tham chiếu (Parent-Child)
-  parentId  String?  @db.Uuid @map("parent_id")
-  parent    Category? @relation("ParentChild", fields: [parentId], references: [id], onDelete: SetNull)
-  children  Category[] @relation("ParentChild")
+  parentId String?    @map("parent_id") @db.Uuid
+  parent   Category?  @relation("ParentChild", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("ParentChild")
 
   // Quan hệ: Một danh mục có nhiều Item
-  items     Item[]
+  items Item[]
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz // <-- ĐÃ SỬA
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz // <-- ĐÃ SỬA
@@ -122,26 +126,26 @@ model Category {
 }
 
 model Item {
-  id                String    @id @default(uuid()) @db.Uuid
-  
-  // Quan hệ với Category
-  categoryId        String?   @db.Uuid @map("category_id")
-  category          Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  id String @id @default(uuid()) @db.Uuid
 
-  name              String    @db.VarChar(255)
-  slug              String    @db.VarChar(255) // Ràng buộc unique được dời xuống @@unique
+  // Quan hệ với Category
+  categoryId String?   @map("category_id") @db.Uuid
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  name              String   @db.VarChar(255)
+  slug              String   @db.VarChar(255) // Ràng buộc unique được dời xuống @@unique
   description       String?
-  thumbnailImageUrl String?   @map("thumbnail_image_url")
-  unit              ItemUnit  @default(PIECE)
-  
-  priceUsd          Decimal?  @map("price_usd") @db.Decimal(12, 2)
-  priceCoin         Decimal?  @map("price_coin") @db.Decimal(12, 2)
-  
-  stockQuantity     Int       @default(0) @map("stock_quantity")
-  isActive          Boolean   @default(true) @map("is_active")
-  
-  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz // <-- ĐÃ SỬA
-  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz // <-- ĐÃ SỬA
+  thumbnailImageUrl String?  @map("thumbnail_image_url")
+  unit              ItemUnit @default(PIECE)
+
+  priceUsd  Decimal? @map("price_usd") @db.Decimal(12, 2)
+  priceCoin Decimal? @map("price_coin") @db.Decimal(12, 2)
+
+  stockQuantity Int     @default(0) @map("stock_quantity")
+  isActive      Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz // <-- ĐÃ SỬA
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz // <-- ĐÃ SỬA
 
   // Quan hệ ngược
   orderDetails              OrderDetail[]
@@ -155,15 +159,15 @@ model Item {
 }
 
 model CurrencyExchangeRate {
-  id          String   @id @default(uuid()) @db.Uuid
-  rate        Decimal  @db.Decimal(15, 2)
-  rateType    String   @unique @map("rate_type") @db.VarChar(50)
-      
+  id       String  @id @default(uuid()) @db.Uuid
+  rate     Decimal @db.Decimal(15, 2)
+  rateType String  @unique @map("rate_type") @db.VarChar(50)
+
   // Quan hệ với User (Admin cập nhật)
-  updatedById String?  @db.Uuid @map("updated_by")
-  updatedBy   User?    @relation(fields: [updatedById], references: [id])
-  
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz // <-- ĐÃ SỬA
+  updatedById String? @map("updated_by") @db.Uuid
+  updatedBy   User?   @relation(fields: [updatedById], references: [id])
+
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz // <-- ĐÃ SỬA
 
   @@map("currency_exchange_rates")
 }
@@ -173,55 +177,68 @@ model CurrencyExchangeRate {
 //==============================================================
 
 model DeliveryTimeSlot {
-  id          String   @id @default(uuid()) @db.Uuid
-  displayText String   @map("display_text") @db.VarChar(100)
-  isActive    Boolean  @default(true) @map("is_active")
+  id          String  @id @default(uuid()) @db.Uuid
+  displayText String  @map("display_text") @db.VarChar(100)
+  isActive    Boolean @default(true) @map("is_active")
+
+  // New fields
+  dayOfWeek Int    @default(0) @map("day_of_week")
+  startTime String @default("00:00") @map("start_time") @db.VarChar(5)
+  endTime   String @default("23:59") @map("end_time") @db.VarChar(5)
 
   // Quan hệ: Một khung giờ có nhiều Order
-  orders      Order[]
+  orders Order[]
 
   @@map("delivery_time_slots")
 }
 
 model Order {
-  id                 String     @id @default(uuid()) @db.Uuid
+  id String @id @default(uuid()) @db.Uuid
 
-  orderNumber        String?  @unique @map("order_number")
+  orderNumber String? @unique @map("order_number")
 
-  customerUserId     String?    @db.Uuid @map("customer_user_id")
-  customer           User?      @relation("CustomerOrders", fields: [customerUserId], references: [id], onDelete: SetNull)
-  
-  inGameName         String     @map("in_game_name") @db.VarChar(100)
-  
-  staffUserId        String?    @db.Uuid @map("staff_user_id")
-  staff              User?      @relation("StaffHandledOrders", fields: [staffUserId], references: [id], onDelete: SetNull)
-  
-  deliveryTimeSlotId String     @db.Uuid @map("delivery_time_slot_id")
+  customerUserId String? @map("customer_user_id") @db.Uuid
+  customer       User?   @relation("CustomerOrders", fields: [customerUserId], references: [id], onDelete: SetNull)
+
+  inGameName String @map("in_game_name") @db.VarChar(100)
+
+  staffUserId String? @map("staff_user_id") @db.Uuid
+  staff       User?   @relation("StaffHandledOrders", fields: [staffUserId], references: [id], onDelete: SetNull)
+
+  deliveryTimeSlotId String           @map("delivery_time_slot_id") @db.Uuid
   deliveryTimeSlot   DeliveryTimeSlot @relation(fields: [deliveryTimeSlotId], references: [id], onDelete: Restrict)
-  
-  status             OrderStatus    @default(PENDING)
-  paymentStatus      PaymentStatus  @default(UNPAID) @map("payment_status")
-  
+
+  status        OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID) @map("payment_status")
+
   // [BỎ] Không dùng trường này nữa vì đơn hàng có thể có 2 loại tiền
   // currencyUsed       CurrencyType   @map("currency_used") 
-  
-  // [SỬA] Tách riêng các giá trị COIN
-  subTotalCoin       Decimal    @default(0) @map("sub_total_coin") @db.Decimal(12, 2)
-  vipDiscountAmountCoin Decimal @default(0) @map("vip_discount_amount_coin") @db.Decimal(12, 2)
-  totalAmountCoin    Decimal    @default(0) @map("total_amount_coin") @db.Decimal(12, 2)
-  
-  // [THÊM] Tách riêng các giá trị USD
-  subTotalUsd        Decimal    @default(0) @map("sub_total_usd") @db.Decimal(12, 2)
-  // (Chúng ta giả định VIP discount chỉ áp dụng cho COIN)
-  totalAmountUsd     Decimal    @default(0) @map("total_amount_usd") @db.Decimal(12, 2)
 
-  notes              String?
-  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt          DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+  // [SỬA] Tách riêng các giá trị COIN
+  subTotalCoin          Decimal @default(0) @map("sub_total_coin") @db.Decimal(12, 2)
+  vipDiscountAmountCoin Decimal @default(0) @map("vip_discount_amount_coin") @db.Decimal(12, 2)
+  totalAmountCoin       Decimal @default(0) @map("total_amount_coin") @db.Decimal(12, 2)
+
+  // [THÊM] Tách riêng các giá trị USD
+  subTotalUsd    Decimal @default(0) @map("sub_total_usd") @db.Decimal(12, 2)
+  // (Chúng ta giả định VIP discount chỉ áp dụng cho COIN)
+  totalAmountUsd Decimal @default(0) @map("total_amount_usd") @db.Decimal(12, 2)
+
+  notes     String?
+  
+  // [THÊM] Order Status Timeline - Track thời điểm mỗi trạng thái
+  pendingAt           DateTime? @map("pending_at") @db.Timestamptz
+  preparingAt         DateTime? @map("preparing_at") @db.Timestamptz
+  readyForDeliveryAt  DateTime? @map("ready_for_delivery_at") @db.Timestamptz
+  completedAt         DateTime? @map("completed_at") @db.Timestamptz
+  cancelledAt         DateTime? @map("cancelled_at") @db.Timestamptz
+  
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   // Quan hệ ngược
-  orderDetails       OrderDetail[]
-  inventoryLogs      InventoryLog[]
+  orderDetails  OrderDetail[]
+  inventoryLogs InventoryLog[]
 
   @@index([customerUserId])
   @@index([status])
@@ -229,23 +246,22 @@ model Order {
 }
 
 model OrderDetail {
-  id              String   @id @default(uuid()) @db.Uuid
-  
-  orderId         String   @db.Uuid @map("order_id")
-  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  
-  
-  itemId          String   @db.Uuid @map("item_id")
-  item            Item     @relation(fields: [itemId], references: [id], onDelete: Restrict)
-  
-  quantity        Int
-  unitAtPurchase  ItemUnit @map("unit_at_purchase")
-  
+  id String @id @default(uuid()) @db.Uuid
+
+  orderId String @map("order_id") @db.Uuid
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  itemId String @map("item_id") @db.Uuid
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  quantity       Int
+  unitAtPurchase ItemUnit @map("unit_at_purchase")
+
   // [SỬA] Thêm trường tiền tệ cho từng dòng
   currencyAtPurchase CurrencyType @default(COIN) @map("currency_at_purchase")
-  
-  priceAtPurchase Decimal  @map("price_at_purchase") @db.Decimal(12, 2)
-  totalLineAmount Decimal  @map("total_line_amount") @db.Decimal(12, 2)
+
+  priceAtPurchase Decimal @map("price_at_purchase") @db.Decimal(12, 2)
+  totalLineAmount Decimal @map("total_line_amount") @db.Decimal(12, 2)
 
   @@map("order_details")
 }
@@ -255,20 +271,20 @@ model OrderDetail {
 //==============================================================
 
 model InventoryLog {
-  id               String      @id @default(uuid()) @db.Uuid
-  
+  id String @id @default(uuid()) @db.Uuid
+
   // Quan hệ với Item
-  itemId           String      @db.Uuid @map("item_id")
-  item             Item        @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  
+  itemId String @map("item_id") @db.Uuid
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
   // Quan hệ với User (Admin/Staff)
-  userId           String      @db.Uuid @map("user_id")
-  user             User        @relation(fields: [userId], references: [id], onDelete: Restrict)
-  
+  userId String @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
   // Quan hệ với Order (Nullable)
-  orderId          String?     @db.Uuid @map("order_id")
-  order            Order?      @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  
+  orderId String? @map("order_id") @db.Uuid
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
   quantityChange   Int         @map("quantity_change")
   newStockQuantity Int         @map("new_stock_quantity")
   reason           StockReason
@@ -279,24 +295,24 @@ model InventoryLog {
 }
 
 model SupplierSubmission {
-  id               String    @id @default(uuid()) @db.Uuid
-  
+  id String @id @default(uuid()) @db.Uuid
+
   // Quan hệ với User (Supplier)
-  supplierUserId   String    @db.Uuid @map("supplier_user_id")
-  supplier         User      @relation("SupplierSubmissions", fields: [supplierUserId], references: [id], onDelete: Restrict)
-  
-  status           String    @default("PENDING") @db.VarChar(50)
-  
+  supplierUserId String @map("supplier_user_id") @db.Uuid
+  supplier       User   @relation("SupplierSubmissions", fields: [supplierUserId], references: [id], onDelete: Restrict)
+
+  status String @default("PENDING") @db.VarChar(50)
+
   // Quan hệ với User (Admin/Staff duyệt)
-  approvedByUserId String?   @db.Uuid @map("approved_by_user_id")
-  approvedBy       User?     @relation("AdminApprovedSubmissions", fields: [approvedByUserId], references: [id], onDelete: SetNull)
-  
-  supplierNotes    String?   @map("supplier_notes")
-  adminNotes       String?   @map("admin_notes")
-  totalValueCoin   Decimal   @default(0) @map("total_value_coin") @db.Decimal(12, 2)
-  
-  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz // <-- ĐÃ SỬA
-  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz // <-- ĐÃ SỬA
+  approvedByUserId String? @map("approved_by_user_id") @db.Uuid
+  approvedBy       User?   @relation("AdminApprovedSubmissions", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+
+  supplierNotes  String? @map("supplier_notes")
+  adminNotes     String? @map("admin_notes")
+  totalValueCoin Decimal @default(0) @map("total_value_coin") @db.Decimal(12, 2)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz // <-- ĐÃ SỬA
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz // <-- ĐÃ SỬA
 
   // Quan hệ ngược
   supplierSubmissionDetails SupplierSubmissionDetail[]
@@ -307,20 +323,20 @@ model SupplierSubmission {
 }
 
 model SupplierSubmissionDetail {
-  id                       String             @id @default(uuid()) @db.Uuid
-  
+  id String @id @default(uuid()) @db.Uuid
+
   // Quan hệ với SupplierSubmission
-  submissionId             String             @db.Uuid @map("submission_id")
-  submission               SupplierSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  
+  submissionId String             @map("submission_id") @db.Uuid
+  submission   SupplierSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
   // Quan hệ với Item
-  itemId                   String             @db.Uuid @map("item_id")
-  item                     Item               @relation(fields: [itemId], references: [id], onDelete: Restrict)
-  
-  quantity                 Int
-  unit                     ItemUnit
-  suggestedPricePerUnitCoin Decimal            @map("suggested_price_per_unit_coin") @db.Decimal(12, 2)
-  finalPricePerUnitCoin     Decimal            @map("final_price_per_unit_coin") @db.Decimal(12, 2)
+  itemId String @map("item_id") @db.Uuid
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  quantity                  Int
+  unit                      ItemUnit
+  suggestedPricePerUnitCoin Decimal  @map("suggested_price_per_unit_coin") @db.Decimal(12, 2)
+  finalPricePerUnitCoin     Decimal  @map("final_price_per_unit_coin") @db.Decimal(12, 2)
 
   @@map("supplier_submission_details")
 }

@@ -12,7 +12,7 @@ const ORDER_STATUSES = ['PENDING', 'PREPARING', 'READY_FOR_DELIVERY', 'COMPLETED
 const PAYMENT_STATUSES = ['UNPAID', 'PAID'];
 
 export default function AdminOrderDetailPage() {
-  const { id } = useParams();
+  const { orderId: id } = useParams();
   const navigate = useNavigate();
   const adminUser = useAuthStore((state) => state.user);
 
@@ -59,7 +59,7 @@ export default function AdminOrderDetailPage() {
       };
       await updateOrderAdmin(id, updateData);
       toast.success('Cập nhật đơn hàng thành công!');
-      fetchOrderDetails(); 
+      fetchOrderDetails();
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'Cập nhật thất bại';
       toast.error(errorMsg);
@@ -79,7 +79,7 @@ export default function AdminOrderDetailPage() {
   if (!order) {
     return null;
   }
-  
+
   const totalAmountCoin = parseFloat(order.totalAmountCoin) || 0;
   const totalAmountUsd = parseFloat(order.totalAmountUsd) || 0;
   const subTotalCoin = parseFloat(order.subTotalCoin) || 0;
@@ -94,10 +94,10 @@ export default function AdminOrderDetailPage() {
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         <div className="lg:col-span-2 bg-gray-900 shadow-xl rounded-lg p-6">
           <h1 className="text-3xl font-bold text-white mb-4">Chi tiết Đơn hàng (Admin)</h1>
-          
+
           {/* [BẮT ĐẦU SỬA] Hiển thị cả orderNumber và id */}
           <p className="font-mono text-xl font-bold text-pink-400 mb-2">
             Mã ĐH: {order.orderNumber || 'N/A'}
@@ -122,9 +122,9 @@ export default function AdminOrderDetailPage() {
               {order.orderDetails.map(detail => (
                 <div key={detail.id} className="flex justify-between items-center">
                   <div className="flex items-center space-x-3">
-                    <img 
-                      src={detail.item?.thumbnailImageUrl || 'https://placehold.co/64x64/2D3748/FFFFFF?text=Item'} 
-                      alt={detail.item?.name || 'Vật phẩm đã bị xóa'} 
+                    <img
+                      src={detail.item?.thumbnailImageUrl || 'https://placehold.co/64x64/2D3748/FFFFFF?text=Item'}
+                      alt={detail.item?.name || 'Vật phẩm đã bị xóa'}
                       className="w-12 h-12 rounded-md object-cover"
                     />
                     <div>
@@ -142,7 +142,7 @@ export default function AdminOrderDetailPage() {
               ))}
             </div>
           </div>
-          
+
           {/* Tổng kết */}
           <div className="text-right space-y-2">
             {subTotalUsd > 0 && (
@@ -179,7 +179,7 @@ export default function AdminOrderDetailPage() {
         {/* Cột 2: Panel Hành động */}
         <div className="lg:col-span-1 bg-gray-900 shadow-xl rounded-lg p-6 h-fit">
           <h2 className="text-2xl font-semibold text-white mb-4">Hành động</h2>
-          
+
           <div className="mb-4">
             <label htmlFor="orderStatus" className="block text-sm font-medium text-gray-300 mb-2">Trạng thái Đơn hàng</label>
             <select

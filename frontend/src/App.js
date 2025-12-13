@@ -17,6 +17,8 @@ import RegisterPage from './pages/RegisterPage';
 import ItemsPage from './pages/ItemsPage';
 import ItemDetailPage from './pages/ItemDetailPage';
 import SupportPage from './pages/SupportPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // Pages - Customer
 import CartPage from './pages/CartPage';
@@ -90,6 +92,8 @@ function App() {
           <Route path="/support" element={<SupportPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* --- CUSTOMER ROUTES --- */}
           {/* [SỬA] Cho phép khách vãng lai xem giỏ hàng */}

@@ -9,9 +9,9 @@ const getAllVipLevels = asyncHandler(async (req, res) => {
   res.status(httpStatus.OK).send(vipLevels);
 });
 
-// Admin: Lấy chi tiết
-const getVipLevelById = asyncHandler(async (req, res) => {
-  const vipLevel = await vipLevelService.getVipLevelById(req.params.id);
+// [FIX] Admin: Lấy chi tiết - đổi từ id sang level
+const getVipLevelByLevel = asyncHandler(async (req, res) => {
+  const vipLevel = await vipLevelService.getVipLevelByLevel(req.params.level);
   res.status(httpStatus.OK).send(vipLevel);
 });
 
@@ -21,22 +21,22 @@ const createVipLevel = asyncHandler(async (req, res) => {
   res.status(httpStatus.CREATED).send(vipLevel);
 });
 
-// Admin: Cập nhật
-const updateVipLevelById = asyncHandler(async (req, res) => {
-  const vipLevel = await vipLevelService.updateVipLevelById(req.params.id, req.body);
+// [FIX] Admin: Cập nhật - đổi từ id sang level
+const updateVipLevelByLevel = asyncHandler(async (req, res) => {
+  const vipLevel = await vipLevelService.updateVipLevelByLevel(req.params.level, req.body);
   res.status(httpStatus.OK).send(vipLevel);
 });
 
-// Admin: Xóa
-const deleteVipLevelById = asyncHandler(async (req, res) => {
-  await vipLevelService.deleteVipLevelById(req.params.id);
+// [FIX] Admin: Xóa - đổi từ id sang level
+const deleteVipLevelByLevel = asyncHandler(async (req, res) => {
+  await vipLevelService.deleteVipLevelByLevel(req.params.level);
   res.status(httpStatus.OK).send({ message: 'Xóa cấp độ VIP thành công' });
 });
 
 export const vipLevelController = {
   getAllVipLevels,
-  getVipLevelById,
+  getVipLevelByLevel,
   createVipLevel,
-  updateVipLevelById,
-  deleteVipLevelById,
+  updateVipLevelByLevel,
+  deleteVipLevelByLevel,
 };

@@ -98,19 +98,45 @@ const changeMyPassword = async (userId, passwordData) => {
   });
 };
 /**
- * [MỚI - Admin] Lấy danh sách user (có lọc theo role)
- * @param {Array<string>} roles - Mảng các role (VD: ['STAFF', 'SUPPLIER'])
- * @returns {Promise<User[]>}
+ * [NÂNG CẤP - Admin] Lấy danh sách user với Pagination và Filter
+ * @param {object} query - { page, limit, roles, search }
+ * @returns {Promise<{data: User[], pagination: object}>}
  */
-const adminGetUsers = async (roles) => {
+const adminGetUsers = async (query = {}) => {
+  const {
+    page = 1,
+    limit = 20,
+    roles,
+    search,
+  } = query;
+
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const take = parseInt(limit);
+
+  // Build where clause
   const whereClause = {};
-  
-  // Nếu có filter roles, thêm vào
-  if (roles && roles.length > 0) {
-    whereClause.role = { in: roles };
+
+  // Filter by roles
+  if (roles) {
+    const roleArray = Array.isArray(roles) ? roles : roles.split(',');
+    if (roleArray.length > 0) {
+      whereClause.role = { in: roleArray };
+    }
   }
 
-  return prisma.user.findMany({
+  // Search by email or inGameName
+  if (search) {
+    whereClause.OR = [
+      { email: { contains: search, mode: 'insensitive' } },
+      { inGameName: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+
+  // Get total count for pagination
+  const total = await prisma.user.count({ where: whereClause });
+
+  // Get paginated users
+  const users = await prisma.user.findMany({
     where: whereClause,
     select: {
       id: true,
@@ -118,7 +144,7 @@ const adminGetUsers = async (roles) => {
       inGameName: true,
       role: true,
       createdAt: true,
-      // Lấy thông tin VIP cho list customer
+      totalSpentCoin: true,
       vipLevel: {
         select: {
           level: true,
@@ -127,7 +153,19 @@ const adminGetUsers = async (roles) => {
       },
     },
     orderBy: { createdAt: 'desc' },
+    skip,
+    take,
   });
+
+  return {
+    data: users,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total,
+      totalPages: Math.ceil(total / take),
+    }
+  };
 };
 
 /**

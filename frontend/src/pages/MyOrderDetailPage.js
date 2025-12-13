@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getMyOrderById } from '../services/orderService.js';
 import { formatNumber } from '../utils/formatNumber.js';
-import { FaCoins } from 'react-icons/fa';
-import { FaDollarSign } from 'react-icons/fa';
+import { FaCoins, FaDollarSign } from 'react-icons/fa';
+import OrderTimeline from '../components/order/OrderTimeline.js';
 
 const formatStatus = (status) => {
   const styles = {
@@ -60,14 +60,14 @@ export default function MyOrderDetailPage() {
       <Link to="/my-orders" className="text-pink-400 hover:text-pink-300 mb-6 inline-block">
         &larr; Quay lại Danh sách đơn hàng
       </Link>
-      
+
       <div className="bg-gray-800 rounded-lg shadow-xl p-6 md:p-8">
         <h1 className="text-3xl font-bold text-white mb-6">Chi tiết Đơn hàng</h1>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div>
             <p className="text-gray-400">Mã đơn hàng:</p>
-            
+
             {/* [BẮT ĐẦU SỬA] Ưu tiên hiển thị orderNumber */}
             <p className="text-white font-mono text-xl font-bold text-pink-400">
               {order.orderNumber || 'N/A'}
@@ -111,7 +111,7 @@ export default function MyOrderDetailPage() {
           {order.orderDetails.map(detail => (
             <div key={detail.id} className="flex justify-between items-center bg-gray-800 p-3 rounded-lg">
               <div className="flex items-center space-x-4">
-                <img 
+                <img
                   src={detail.item?.thumbnailImageUrl || 'https://placehold.co/64x64/2D3748/FFFFFF?text=Item'}
                   alt={detail.item?.name || 'Vật phẩm'}
                   className="w-12 h-12 rounded-md object-cover flex-shrink-0"
@@ -119,7 +119,7 @@ export default function MyOrderDetailPage() {
                 <div>
                   <p className="text-white font-semibold">{detail.item?.name || '(Vật phẩm đã bị xóa)'} (x{formatNumber(detail.quantity)})</p>
                   <p className="text-sm text-gray-400">
-                    Đơn giá: {formatNumber(detail.priceAtPurchase)} 
+                    Đơn giá: {formatNumber(detail.priceAtPurchase)}
                     <span className={detail.currencyAtPurchase === 'USD' ? 'text-green-400' : 'text-yellow-400'}>
                       {' '}{detail.currencyAtPurchase}
                     </span>
@@ -167,6 +167,11 @@ export default function MyOrderDetailPage() {
               </p>
             )}
           </div>
+        </div>
+
+        {/* [MỚI] Order Timeline */}
+        <div className="mt-8">
+          <OrderTimeline order={order} />
         </div>
       </div>
     </div>
