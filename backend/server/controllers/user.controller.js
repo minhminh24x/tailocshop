@@ -90,20 +90,36 @@ const getMyProfile = asyncHandler(async (req, res) => {
     },
   });
 
+  // [FIX] Nếu không có vipLevel, lấy VIP level 0 làm default
+  let effectiveVipLevel = user.vipLevel;
+  if (!effectiveVipLevel) {
+    const defaultVip = await prisma.vipLevel.findUnique({
+      where: { level: 0 },
+      select: {
+        level: true,
+        name: true,
+        coinThreshold: true,
+        discountPercent: true,
+      },
+    });
+    effectiveVipLevel = defaultVip || {
+      level: 0,
+      name: 'Thành viên mới',
+      coinThreshold: 0,
+      discountPercent: 0,
+    };
+  }
+
   // 3. Gửi phản hồi
   res.status(200).json({
     user: {
       ...user,
       totalCoinPurchased: user.totalSpentCoin,
-      // [FIX] Dùng ternary (toán tử 3 ngôi) để an toàn nếu user.vipLevel là null
-      vipLevel: user.vipLevel
-        ? {
-          ...user.vipLevel,
-          requiredCoins: user.vipLevel.coinThreshold,
-        }
-        : null,
+      vipLevel: {
+        ...effectiveVipLevel,
+        requiredCoins: effectiveVipLevel.coinThreshold,
+      },
     },
-    // [FIX] Dùng ternary để an toàn nếu nextVipLevel là null
     nextVipLevel: nextVipLevel
       ? {
         ...nextVipLevel,

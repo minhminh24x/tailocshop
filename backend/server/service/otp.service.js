@@ -10,11 +10,19 @@ const OTP_EXPIRY_MINUTES = 10;
 
 // Cấu hình email transporter
 const createTransporter = () => {
+    // [FIX] Sử dụng đúng tên biến môi trường
+    const emailUser = process.env.EMAIL_USERNAME || process.env.EMAIL_USER;
+    const emailPass = process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS;
+
+    if (!emailUser || !emailPass) {
+        console.error('[EMAIL] Missing EMAIL_USERNAME or EMAIL_PASSWORD in .env');
+    }
+
     return nodemailer.createTransport({
         service: 'gmail',
         auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
+            user: emailUser,
+            pass: emailPass,
         },
     });
 };
@@ -66,7 +74,7 @@ const sendRegistrationOTP = async (email, inGameName) => {
         const transporter = createTransporter();
 
         await transporter.sendMail({
-            from: `"Tài Lộc Shop" <${process.env.EMAIL_USER}>`,
+            from: `"Tài Lộc Shop" <${process.env.EMAIL_USERNAME || process.env.EMAIL_USER}>`,
             to: email,
             subject: 'Mã xác thực đăng ký - Tài Lộc Shop',
             html: `

@@ -22,6 +22,8 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import AboutPage from './pages/AboutPage';
 import RegisterStaffPage from './pages/RegisterStaffPage';
 import RegisterSupplierPage from './pages/RegisterSupplierPage';
+import ContactPage from './pages/ContactPage';
+import PrivacyPage from './pages/PrivacyPage';
 
 // Pages - Customer
 import CartPage from './pages/CartPage';
@@ -104,6 +106,8 @@ function App() {
           <Route path="/register/staff" element={<RegisterStaffPage />} />
           <Route path="/register/supplier" element={<RegisterSupplierPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 

@@ -29,7 +29,7 @@ export default function Footer() {
           {/* Cột 3: Thông tin liên hệ */}
           <div>
             <h3 className="text-xl font-bold text-white mb-4">Liên hệ chúng tôi</h3>
-            <p>Email: support@tailocshop.com</p>
+            <p>Email: <a href="mailto:loclm112.noreplay@gmail.com" className="text-yellow-400 hover:underline">loclm112.noreplay@gmail.com</a></p>
             <p>Discord: KingMCCommunity</p>
             <p>Server: play.kingmc.vn</p>
           </div>
