@@ -1,20 +1,20 @@
 // File: frontend/src/pages/admin/manager/AdminManageUsers.js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { getUsers } from '../../../services/adminUserService';
 import CreateUserModal from '../../../components/admin/CreateUserModal';
 import Pagination from '../../../components/common/Pagination';
-import { FaSearch, FaCoins } from 'react-icons/fa';
+import { FaSearch, FaCoins, FaPlus } from 'react-icons/fa';
 import { formatNumber } from '../../../utils/formatNumber';
 
 export default function AdminManageUsers({ type = 'STAFF' }) {
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  // [NÂNG CẤP] Server-side Pagination & Filter State
+  // Pagination & Filter State
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -26,10 +26,6 @@ export default function AdminManageUsers({ type = 'STAFF' }) {
   const pageTitle = isCustomerMode ? 'Quản lý Khách hàng' : 'Quản lý Nhân sự';
   const rolesToFetch = isCustomerMode ? ['CUSTOMER'] : ['STAFF', 'SUPPLIER'];
 
-  // [SỬA] Dùng ref để track mounted state và prevent infinite loops
-  const isMounted = useRef(true);
-  const fetchInProgress = useRef(false);
-
   // Debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -38,64 +34,47 @@ export default function AdminManageUsers({ type = 'STAFF' }) {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // [SỬA] Fetch với kiểm tra prevent duplicate calls
-  useEffect(() => {
-    // Prevent concurrent calls
-    if (fetchInProgress.current) return;
+  // Fetch users function - wrapped in useCallback
+  // [SỬA] Dùng type prop trực tiếp thay vì rolesToFetch array để tránh infinite loop
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Tính roles trực tiếp bên trong để tránh dependency thay đổi
+      const roles = type === 'CUSTOMER' ? 'CUSTOMER' : 'STAFF,SUPPLIER';
 
-    const fetchUsers = async () => {
-      fetchInProgress.current = true;
-      setLoading(true);
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+        roles: roles,
+      };
 
-      try {
-        const params = {
-          page: currentPage,
-          limit: itemsPerPage,
-          roles: rolesToFetch.join(','),
-        };
-
-        if (debouncedSearch) {
-          params.search = debouncedSearch;
-        }
-
-        const response = await getUsers(params);
-        console.log('[AdminManageUsers] API Response:', response); // DEBUG
-
-        if (isMounted.current) {
-          // [FIX] API trả về { data: [...], pagination: {...} }
-          // response đã là object chứa data và pagination
-          const usersData = response?.data || [];
-          const paginationData = response?.pagination || {};
-
-          console.log('[AdminManageUsers] Users:', usersData); // DEBUG
-
-          setUsers(usersData);
-          setTotalPages(paginationData.totalPages || 1);
-          setTotalItems(paginationData.total || 0);
-        }
-      } catch (error) {
-        if (isMounted.current) {
-          toast.error('Lỗi khi tải danh sách người dùng');
-        }
-      } finally {
-        if (isMounted.current) {
-          setLoading(false);
-        }
-        fetchInProgress.current = false;
+      if (debouncedSearch) {
+        params.search = debouncedSearch;
       }
-    };
 
-    fetchUsers();
-  }, [currentPage, itemsPerPage, debouncedSearch, type]); // [SỬA] Dùng type thay vì rolesToFetch
+      console.log('[AdminManageUsers] Fetching with params:', params);
+      const response = await getUsers(params);
+      console.log('[AdminManageUsers] Response:', response);
 
-  // Cleanup on unmount
+      // API trả về { data: [...], pagination: {...} }
+      setUsers(response?.data || []);
+      setTotalPages(response?.pagination?.totalPages || 1);
+      setTotalItems(response?.pagination?.total || 0);
+    } catch (error) {
+      console.error('[AdminManageUsers] Error:', error);
+      toast.error('Lỗi khi tải danh sách người dùng');
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, itemsPerPage, debouncedSearch, type]); // [SỬA] Dùng 'type' thay vì rolesToFetch
+
+  // [SỬA] Fetch khi dependencies thay đổi
   useEffect(() => {
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
+    fetchUsers();
+  }, [fetchUsers]);
 
-  // Reset khi đổi type (Customer vs Staff) - CHỈ reset search và page
+  // Reset khi đổi type (Customer vs Staff)
   useEffect(() => {
     setSearchTerm('');
     setCurrentPage(1);
@@ -103,7 +82,7 @@ export default function AdminManageUsers({ type = 'STAFF' }) {
 
   const handleUserCreated = () => {
     setIsModalOpen(false);
-    setCurrentPage(1); // Trigger refetch
+    fetchUsers(); // Reload data
     toast.success('Tạo tài khoản thành công!');
   };
 
@@ -119,36 +98,39 @@ export default function AdminManageUsers({ type = 'STAFF' }) {
         {!isCustomerMode && (
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-slate-900 rounded-lg font-semibold hover:from-yellow-600 hover:to-orange-600 transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-slate-900 font-bold rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all"
           >
-            + Tạo tài khoản mới
+            <FaPlus /> Tạo tài khoản mới
           </button>
         )}
       </div>
 
-      {/* Search (cho cả Customer và Staff) */}
+      {/* Search */}
       <div className="relative mb-6 max-w-md">
+        <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
         <input
           type="text"
           placeholder="Tìm theo tên, email..."
-          className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500"
           value={searchTerm}
-          onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="w-full pl-12 pr-4 py-3 bg-slate-900 border border-white/10 rounded-xl text-white focus:outline-none focus:border-yellow-500"
         />
-        <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
       </div>
 
       {/* Table */}
-      <div className="bg-slate-900 shadow-xl rounded-lg overflow-hidden border border-white/10">
+      <div className="bg-slate-900 rounded-xl overflow-hidden border border-white/10">
         <table className="min-w-full text-white">
           <thead className="bg-slate-800">
             <tr>
               <th className="py-3 px-4 text-left">Tên In-game</th>
               <th className="py-3 px-4 text-left">Email</th>
-              <th className="py-3 px-4 text-left">Vai trò</th>
+              <th className="py-3 px-4 text-center">Vai trò</th>
               {isCustomerMode && (
                 <>
-                  <th className="py-3 px-4 text-left">Cấp VIP</th>
+                  <th className="py-3 px-4 text-center">Cấp VIP</th>
                   <th className="py-3 px-4 text-right">Tổng chi tiêu</th>
                 </>
               )}
@@ -157,42 +139,46 @@ export default function AdminManageUsers({ type = 'STAFF' }) {
           <tbody className="divide-y divide-white/5">
             {loading ? (
               <tr>
-                <td colSpan={isCustomerMode ? 5 : 3} className="text-center py-8 text-gray-400">
+                <td colSpan={isCustomerMode ? 5 : 3} className="py-8 text-center text-gray-400">
                   Đang tải...
                 </td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={isCustomerMode ? 5 : 3} className="text-center py-8 text-gray-400">
-                  Không có dữ liệu
+                <td colSpan={isCustomerMode ? 5 : 3} className="py-8 text-center text-gray-400">
+                  Không tìm thấy người dùng nào
                 </td>
               </tr>
             ) : (
               users.map((user) => (
                 <tr
                   key={user.id}
-                  className="hover:bg-white/5 cursor-pointer transition-colors"
                   onClick={() => handleRowClick(user.id)}
+                  className="hover:bg-white/5 cursor-pointer transition-colors"
                 >
-                  <td className="p-4 font-medium text-yellow-400">{user.inGameName}</td>
-                  <td className="p-4 text-gray-300">{user.email}</td>
-                  <td className="p-4">
-                    <span className={`px-2 py-1 rounded text-xs font-bold ${user.role === 'ADMIN' ? 'bg-red-900 text-red-200' :
-                      user.role === 'STAFF' ? 'bg-green-900 text-green-200' :
-                        user.role === 'SUPPLIER' ? 'bg-blue-900 text-blue-200' :
-                          'bg-gray-900 text-gray-200'
+                  <td className="py-3 px-4 font-medium">{user.inGameName}</td>
+                  <td className="py-3 px-4 text-gray-400">{user.email}</td>
+                  <td className="py-3 px-4 text-center">
+                    <span className={`px-2 py-1 rounded text-xs font-bold ${user.role === 'ADMIN' ? 'bg-red-900/50 text-red-300' :
+                      user.role === 'STAFF' ? 'bg-blue-900/50 text-blue-300' :
+                        user.role === 'SUPPLIER' ? 'bg-green-900/50 text-green-300' :
+                          'bg-gray-700 text-gray-300'
                       }`}>
                       {user.role}
                     </span>
                   </td>
                   {isCustomerMode && (
                     <>
-                      <td className="p-4 text-blue-400">
-                        {user.vipLevel?.name || 'Mới'}
+                      <td className="py-3 px-4 text-center">
+                        <span className="text-yellow-400 font-medium">
+                          {user.vipLevel?.name || 'Tân Thủ'}
+                        </span>
                       </td>
-                      <td className="p-4 text-right text-yellow-400 flex items-center justify-end">
-                        <FaCoins className="mr-1" />
-                        {formatNumber(user.totalCoinSpent || 0)}
+                      <td className="py-3 px-4 text-right">
+                        <span className="flex items-center justify-end gap-1 text-green-400">
+                          <FaCoins className="text-yellow-500" />
+                          {formatNumber(user.totalSpentCoin || 0)}
+                        </span>
                       </td>
                     </>
                   )}
@@ -203,26 +189,27 @@ export default function AdminManageUsers({ type = 'STAFF' }) {
         </table>
       </div>
 
-      {/* Pagination & Info */}
-      <div className="mt-4 flex justify-between items-center text-gray-400">
-        <span>
-          Tổng cộng: <strong className="text-white">{totalItems}</strong> người dùng
-        </span>
-        {totalPages > 1 && (
+      {/* Footer info */}
+      <p className="text-gray-400 text-sm mt-4">
+        Tổng cộng: <strong>{totalItems}</strong> người dùng
+      </p>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-4">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
           />
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Modal */}
       <CreateUserModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={handleUserCreated}
-        defaultRole={isCustomerMode ? 'CUSTOMER' : 'STAFF'}
       />
     </div>
   );

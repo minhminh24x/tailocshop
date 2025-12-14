@@ -62,6 +62,31 @@ const updateOrderAdmin = asyncHandler(async (req, res) => {
   res.status(httpStatus.OK).send(order);
 });
 
+// [MỚI] Chuyển đơn hàng sang bước tiếp theo
+const advanceOrderStatus = asyncHandler(async (req, res) => {
+  const { id: orderId } = req.params;
+  const adminUserId = req.user.id;
+
+  const order = await orderService.advanceOrderStatus(orderId, adminUserId);
+  res.status(httpStatus.OK).send(order);
+});
+
+// [MỚI] Xác nhận thanh toán và hoàn thành đơn hàng
+const confirmPaymentAndComplete = asyncHandler(async (req, res) => {
+  const { id: orderId } = req.params;
+  const adminUserId = req.user.id;
+
+  const order = await orderService.confirmPaymentAndComplete(orderId, adminUserId);
+  res.status(httpStatus.OK).send(order);
+});
+
+// [MỚI] Lấy trạng thái tiếp theo
+const getNextOrderStatus = asyncHandler(async (req, res) => {
+  const { currentStatus } = req.params;
+  const nextStatus = orderService.getNextStatus(currentStatus);
+  res.status(httpStatus.OK).send({ currentStatus, nextStatus });
+});
+
 export const orderController = {
   createOrder,
   getMyOrders,
@@ -69,4 +94,8 @@ export const orderController = {
   getAllOrdersAdmin,
   getOrderByIdAdmin,
   updateOrderAdmin,
+  // [MỚI] Order flow
+  advanceOrderStatus,
+  confirmPaymentAndComplete,
+  getNextOrderStatus,
 };

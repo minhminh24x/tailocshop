@@ -52,6 +52,28 @@ router
     orderController.updateOrderAdmin
   );
 
-// (Các route .get và .patch riêng lẻ đã được gộp ở trên)
+// [MỚI] Route chuyển đơn hàng sang bước tiếp theo
+router.post(
+  '/admin/:id/advance',
+  protect,
+  authorize('ADMIN', 'STAFF'),
+  orderController.advanceOrderStatus
+);
+
+// [MỚI] Route xác nhận thanh toán và hoàn thành
+router.post(
+  '/admin/:id/confirm-complete',
+  protect,
+  authorize('ADMIN', 'STAFF'),
+  orderController.confirmPaymentAndComplete
+);
+
+// [MỚI] Route lấy trạng thái tiếp theo (helper)
+router.get(
+  '/status/next/:currentStatus',
+  protect,
+  authorize('ADMIN', 'STAFF'),
+  orderController.getNextOrderStatus
+);
 
 export default router;

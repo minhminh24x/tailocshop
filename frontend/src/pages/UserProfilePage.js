@@ -143,13 +143,20 @@ const UserProfilePage = () => {
   };
 
   const currentVip = user.vipLevel;
-  const totalCoins = parseFloat(user.totalCoinSpent) || 0;
+  const totalCoins = parseFloat(user.totalCoinSpent || user.totalSpentCoin) || 0;
   const vipImageUrl = getVipImageUrl(currentVip);
 
-  const nextVipThreshold = nextVip?.minTotalSpent || 1000000;
-  const progressPercent = nextVip
-    ? Math.min(100, (totalCoins / parseFloat(nextVipThreshold)) * 100)
-    : 100;
+  // [SỬA] Logic tính progress - xử lý edge cases
+  const nextVipThreshold = nextVip?.requiredCoins || nextVip?.coinThreshold || 1000000;
+  const currentVipThreshold = currentVip?.coinThreshold || 0;
+
+  // Chỉ 100% khi có VIP và không có next level
+  const isMaxLevel = currentVip && !nextVip;
+  const progressPercent = isMaxLevel
+    ? 100
+    : nextVip
+      ? Math.min(100, ((totalCoins - currentVipThreshold) / (parseFloat(nextVipThreshold) - currentVipThreshold)) * 100)
+      : Math.min(100, (totalCoins / parseFloat(nextVipThreshold)) * 100);
 
   const getRoleName = (role) => {
     switch (role) {
@@ -240,12 +247,16 @@ const UserProfilePage = () => {
                 />
               </div>
 
-              {nextVip ? (
+              {isMaxLevel ? (
+                <p className="text-sm text-green-400 mt-2">🎉 Bạn đã đạt cấp VIP cao nhất!</p>
+              ) : nextVip ? (
                 <p className="text-sm text-gray-400 mt-2">
                   Cần thêm <strong className="text-yellow-400">{(parseFloat(nextVipThreshold) - totalCoins).toLocaleString('vi-VN')} Xu</strong> để đạt <strong className="text-blue-400">{nextVip.name}</strong>
                 </p>
               ) : (
-                <p className="text-sm text-green-400 mt-2">🎉 Bạn đã đạt cấp VIP cao nhất!</p>
+                <p className="text-sm text-gray-400 mt-2">
+                  Hãy mua sắm để tích lũy và nhận những lợi ích đầu tiên!
+                </p>
               )}
 
               <div className="mt-4 p-3 bg-slate-800/50 rounded-lg border border-white/10">

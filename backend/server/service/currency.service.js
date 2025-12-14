@@ -54,7 +54,7 @@ const updateExchangeRate = async (rateType, newRate, adminId) => {
       },
       include: {
         updatedBy: {
-          select: { id: true, username: true },
+          select: { id: true, inGameName: true }, // [SỬA] username -> inGameName
         },
       },
     });

@@ -109,9 +109,9 @@ export default function AdminManageTimeSlots() {
         <table className="min-w-full text-white">
           <thead className="bg-gray-800">
             <tr>
-              <th className="py-3 px-4 text-left">Ngày áp dụng</th>
-              <th className="py-3 px-4 text-left">Giờ bắt đầu</th>
-              <th className="py-3 px-4 text-left">Giờ kết thúc</th>
+              <th className="py-3 px-4 text-left">Tên hiển thị</th>
+              <th className="py-3 px-4 text-left">Ngày</th>
+              <th className="py-3 px-4 text-left">Giờ</th>
               <th className="py-3 px-4 text-center">Trạng thái</th>
               <th className="py-3 px-4 text-center">Hành động</th>
             </tr>
@@ -119,11 +119,15 @@ export default function AdminManageTimeSlots() {
           <tbody className="bg-gray-800 divide-y divide-gray-700">
             {timeSlots.map((slot) => (
               <tr key={slot.id} className="hover:bg-gray-700">
-                <td className="py-3 px-4 font-medium">
-                  {['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'][slot.dayOfWeek] || slot.dayOfWeek}
+                <td className="py-3 px-4 font-medium text-yellow-400">
+                  {slot.displayText || 'Chưa đặt tên'}
                 </td>
-                <td className="py-3 px-4 font-mono">{slot.startTime}</td>
-                <td className="py-3 px-4 font-mono">{slot.endTime}</td>
+                <td className="py-3 px-4 text-gray-400 text-sm">
+                  {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][slot.dayOfWeek] || '-'}
+                </td>
+                <td className="py-3 px-4 font-mono text-gray-400 text-sm">
+                  {slot.startTime} - {slot.endTime}
+                </td>
                 <td className="py-3 px-4 text-center">
                   {slot.isActive ? (
                     <span className="px-2 py-1 text-xs font-semibold bg-green-700 text-green-100 rounded-full">Kích hoạt</span>

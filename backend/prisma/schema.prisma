@@ -426,3 +426,18 @@ enum VoucherDiscountType {
   PERCENTAGE // Giảm theo %
   FIXED_COIN // Giảm số xu cố định
 }
+
+// --- [THÊM] Bảng lưu OTP xác thực email ---
+model PendingOTP {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique @db.VarChar(255)
+  otp       String   @db.VarChar(10)
+  type      String   @default("REGISTRATION") @db.VarChar(50) // REGISTRATION, PASSWORD_RESET
+  verified  Boolean  @default(false)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([email])
+  @@map("pending_otps")
+}
+

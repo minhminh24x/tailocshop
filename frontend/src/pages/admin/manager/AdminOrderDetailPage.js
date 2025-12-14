@@ -2,14 +2,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { getOrderByIdAdmin, updateOrderAdmin } from '../../../services/adminOrderService.js';
+import {
+  getOrderByIdAdmin,
+  updateOrderAdmin,
+  advanceOrderStatus,
+  confirmPaymentAndComplete,
+  ORDER_STATUS_LABELS,
+  getNextStatus
+} from '../../../services/adminOrderService.js';
 import { useAuthStore } from '../../../store/authStore.js';
 import { formatNumber } from '../../../utils/formatNumber.js';
-import { FaCoins } from 'react-icons/fa';
-import { FaDollarSign } from 'react-icons/fa';
-
-const ORDER_STATUSES = ['PENDING', 'PREPARING', 'READY_FOR_DELIVERY', 'COMPLETED', 'CANCELLED'];
-const PAYMENT_STATUSES = ['UNPAID', 'PAID'];
+import { FaCoins, FaDollarSign, FaCheck, FaTimes, FaArrowRight, FaClock } from 'react-icons/fa';
+import OrderTimeline from '../../../components/order/OrderTimeline.js';
 
 export default function AdminOrderDetailPage() {
   const { orderId: id } = useParams();
@@ -19,9 +23,6 @@ export default function AdminOrderDetailPage() {
   const [order, setOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const [currentStatus, setCurrentStatus] = useState('');
-  const [currentPaymentStatus, setCurrentPaymentStatus] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
   const fetchOrderDetails = useCallback(async () => {
@@ -30,8 +31,6 @@ export default function AdminOrderDetailPage() {
       setError(null);
       const { data } = await getOrderByIdAdmin(id);
       setOrder(data);
-      setCurrentStatus(data.status);
-      setCurrentPaymentStatus(data.paymentStatus);
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'Không thể tải chi tiết đơn hàng';
       setError(errorMsg);
@@ -45,20 +44,59 @@ export default function AdminOrderDetailPage() {
     fetchOrderDetails();
   }, [fetchOrderDetails]);
 
-  const handleUpdateOrder = async () => {
-    if (currentStatus === order.status && currentPaymentStatus === order.paymentStatus) {
-      toast.error('Bạn chưa thay đổi trạng thái nào.');
-      return;
+  // [MỚI] Chuyển sang bước tiếp theo
+  const handleAdvanceStatus = async () => {
+    setIsUpdating(true);
+    try {
+      await advanceOrderStatus(id);
+      toast.success('Chuyển trạng thái thành công!');
+      fetchOrderDetails();
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || 'Cập nhật thất bại';
+      toast.error(errorMsg);
+    } finally {
+      setIsUpdating(false);
     }
+  };
+
+  // [MỚI] Xác nhận thanh toán và hoàn thành
+  const handleConfirmComplete = async () => {
+    setIsUpdating(true);
+    try {
+      await confirmPaymentAndComplete(id);
+      toast.success('Đã xác nhận thanh toán và hoàn thành đơn hàng!');
+      fetchOrderDetails();
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || 'Cập nhật thất bại';
+      toast.error(errorMsg);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // [MỚI] Hủy đơn hàng
+  const handleCancelOrder = async () => {
+    if (!window.confirm('Bạn có chắc chắn muốn HỦY đơn hàng này? Hàng sẽ được hoàn kho.')) return;
 
     setIsUpdating(true);
     try {
-      const updateData = {
-        status: currentStatus,
-        paymentStatus: currentPaymentStatus,
-      };
-      await updateOrderAdmin(id, updateData);
-      toast.success('Cập nhật đơn hàng thành công!');
+      await updateOrderAdmin(id, { status: 'CANCELLED' });
+      toast.success('Đã hủy đơn hàng!');
+      fetchOrderDetails();
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || 'Hủy đơn thất bại';
+      toast.error(errorMsg);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // [MỚI] Xác nhận đã thanh toán
+  const handleConfirmPayment = async () => {
+    setIsUpdating(true);
+    try {
+      await updateOrderAdmin(id, { paymentStatus: 'PAID' });
+      toast.success('Đã xác nhận thanh toán!');
       fetchOrderDetails();
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'Cập nhật thất bại';
@@ -86,6 +124,10 @@ export default function AdminOrderDetailPage() {
   const subTotalUsd = parseFloat(order.subTotalUsd) || 0;
   const vipDiscountAmountCoin = parseFloat(order.vipDiscountAmountCoin) || 0;
 
+  const nextStatus = getNextStatus(order.status);
+  const isCompleted = order.status === 'COMPLETED';
+  const isCancelled = order.status === 'CANCELLED';
+  const isPaid = order.paymentStatus === 'PAID';
 
   return (
     <div>
@@ -98,13 +140,10 @@ export default function AdminOrderDetailPage() {
         <div className="lg:col-span-2 bg-gray-900 shadow-xl rounded-lg p-6">
           <h1 className="text-3xl font-bold text-white mb-4">Chi tiết Đơn hàng (Admin)</h1>
 
-          {/* [BẮT ĐẦU SỬA] Hiển thị cả orderNumber và id */}
           <p className="font-mono text-xl font-bold text-pink-400 mb-2">
             Mã ĐH: {order.orderNumber || 'N/A'}
           </p>
           <p className="font-mono text-xs text-gray-500 mb-6">UUID: {order.id}</p>
-          {/* [KẾT THÚC SỬA] */}
-
 
           {/* Thông tin Khách hàng */}
           <div className="mb-6">
@@ -174,50 +213,104 @@ export default function AdminOrderDetailPage() {
               )}
             </div>
           </div>
+
+          {/* [MỚI] Timeline */}
+          <div className="mt-6">
+            <OrderTimeline order={order} />
+          </div>
         </div>
 
-        {/* Cột 2: Panel Hành động */}
+        {/* Cột 2: Panel Hành động - [SỬA] Step-by-step flow */}
         <div className="lg:col-span-1 bg-gray-900 shadow-xl rounded-lg p-6 h-fit">
           <h2 className="text-2xl font-semibold text-white mb-4">Hành động</h2>
 
-          <div className="mb-4">
-            <label htmlFor="orderStatus" className="block text-sm font-medium text-gray-300 mb-2">Trạng thái Đơn hàng</label>
-            <select
-              id="orderStatus"
-              value={currentStatus}
-              onChange={(e) => setCurrentStatus(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
-            >
-              {ORDER_STATUSES.map(status => (
-                <option key={status} value={status}>{status}</option>
-              ))}
-            </select>
+          {/* Trạng thái hiện tại */}
+          <div className="mb-6 p-4 bg-gray-800 rounded-lg">
+            <p className="text-sm text-gray-400 mb-2">Trạng thái đơn hàng</p>
+            <p className={`text-xl font-bold ${isCompleted ? 'text-green-400' :
+                isCancelled ? 'text-red-400' :
+                  'text-yellow-400'
+              }`}>
+              {ORDER_STATUS_LABELS[order.status] || order.status}
+            </p>
+
+            <p className="text-sm text-gray-400 mt-3 mb-2">Thanh toán</p>
+            <p className={`text-xl font-bold ${isPaid ? 'text-green-400' : 'text-red-400'}`}>
+              {isPaid ? '✅ Đã thanh toán' : '❌ Chưa thanh toán'}
+            </p>
           </div>
 
-          <div className="mb-6">
-            <label htmlFor="paymentStatus" className="block text-sm font-medium text-gray-300 mb-2">Trạng thái Thanh toán</label>
-            <select
-              id="paymentStatus"
-              value={currentPaymentStatus}
-              onChange={(e) => setCurrentPaymentStatus(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
-            >
-              {PAYMENT_STATUSES.map(status => (
-                <option key={status} value={status}>{status}</option>
-              ))}
-            </select>
-          </div>
+          {/* Các nút hành động */}
+          {!isCompleted && !isCancelled && (
+            <div className="space-y-3">
 
-          <button
-            onClick={handleUpdateOrder}
-            disabled={isUpdating}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-300 disabled:bg-gray-600"
-          >
-            {isUpdating ? 'Đang cập nhật...' : 'Lưu Thay đổi'}
-          </button>
+              {/* Nút xác nhận thanh toán */}
+              {!isPaid && (
+                <button
+                  onClick={handleConfirmPayment}
+                  disabled={isUpdating}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 disabled:bg-gray-600 flex items-center justify-center gap-2"
+                >
+                  <FaCheck /> Xác nhận Thanh toán
+                </button>
+              )}
+
+              {/* Nút chuyển bước tiếp theo */}
+              {nextStatus && nextStatus !== 'COMPLETED' && (
+                <button
+                  onClick={handleAdvanceStatus}
+                  disabled={isUpdating}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 disabled:bg-gray-600 flex items-center justify-center gap-2"
+                >
+                  <FaArrowRight /> Chuyển sang: {ORDER_STATUS_LABELS[nextStatus]}
+                </button>
+              )}
+
+              {/* Nút hoàn thành (yêu cầu đã thanh toán) */}
+              {nextStatus === 'COMPLETED' && isPaid && (
+                <button
+                  onClick={handleAdvanceStatus}
+                  disabled={isUpdating}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 disabled:bg-gray-600 flex items-center justify-center gap-2"
+                >
+                  <FaCheck /> Hoàn thành đơn hàng
+                </button>
+              )}
+
+              {/* Nút thanh toán + hoàn thành nhanh */}
+              {!isPaid && (
+                <button
+                  onClick={handleConfirmComplete}
+                  disabled={isUpdating}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 disabled:bg-gray-600 flex items-center justify-center gap-2"
+                >
+                  <FaCheck /> Thanh toán + Hoàn thành ngay
+                </button>
+              )}
+
+              {/* Nút hủy */}
+              <button
+                onClick={handleCancelOrder}
+                disabled={isUpdating}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 disabled:bg-gray-600 flex items-center justify-center gap-2"
+              >
+                <FaTimes /> Hủy đơn hàng
+              </button>
+            </div>
+          )}
+
+          {/* Đơn hàng đã chốt */}
+          {(isCompleted || isCancelled) && (
+            <div className={`p-4 rounded-lg text-center ${isCompleted ? 'bg-green-900/30' : 'bg-red-900/30'}`}>
+              <p className={`text-lg font-bold ${isCompleted ? 'text-green-400' : 'text-red-400'}`}>
+                {isCompleted ? '✅ Đơn hàng đã hoàn thành' : '❌ Đơn hàng đã bị hủy'}
+              </p>
+              <p className="text-sm text-gray-400 mt-2">Không thể cập nhật thêm</p>
+            </div>
+          )}
 
           <div className="mt-4 text-center text-sm text-gray-400">
-            <p>Người xử lý: {order.staff?.inGameName || (isUpdating ? adminUser.inGameName : 'Chưa có')}</p>
+            <p>Người xử lý: {order.staff?.inGameName || 'Chưa có'}</p>
             <p className="mt-1">Cập nhật lần cuối: {new Date(order.updatedAt).toLocaleString('vi-VN')}</p>
           </div>
         </div>

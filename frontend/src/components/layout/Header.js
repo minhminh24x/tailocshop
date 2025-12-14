@@ -116,6 +116,14 @@ export default function Header() {
 
         {/* ACTIONS */}
         <div className="hidden md:flex items-center gap-5">
+          {/* [MỚI] Wishlist Icon */}
+          {user && (
+            <Link to="/wishlist" className="relative group p-2">
+              <Heart className="w-6 h-6 text-gray-300 group-hover:text-pink-400 transition-colors" />
+            </Link>
+          )}
+
+          {/* Cart Icon */}
           <Link to="/cart" className="relative group p-2">
             <ShoppingCart className="w-6 h-6 text-gray-300 group-hover:text-yellow-400 transition-colors" />
             {items.length > 0 && (

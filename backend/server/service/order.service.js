@@ -406,6 +406,105 @@ const getOrderByIdAdmin = async (orderId) => {
   return order;
 };
 
+// [MỚI] Định nghĩa thứ tự trạng thái
+const ORDER_STATUS_FLOW = ['PENDING', 'PREPARING', 'READY_FOR_DELIVERY', 'COMPLETED'];
+
+/**
+ * [MỚI] Lấy trạng thái tiếp theo trong flow
+ * @param {string} currentStatus - Trạng thái hiện tại
+ * @returns {string|null} - Trạng thái tiếp theo hoặc null nếu đã cuối
+ */
+const getNextStatus = (currentStatus) => {
+  const currentIndex = ORDER_STATUS_FLOW.indexOf(currentStatus);
+  if (currentIndex === -1 || currentIndex >= ORDER_STATUS_FLOW.length - 1) {
+    return null;
+  }
+  return ORDER_STATUS_FLOW[currentIndex + 1];
+};
+
+/**
+ * [MỚI] Chuyển đơn hàng sang bước tiếp theo
+ * Flow: PENDING → PREPARING → READY_FOR_DELIVERY → COMPLETED
+ * 
+ * @param {string} orderId - ID đơn hàng
+ * @param {string} adminUserId - ID của admin/staff thực hiện
+ * @returns {Promise<Order>}
+ */
+const advanceOrderStatus = async (orderId, adminUserId) => {
+  // 1. Lấy đơn hàng hiện tại
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      orderDetails: true,
+      customer: true,
+    },
+  });
+
+  if (!order) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Không tìm thấy đơn hàng');
+  }
+
+  // 2. Kiểm tra đơn hàng đã chốt chưa
+  if (order.status === 'COMPLETED' || order.status === 'CANCELLED') {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Không thể cập nhật đơn hàng đã hoàn thành hoặc đã hủy.'
+    );
+  }
+
+  // 3. Lấy trạng thái tiếp theo
+  const nextStatus = getNextStatus(order.status);
+  if (!nextStatus) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Đơn hàng đã ở trạng thái cuối cùng.'
+    );
+  }
+
+  // 4. Nếu chuyển sang COMPLETED, kiểm tra thanh toán
+  if (nextStatus === 'COMPLETED' && order.paymentStatus !== 'PAID') {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Không thể hoàn thành đơn hàng chưa thanh toán. Vui lòng xác nhận thanh toán trước.'
+    );
+  }
+
+  // 5. Gọi updateOrderAdmin với status mới
+  return updateOrderAdmin(orderId, { status: nextStatus }, adminUserId);
+};
+
+/**
+ * [MỚI] Xác nhận thanh toán và tự động hoàn thành đơn hàng
+ * 
+ * @param {string} orderId - ID đơn hàng
+ * @param {string} adminUserId - ID của admin/staff thực hiện
+ * @returns {Promise<Order>}
+ */
+const confirmPaymentAndComplete = async (orderId, adminUserId) => {
+  // 1. Lấy đơn hàng hiện tại
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+  });
+
+  if (!order) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Không tìm thấy đơn hàng');
+  }
+
+  // 2. Kiểm tra đơn hàng đã chốt chưa
+  if (order.status === 'COMPLETED' || order.status === 'CANCELLED') {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Không thể cập nhật đơn hàng đã hoàn thành hoặc đã hủy.'
+    );
+  }
+
+  // 3. Gọi updateOrderAdmin với PAID + COMPLETED
+  return updateOrderAdmin(orderId, {
+    paymentStatus: 'PAID',
+    status: 'COMPLETED'
+  }, adminUserId);
+};
+
 /**
  * [NÂNG CẤP LỚN] Cập nhật 1 đơn hàng (cho Admin)
  * - Thêm: Chặn sửa đơn hàng đã chốt (COMPLETED, CANCELLED).
@@ -513,6 +612,17 @@ const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
         const usdSpentInCoinValue = parseFloat(order.totalAmountUsd) / conversionRate; //
         const totalEquivalentSpent = parseFloat(order.totalAmountCoin) + usdSpentInCoinValue; //
 
+        // [DEBUG] Log VIP calculation
+        console.log('[VIP DEBUG] Order COMPLETED:', {
+          orderId: order.id,
+          customerId: order.customerUserId,
+          totalAmountCoin: order.totalAmountCoin,
+          totalAmountUsd: order.totalAmountUsd,
+          conversionRate,
+          usdSpentInCoinValue,
+          totalEquivalentSpent,
+        });
+
         if (totalEquivalentSpent > 0) {
           // Cập nhật tổng chi tiêu cho user
           const updatedUser = await tx.user.update({
@@ -525,8 +635,15 @@ const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
             select: { totalSpentCoin: true },
           });
 
+          // [DEBUG] Log after update
+          console.log('[VIP DEBUG] User totalSpentCoin updated:', {
+            userId: order.customerUserId,
+            newTotalSpentCoin: updatedUser.totalSpentCoin,
+          });
+
           // Cập nhật lại cấp VIP
           await updateUserVipLevel(tx, order.customerUserId, updatedUser.totalSpentCoin);
+          console.log('[VIP DEBUG] VIP level updated for user:', order.customerUserId);
         }
       }
     }
@@ -589,4 +706,8 @@ export const orderService = {
   getAllOrdersAdmin,
   getOrderByIdAdmin,
   updateOrderAdmin,
+  // [MỚI] Thêm các hàm order flow
+  advanceOrderStatus,
+  confirmPaymentAndComplete,
+  getNextStatus,
 };

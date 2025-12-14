@@ -37,10 +37,13 @@ export default function AdminManageVouchers() {
             fetchInProgress.current = true;
             try {
                 setIsLoading(true);
-                const { data } = await getAllVouchers();
-                setVouchers(data || []);
+                const response = await getAllVouchers();
+                // [SỬA] API trả về { data: { data: [...], pagination: {...} } }
+                const vouchersData = response?.data?.data || response?.data || [];
+                setVouchers(Array.isArray(vouchersData) ? vouchersData : []);
             } catch (error) {
                 toast.error('Lỗi khi tải danh sách voucher');
+                setVouchers([]);
             } finally {
                 setIsLoading(false);
                 fetchInProgress.current = false;
@@ -132,8 +135,9 @@ export default function AdminManageVouchers() {
             }
 
             // Refetch
-            const { data } = await getAllVouchers();
-            setVouchers(data || []);
+            const response = await getAllVouchers();
+            const vouchersData = response?.data?.data || response?.data || [];
+            setVouchers(Array.isArray(vouchersData) ? vouchersData : []);
             handleCloseModal();
         } catch (error) {
             toast.error(error.response?.data?.message || 'Thao tác thất bại');
@@ -206,8 +210,8 @@ export default function AdminManageVouchers() {
                                     </td>
                                     <td className="py-3 px-4">
                                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${voucher.discountType === 'PERCENTAGE'
-                                                ? 'bg-blue-900/50 text-blue-300'
-                                                : 'bg-green-900/50 text-green-300'
+                                            ? 'bg-blue-900/50 text-blue-300'
+                                            : 'bg-green-900/50 text-green-300'
                                             }`}>
                                             {voucher.discountType === 'PERCENTAGE' ? <FaPercent /> : <FaDollarSign />}
                                             {voucher.discountType === 'PERCENTAGE' ? 'Phần trăm' : 'Cố định'}
@@ -229,8 +233,8 @@ export default function AdminManageVouchers() {
                                     </td>
                                     <td className="py-3 px-4 text-center">
                                         <span className={`px-2 py-1 rounded text-xs font-bold ${voucher.isActive
-                                                ? 'bg-green-900/50 text-green-300'
-                                                : 'bg-red-900/50 text-red-300'
+                                            ? 'bg-green-900/50 text-green-300'
+                                            : 'bg-red-900/50 text-red-300'
                                             }`}>
                                             {voucher.isActive ? 'Kích hoạt' : 'Tắt'}
                                         </span>

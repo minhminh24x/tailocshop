@@ -11,7 +11,8 @@ const AdminProtectedRoute = ({ children }) => {
   }
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    // [SỬA] Redirect về /admin/login thay vì /login
+    return <Navigate to="/admin/login" state={{ from: location }} replace />;
   }
 
   if (user.role !== 'ADMIN') {

@@ -43,7 +43,11 @@ export default function AdminSidebar() {
         </NavLink>
 
         <NavLink to="/admin/manage-submissions" className={getNavLinkClass}>
-          📊 Quản lý Kho
+          📋 Lịch sử Phiếu nhập
+        </NavLink>
+
+        <NavLink to="/admin/inventory" className={getNavLinkClass}>
+          📦 Quản lý Tồn kho
         </NavLink>
 
         <NavLink to="/admin/manage-customers" className={getNavLinkClass}>
@@ -63,7 +67,13 @@ export default function AdminSidebar() {
           ⭐ Quản lý Cấp VIP
         </NavLink>
 
-        {/* (Bạn có thể thêm các link khác ở đây sau) */}
+        <NavLink to="/admin/vouchers" className={getNavLinkClass}>
+          🎟️ Quản lý Voucher
+        </NavLink>
+
+        <NavLink to="/admin/export" className={getNavLinkClass}>
+          📥 Xuất dữ liệu
+        </NavLink>
 
       </nav>
     </aside>

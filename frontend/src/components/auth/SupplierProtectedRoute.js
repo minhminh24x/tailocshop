@@ -8,7 +8,7 @@ const SupplierProtectedRoute = () => {
   const isSupplier = user?.role === 'SUPPLIER';
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/admin/login" replace />;
   }
 
   if (!isSupplier) {

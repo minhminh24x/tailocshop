@@ -32,6 +32,7 @@ import MyOrderDetailPage from './pages/MyOrderDetailPage';
 
 // Pages - Admin
 import AdminLayout from './pages/admin/AdminLayout';
+import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminManageUsers from './pages/admin/manager/AdminManageUsers';
 import AdminManageCategories from './pages/admin/manager/AdminManageCategories';
@@ -116,6 +117,8 @@ function App() {
           <Route path="/wishlist" element={<UserProtectedRoute><WishlistPage /></UserProtectedRoute>} />
 
           {/* --- ADMIN ROUTES --- */}
+          {/* [MỚI] Admin Login Page - không cần protected */}
+          <Route path="/admin/login" element={<AdminLoginPage />} />
           {/* AdminLayout sẽ chứa Sidebar/HeaderAdmin */}
           <Route path="/admin" element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>
             <Route index element={<AdminDashboard />} />
