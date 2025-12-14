@@ -153,6 +153,15 @@ const UserProfilePage = () => {
   const totalCoins = parseFloat(user.totalCoinSpent || user.totalSpentCoin) || 0;
   const vipImageUrl = getVipImageUrl(currentVip);
 
+  // [DEBUG] Log VIP data for troubleshooting
+  console.log('[Profile VIP Debug]', {
+    user: user?.inGameName,
+    currentVip,
+    nextVip,
+    totalCoins,
+    userVipLevel: user?.vipLevel,
+  });
+
   // [SỬA] Logic tính progress - xử lý edge cases
   const nextVipThreshold = nextVip?.requiredCoins || nextVip?.coinThreshold || 1000000;
   const currentVipThreshold = currentVip?.coinThreshold || 0;

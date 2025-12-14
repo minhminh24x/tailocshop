@@ -16,7 +16,6 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ItemsPage from './pages/ItemsPage';
 import ItemDetailPage from './pages/ItemDetailPage';
-import SupportPage from './pages/SupportPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import AboutPage from './pages/AboutPage';
@@ -100,7 +99,6 @@ function App() {
           {/* [ĐÃ SỬA] Route này phải khớp với ItemDetailPage (slug + unit) */}
           <Route path="/items/:slug/:unit" element={<ItemDetailPage />} />
 
-          <Route path="/support" element={<SupportPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/register/staff" element={<RegisterStaffPage />} />

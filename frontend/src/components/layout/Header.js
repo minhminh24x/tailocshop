@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useCartStore } from '../../store/cartStore';
-import { Menu, X, ShoppingCart, User, LogOut, Sparkles, Heart, ChevronDown, Settings, HelpCircle, Shield, Package } from 'lucide-react';
+import { Menu, X, ShoppingCart, User, LogOut, Sparkles, ChevronDown, Settings, HelpCircle, Shield, Package } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Header() {
@@ -44,13 +44,12 @@ export default function Header() {
   const activeLinkStyle = "text-yellow-400 bg-white/5 shadow-[0_0_15px_rgba(250,204,21,0.3)]";
   const normalLinkStyle = "text-gray-300 hover:text-white hover:bg-white/5";
 
-  // [SỬA] Dropdown menu items dựa trên role
+  // [SỬA] Dropdown menu items - Xóa Yêu thích, đổi Hỗ trợ thành Liên hệ
   const getDropdownItems = () => {
     const items = [
       { name: 'Thông tin', path: '/profile', icon: User },
       { name: 'Đơn hàng', path: '/my-orders', icon: Package },
-      { name: 'Yêu thích', path: '/wishlist', icon: Heart },
-      { name: 'Hỗ trợ', path: '/support', icon: HelpCircle },
+      { name: 'Liên hệ', path: '/contact', icon: HelpCircle },
     ];
 
     // Thêm link admin/staff nếu có quyền
@@ -116,13 +115,6 @@ export default function Header() {
 
         {/* ACTIONS */}
         <div className="hidden md:flex items-center gap-5">
-          {/* [MỚI] Wishlist Icon */}
-          {user && (
-            <Link to="/wishlist" className="relative group p-2">
-              <Heart className="w-6 h-6 text-gray-300 group-hover:text-pink-400 transition-colors" />
-            </Link>
-          )}
-
           {/* Cart Icon */}
           <Link to="/cart" className="relative group p-2">
             <ShoppingCart className="w-6 h-6 text-gray-300 group-hover:text-yellow-400 transition-colors" />
