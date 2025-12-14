@@ -2,7 +2,11 @@
 import prisma from '../lib/prisma.js';
 import ApiError from '../utils/ApiError.js';
 import httpStatus from 'http-status';
-import { emitNewOrder, emitOrderStatusChange, emitLowStockAlert } from '../lib/socket.js';
+// import { emitNewOrder, emitOrderStatusChange, emitLowStockAlert } from '../lib/socket.js';
+
+// Dummy socket functions for now (disabled for debugging)
+const emitNewOrder = () => { };
+const emitOrderStatusChange = () => { };
 
 // === HÀM HELPER (Giữ nguyên) ===
 const updateUserVipLevel = async (tx, userId, newTotalSpent) => {

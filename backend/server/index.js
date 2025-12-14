@@ -11,8 +11,8 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 
-// [THÊM] Socket.io
-import { initSocket } from './lib/socket.js';
+// [THÊM] Socket.io (disabled temporarily for debugging)
+// import { initSocket } from './lib/socket.js';
 
 import authRoutes from './routes/auth.route.js';
 import userRoutes from './routes/user.route.js';
@@ -38,10 +38,16 @@ const app = express();
 const server = http.createServer(app); // [THÊM] HTTP server for Socket.io
 const PORT = process.env.PORT || 8080;
 
-// [THÊM] Initialize Socket.io
-initSocket(server);
+// [THÊM] Initialize Socket.io (disabled temporarily for debugging)
+// try {
+//   initSocket(server);
+// } catch (e) {
+//   console.warn('[Socket.io] Failed to initialize:', e.message);
+// }
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP for now
+}));
 
 // [NÂNG CẤP] 2. Compression
 app.use(compression());
