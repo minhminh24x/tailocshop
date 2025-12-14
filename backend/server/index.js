@@ -143,7 +143,8 @@ app.get('/api', (req, res) => {
 });
 
 // [THÊM] 404 Handler - Xử lý route không tồn tại
-app.use('*', (req, res, next) => {
+// Note: Express 5 doesn't support app.use('*', ...) - must use app.use without path
+app.use((req, res, next) => {
   res.status(404).json({
     status: 'error',
     message: `Route ${req.originalUrl} không tồn tại`
