@@ -20,26 +20,27 @@ export const useAuthStore = create(persist(
     // Hàm này dùng để refresh user data (VIP, etc.)
     checkAuthStatus: async () => {
       try {
-        const response = await getMyProfile();
-        console.log('[AuthStore DEBUG] getMyProfile response:', response);
-        const { data } = response;
-        console.log('[AuthStore DEBUG] Parsed data:', data);
-        console.log('[AuthStore DEBUG] user.vipLevel:', data?.user?.vipLevel);
+        // [FIX] getMyProfile đã return response.data, không cần destructure nữa
+        const data = await getMyProfile();
+        console.log('[AuthStore DEBUG] getMyProfile data:', data);
 
-        set({
-          user: data.user,
-          nextVipLevel: data.nextVipLevel,
-          isAuthLoading: false
-        });
+        if (data && data.user) {
+          set({
+            user: data.user,
+            nextVipLevel: data.nextVipLevel,
+            isAuthLoading: false
+          });
+        } else {
+          console.warn('[AuthStore] Invalid data structure:', data);
+          set({ isAuthLoading: false });
+        }
       } catch (err) {
         console.error('[AuthStore DEBUG] checkAuthStatus error:', err);
         // [FIX] Chỉ reset user nếu CHƯA có user (tức là đang check lần đầu khi F5)
-        // Nếu đã có user (đã login) thì giữ nguyên, chỉ set isAuthLoading = false
         const currentUser = get().user;
         if (!currentUser) {
           set({ user: null, nextVipLevel: null, isAuthLoading: false });
         } else {
-          // Giữ nguyên user hiện tại, chỉ cập nhật loading state
           set({ isAuthLoading: false });
         }
       }
