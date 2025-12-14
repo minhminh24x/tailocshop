@@ -4,7 +4,7 @@ import { Mail, MessageSquare, Send, AlertCircle, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import apiClient from '../services/apiClient';
 
-const SUPPORT_EMAIL = 'loclm112.noreplay@gmail.com';
+const SUPPORT_EMAIL = 'loclm112.noreply@gmail.com';
 
 export default function ContactPage() {
     const [formData, setFormData] = useState({

@@ -137,8 +137,8 @@ export default function PrivacyPage() {
                         </ul>
                         <p className="mt-4">
                             Để thực hiện các quyền này, vui lòng liên hệ:{' '}
-                            <a href="mailto:loclm112.noreplay@gmail.com" className="text-yellow-400 hover:underline">
-                                loclm112.noreplay@gmail.com
+                            <a href="mailto:loclm112.noreply@gmail.com" className="text-yellow-400 hover:underline">
+                                loclm112.noreply@gmail.com
                             </a>
                         </p>
                     </div>
@@ -171,8 +171,8 @@ export default function PrivacyPage() {
                         </p>
                         <div className="bg-slate-800/50 rounded-xl p-4">
                             <p><strong>Email:</strong>{' '}
-                                <a href="mailto:loclm112.noreplay@gmail.com" className="text-yellow-400 hover:underline">
-                                    loclm112.noreplay@gmail.com
+                                <a href="mailto:loclm112.noreply@gmail.com" className="text-yellow-400 hover:underline">
+                                    loclm112.noreply@gmail.com
                                 </a>
                             </p>
                         </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useCartStore } from '../../store/cartStore';
-import { Menu, X, ShoppingCart, User, LogOut, Sparkles, ChevronDown, Settings, HelpCircle, Shield, Package } from 'lucide-react';
+import { Menu, X, ShoppingCart, User, LogOut, Sparkles, Heart, ChevronDown, Settings, HelpCircle, Shield, Package } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Header() {
@@ -115,6 +115,13 @@ export default function Header() {
 
         {/* ACTIONS */}
         <div className="hidden md:flex items-center gap-5">
+          {/* Wishlist Icon */}
+          {user && (
+            <Link to="/wishlist" className="relative group p-2">
+              <Heart className="w-6 h-6 text-gray-300 group-hover:text-pink-400 transition-colors" />
+            </Link>
+          )}
+
           {/* Cart Icon */}
           <Link to="/cart" className="relative group p-2">
             <ShoppingCart className="w-6 h-6 text-gray-300 group-hover:text-yellow-400 transition-colors" />
