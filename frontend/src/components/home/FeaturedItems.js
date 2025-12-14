@@ -16,10 +16,10 @@ export default function FeaturedItems() {
       try {
         setIsLoading(true);
         setError(null);
-        
+
         // Gọi API backend
         const response = await apiClient.get('/items/featured');
-        
+
         setItems(response.data); // Lưu dữ liệu thật vào state
       } catch (err) {
         console.error('Lỗi khi tải vật phẩm:', err);
@@ -51,10 +51,10 @@ export default function FeaturedItems() {
       </section>
     );
   }
-  
+
   // Xử lý khi không có vật phẩm
   if (!items || items.length === 0) {
-     return (
+    return (
       <section className="py-16 text-center">
         <h2 className="text-3xl font-bold text-center mb-10">Vật Phẩm Nổi Bật</h2>
         <p className="text-xl text-gray-400">Hiện chưa có vật phẩm nào được bán.</p>
@@ -65,12 +65,12 @@ export default function FeaturedItems() {
   return (
     <section className="py-16 animate-fade-up animate-delay-500">
       <h2 className="text-3xl font-bold text-center mb-10">Vật Phẩm Nổi Bật</h2>
-      
+
       {/* Lặp qua 'items' (từ state) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {items.map((item) => (
           // [SỬA] Bọc ItemCard bằng Link, trỏ đến trang chi tiết
-          <Link key={item.id} to={`/item/${item.slug}/${item.unit}`}>
+          <Link key={item.id} to={`/items/${item.slug}/${item.unit}`}>
             <ItemCard item={item} />
           </Link>
         ))}

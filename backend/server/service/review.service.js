@@ -91,7 +91,7 @@ const createReview = async (userId, reviewData) => {
         throw new ApiError(httpStatus.BAD_REQUEST, 'Bạn đã đánh giá sản phẩm này rồi');
     }
 
-    // Kiểm tra user đã từng mua sản phẩm này chưa (tùy chọn)
+    // Kiểm tra user đã từng mua sản phẩm này chưa (BẮT BUỘC)
     const hasPurchased = await prisma.orderDetail.findFirst({
         where: {
             itemId,
@@ -102,14 +102,19 @@ const createReview = async (userId, reviewData) => {
         }
     });
 
-    // Tạo review (auto-approve nếu đã mua)
+    // [SỬA] Chỉ cho phép đánh giá nếu đã mua
+    if (!hasPurchased) {
+        throw new ApiError(httpStatus.FORBIDDEN, 'Bạn cần mua sản phẩm này trước khi đánh giá');
+    }
+
+    // Tạo review (auto-approve vì đã xác nhận mua)
     return prisma.review.create({
         data: {
             userId,
             itemId,
             rating,
             comment,
-            isApproved: !!hasPurchased // Tự duyệt nếu user đã mua
+            isApproved: true // Tự duyệt vì đã xác nhận user đã mua
         },
         include: {
             user: {
