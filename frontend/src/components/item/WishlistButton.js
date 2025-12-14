@@ -23,20 +23,26 @@ export default function WishlistButton({ itemId, className = '', size = 'md' }) 
     };
 
     // Kiểm tra trạng thái wishlist khi component mount
+    // [SỬA] Chỉ gọi API nếu user đã đăng nhập
     useEffect(() => {
-        const checkStatus = async () => {
-            if (!user || !itemId) return;
+        // Không gọi API nếu chưa đăng nhập hoặc không có itemId
+        if (!user || !itemId) {
+            setInWishlist(false);
+            return;
+        }
 
+        const checkStatus = async () => {
             try {
                 const { data } = await checkInWishlist(itemId);
                 setInWishlist(data.inWishlist);
             } catch (error) {
-                // Quietly fail - user might not be logged in
+                // Quietly fail - set to false
+                setInWishlist(false);
             }
         };
 
         checkStatus();
-    }, [itemId, user]);
+    }, [itemId, user?.id]); // Chỉ dependency vào user.id để tránh re-render không cần thiết
 
     const handleToggle = async (e) => {
         e.preventDefault();
@@ -69,8 +75,8 @@ export default function WishlistButton({ itemId, className = '', size = 'md' }) 
             onClick={handleToggle}
             disabled={isLoading}
             className={`p-2 rounded-full transition-all duration-200 ${inWishlist
-                    ? 'bg-pink-600 text-white hover:bg-pink-700'
-                    : 'bg-gray-800/80 text-gray-400 hover:text-pink-400 hover:bg-gray-700'
+                ? 'bg-pink-600 text-white hover:bg-pink-700'
+                : 'bg-gray-800/80 text-gray-400 hover:text-pink-400 hover:bg-gray-700'
                 } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
             title={inWishlist ? 'Xóa khỏi yêu thích' : 'Thêm vào yêu thích'}
         >

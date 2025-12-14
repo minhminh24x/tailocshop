@@ -19,6 +19,9 @@ import ItemDetailPage from './pages/ItemDetailPage';
 import SupportPage from './pages/SupportPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import AboutPage from './pages/AboutPage';
+import RegisterStaffPage from './pages/RegisterStaffPage';
+import RegisterSupplierPage from './pages/RegisterSupplierPage';
 
 // Pages - Customer
 import CartPage from './pages/CartPage';
@@ -97,6 +100,9 @@ function App() {
           <Route path="/support" element={<SupportPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/register/staff" element={<RegisterStaffPage />} />
+          <Route path="/register/supplier" element={<RegisterSupplierPage />} />
+          <Route path="/about" element={<AboutPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 

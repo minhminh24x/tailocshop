@@ -25,7 +25,7 @@ export const protect = asyncHandler(async (req, res, next) => {
   try {
     // 2. Xác thực token (Giữ nguyên logic của bạn)
     // Hãy chắc chắn .env của bạn có JWT_SECRET_KEY
-    const payload = jwt.verify(token, process.env.JWT_SECRET_KEY); 
+    const payload = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
     // 3. Lấy thông tin user từ DB
     const currentUser = await prisma.user.findUnique({
@@ -33,7 +33,7 @@ export const protect = asyncHandler(async (req, res, next) => {
       select: {
         id: true,
         email: true,
-        role: true, 
+        role: true,
         inGameName: true,
         mustChangePassword: true, // [THÊM] Lấy cờ này
       },
@@ -46,8 +46,9 @@ export const protect = asyncHandler(async (req, res, next) => {
     // 4. [LOGIC MỚI] Kiểm tra cờ bắt buộc đổi mật khẩu
     if (currentUser.mustChangePassword) {
       // Cho phép truy cập CHỈ endpoint 'change-password' và 'logout'
-      const isChangingPassword = req.originalUrl.includes('/api/v1/users/change-password');
-      const isLoggingOut = req.originalUrl.includes('/api/v1/auth/logout');
+      // [SỬA] Bỏ /v1 vì routes thực tế không có /v1
+      const isChangingPassword = req.originalUrl.includes('/api/users/change-password');
+      const isLoggingOut = req.originalUrl.includes('/api/auth/logout');
 
       if (!isChangingPassword && !isLoggingOut) {
         // Nếu cố truy cập API khác
@@ -70,7 +71,7 @@ export const protect = asyncHandler(async (req, res, next) => {
     if (error.name === 'TokenExpiredError') {
       throw new ApiError(httpStatus.UNAUTHORIZED, 'Token đã hết hạn');
     }
-    
+
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Token không hợp lệ hoặc lỗi truy vấn người dùng');
   }
 });

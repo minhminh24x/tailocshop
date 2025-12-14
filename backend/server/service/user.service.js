@@ -7,6 +7,33 @@ import crypto from 'crypto'; // Dùng để tạo mật khẩu ngẫu nhiên
 import { emailService } from './email.service.js';
 
 /**
+ * [THÊM] Validate password strength
+ * @param {string} password
+ * @returns {string[]} - Array of error messages (empty if password is strong)
+ */
+const validatePasswordStrength = (password) => {
+  const errors = [];
+
+  if (!password || password.length < 8) {
+    errors.push('Mật khẩu phải có ít nhất 8 ký tự');
+  }
+  if (!/[A-Z]/.test(password)) {
+    errors.push('Cần có ít nhất 1 chữ HOA');
+  }
+  if (!/[a-z]/.test(password)) {
+    errors.push('Cần có ít nhất 1 chữ thường');
+  }
+  if (!/[0-9]/.test(password)) {
+    errors.push('Cần có ít nhất 1 số');
+  }
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    errors.push('Cần có ít nhất 1 ký tự đặc biệt (!@#$%^&*...)');
+  }
+
+  return errors;
+};
+
+/**
  * [Admin] Tạo user mới (Staff/Supplier)
  * @param {object} userData - Dữ liệu user từ body
  * @returns {Promise<User>}
@@ -83,6 +110,12 @@ const changeMyPassword = async (userId, passwordData) => {
   const isPasswordMatch = await bcrypt.compare(oldPassword, user.passwordHash);
   if (!isPasswordMatch) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Mật khẩu cũ không chính xác');
+  }
+
+  // [THÊM] 2.5. Kiểm tra độ mạnh của mật khẩu mới
+  const passwordErrors = validatePasswordStrength(newPassword);
+  if (passwordErrors.length > 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, `Mật khẩu yếu: ${passwordErrors.join(', ')}`);
   }
 
   // 3. Hash mật khẩu mới
