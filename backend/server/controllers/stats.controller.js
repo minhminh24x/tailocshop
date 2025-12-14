@@ -30,8 +30,17 @@ const getLowStockItems = asyncHandler(async (req, res) => {
     res.status(httpStatus.OK).send(items);
 });
 
+/**
+ * [THÊM] Lấy thống kê public cho About page (không cần auth)
+ */
+const getPublicStats = asyncHandler(async (req, res) => {
+    const stats = await statsService.getPublicStats();
+    res.status(httpStatus.OK).send(stats);
+});
+
 export const statsController = {
     getDashboardStats,
     getRecentOrders,
     getLowStockItems,
+    getPublicStats,
 };

@@ -5,7 +5,10 @@ import { protect, authorize } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-// Tất cả routes đều yêu cầu Admin hoặc Staff
+// [THÊM] Public route - Cho About page
+router.get('/public', statsController.getPublicStats);
+
+// Tất cả routes bên dưới yêu cầu Admin hoặc Staff
 router.use(protect);
 router.use(authorize('ADMIN', 'STAFF'));
 
@@ -19,3 +22,4 @@ router.get('/recent-orders', statsController.getRecentOrders);
 router.get('/low-stock', statsController.getLowStockItems);
 
 export default router;
+

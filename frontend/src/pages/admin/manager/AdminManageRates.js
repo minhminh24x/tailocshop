@@ -38,25 +38,26 @@ export default function AdminManageRates() {
   // Bật chế độ chỉnh sửa
   const handleEdit = (rate) => {
     setEditingRateType(rate.rateType);
-    setCurrentValue(parseFloat(rate.rate));
+    setCurrentValue(String(rate.rate)); // [SỬA] Dùng string để tránh NaN
   };
 
   // Hủy chỉnh sửa
   const handleCancel = () => {
     setEditingRateType(null);
-    setCurrentValue(0);
+    setCurrentValue('');
   };
 
   // Lưu thay đổi
   const handleSave = async (rateType) => {
-    if (isNaN(currentValue) || currentValue <= 0) {
+    const parsedValue = parseFloat(currentValue); // [SỬA] Parse khi lưu
+    if (isNaN(parsedValue) || parsedValue <= 0) {
       toast.error('Tỷ giá phải là một số dương');
       return;
     }
 
     const toastId = toast.loading('Đang cập nhật...');
     try {
-      await updateRateAdmin(rateType, currentValue);
+      await updateRateAdmin(rateType, parsedValue);
       toast.success('Cập nhật thành công!', { id: toastId });
       // Tải lại dữ liệu và thoát chế độ edit
       fetchRates();
@@ -77,7 +78,7 @@ export default function AdminManageRates() {
   return (
     <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
       <h2 className="text-2xl font-bold text-white mb-6">Quản lý Tỷ giá Hối đoái</h2>
-      
+
       <div className="overflow-x-auto">
         <table className="min-w-full bg-gray-700 text-white rounded-lg">
           <thead>
@@ -94,7 +95,7 @@ export default function AdminManageRates() {
               <tr key={rate.id}>
                 {/* Tên Tỷ giá */}
                 <td className="px-4 py-3 font-mono text-pink-400">{rate.rateType}</td>
-                
+
                 {/* Giá trị */}
                 <td className="px-4 py-3">
                   {editingRateType === rate.rateType ? (
@@ -103,7 +104,7 @@ export default function AdminManageRates() {
                       type="number"
                       step="any"
                       value={currentValue}
-                      onChange={(e) => setCurrentValue(parseFloat(e.target.value))}
+                      onChange={(e) => setCurrentValue(e.target.value)} // [SỬA] Lưu string thay vì parseFloat
                       className="w-full px-2 py-1 bg-gray-900 border border-pink-500 rounded text-white"
                     />
                   ) : (
@@ -111,12 +112,12 @@ export default function AdminManageRates() {
                     <span className="text-xl font-bold text-green-400">{formatNumber(rate.rate)}</span>
                   )}
                 </td>
-                
+
                 {/* Người cập nhật */}
                 <td className="px-4 py-3 text-gray-300">
                   {rate.updatedBy?.username || 'N/A'}
                 </td>
-                
+
                 {/* Thời gian */}
                 <td className="px-4 py-3 text-gray-400">
                   {new Date(rate.updatedAt).toLocaleString('vi-VN')}

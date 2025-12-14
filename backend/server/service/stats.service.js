@@ -196,8 +196,41 @@ const getLowStockItems = async (threshold = 10, limit = 10) => {
     });
 };
 
+/**
+ * [THÊM] Lấy thống kê public cho About page (không sensitive data)
+ */
+const getPublicStats = async () => {
+    const [totalCustomers, totalOrders, completedOrders] = await Promise.all([
+        // Tổng số khách hàng
+        prisma.user.count({
+            where: { role: 'CUSTOMER' }
+        }),
+
+        // Tổng số đơn hàng
+        prisma.order.count(),
+
+        // Số đơn hoàn thành
+        prisma.order.count({
+            where: { status: 'COMPLETED' }
+        }),
+    ]);
+
+    // Tính tỷ lệ hài lòng (dựa trên đơn hoàn thành)
+    const satisfactionRate = totalOrders > 0
+        ? Math.round((completedOrders / totalOrders) * 100)
+        : 99;
+
+    return {
+        customers: totalCustomers,
+        orders: totalOrders,
+        satisfaction: satisfactionRate,
+        support: '24/7',
+    };
+};
+
 export const statsService = {
     getDashboardStats,
     getRecentOrders,
     getLowStockItems,
+    getPublicStats,
 };

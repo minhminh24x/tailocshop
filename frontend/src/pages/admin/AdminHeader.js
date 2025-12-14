@@ -10,27 +10,27 @@ export default function AdminHeader() {
 
   return (
     <header className="bg-gray-900 text-white p-4 flex justify-between items-center shadow-lg sticky top-0 z-50">
-      <h1 className="text-xl font-bold text-pink-500">
+      <Link to="/admin" className="text-xl font-bold text-pink-500 hover:text-pink-400 transition-colors">
         Tài Lộc Shop - Admin Panel
-      </h1>
-      
+      </Link>
+
       <div className="flex items-center space-x-4">
         {/* Quay về trang chủ (public) */}
-        <Link 
-          to="/" 
+        <Link
+          to="/"
           className="text-sm text-gray-300 hover:text-pink-400 transition-colors"
           title="Quay về trang chủ"
         >
           🏠 Về Shop
         </Link>
-        
+
         {/* Hiển thị thông tin Admin */}
         {user && (
           <span className="text-green-400 font-medium">
             Xin chào, {user.inGameName}
           </span>
         )}
-        
+
         {/* Nút Đăng xuất */}
         <button
           onClick={() => logout()}

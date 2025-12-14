@@ -1,8 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Users, Shield, HeartHandshake, Star, Award } from 'lucide-react';
+import { Sparkles, Users, Shield, HeartHandshake, Star, Award, Package, ThumbsUp, Clock } from 'lucide-react';
+import apiClient from '../services/apiClient';
 
 export default function AboutPage() {
+    const [stats, setStats] = useState({
+        customers: 0,
+        orders: 0,
+        satisfaction: 99,
+        support: '24/7'
+    });
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Fetch real stats from API
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const { data } = await apiClient.get('/stats/public');
+                setStats(data);
+            } catch (error) {
+                // Use fallback data if API fails
+                console.log('Using fallback stats');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchStats();
+    }, []);
+
     const features = [
         {
             icon: Shield,
@@ -25,6 +50,13 @@ export default function AboutPage() {
             description: 'Nhận ưu đãi giảm giá lên đến 20% với hệ thống VIP độc quyền.'
         }
     ];
+
+    const formatNumber = (num) => {
+        if (num >= 1000) {
+            return (num / 1000).toFixed(num >= 10000 ? 0 : 1) + 'K+';
+        }
+        return num.toString() + '+';
+    };
 
     return (
         <div className="space-y-16">
@@ -59,23 +91,35 @@ export default function AboutPage() {
                 ))}
             </section>
 
-            {/* Stats */}
+            {/* Stats - [SỬA] Dùng dữ liệu thực từ API */}
             <section className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-3xl p-8 border border-yellow-500/20">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-                    <div>
-                        <p className="text-4xl font-black text-yellow-400">10K+</p>
+                    <div className="flex flex-col items-center">
+                        <Users className="w-8 h-8 text-yellow-400 mb-2" />
+                        <p className="text-4xl font-black text-yellow-400">
+                            {isLoading ? '...' : formatNumber(stats.customers)}
+                        </p>
                         <p className="text-gray-400 mt-2">Khách hàng</p>
                     </div>
-                    <div>
-                        <p className="text-4xl font-black text-yellow-400">50K+</p>
+                    <div className="flex flex-col items-center">
+                        <Package className="w-8 h-8 text-yellow-400 mb-2" />
+                        <p className="text-4xl font-black text-yellow-400">
+                            {isLoading ? '...' : formatNumber(stats.orders)}
+                        </p>
                         <p className="text-gray-400 mt-2">Đơn hàng</p>
                     </div>
-                    <div>
-                        <p className="text-4xl font-black text-yellow-400">99%</p>
+                    <div className="flex flex-col items-center">
+                        <ThumbsUp className="w-8 h-8 text-yellow-400 mb-2" />
+                        <p className="text-4xl font-black text-yellow-400">
+                            {isLoading ? '...' : `${stats.satisfaction}%`}
+                        </p>
                         <p className="text-gray-400 mt-2">Hài lòng</p>
                     </div>
-                    <div>
-                        <p className="text-4xl font-black text-yellow-400">24/7</p>
+                    <div className="flex flex-col items-center">
+                        <Clock className="w-8 h-8 text-yellow-400 mb-2" />
+                        <p className="text-4xl font-black text-yellow-400">
+                            {stats.support}
+                        </p>
                         <p className="text-gray-400 mt-2">Hỗ trợ</p>
                     </div>
                 </div>

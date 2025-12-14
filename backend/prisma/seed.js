@@ -47,6 +47,7 @@ async function main() {
         passwordHash: pass,
         role: 'ADMIN',
         inGameName: 'AdminTaiLoc',
+        mustChangePassword: false, // [SỬA] Admin không cần đổi mật khẩu
       },
     });
     console.log('Admin created:', admin.email);
@@ -57,6 +58,7 @@ async function main() {
         passwordHash: pass,
         role: 'STAFF',
         inGameName: 'StaffTaiLoc',
+        mustChangePassword: true, // [SỬA] Staff cần đổi mật khẩu lần đầu
       },
     });
     console.log('Staff created:', staff.email);
