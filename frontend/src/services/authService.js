@@ -2,6 +2,29 @@
 import apiClient from './apiClient.js';
 
 /**
+ * Đăng nhập
+ * @param {object} credentials - { email, password }
+ */
+export const loginUser = (credentials) => {
+  return apiClient.post('/auth/login', credentials);
+};
+
+/**
+ * Đăng ký
+ * @param {object} userData - { email, password, inGameName }
+ */
+export const registerUser = (userData) => {
+  return apiClient.post('/auth/register', userData);
+};
+
+/**
+ * Đăng xuất
+ */
+export const logoutUser = () => {
+  return apiClient.post('/auth/logout');
+};
+
+/**
  * Yêu cầu đặt lại mật khẩu (gửi email)
  * @param {string} email 
  */

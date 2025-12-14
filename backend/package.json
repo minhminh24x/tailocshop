@@ -26,10 +26,23 @@
   },
   "scripts": {
     "start": "node -r dotenv/config server/index.js",
-    "dev": "nodemon -r dotenv/config server/index.js"
+    "dev": "nodemon -r dotenv/config server/index.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
   },
   "devDependencies": {
+    "jest": "^29.7.0",
     "nodemon": "^3.1.10",
-    "prisma": "^6.19.0"
+    "prisma": "^6.19.0",
+    "supertest": "^6.3.4"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {},
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/prisma/"
+    ],
+    "testTimeout": 30000
   }
 }
