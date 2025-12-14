@@ -98,22 +98,24 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // 3. Cookie Parser
 app.use(cookieParser());
 
-// 4. [DEBUG MIDDLEWARE] - Log request để kiểm tra (Xóa khi deploy production)
-app.use((req, res, next) => {
-  console.log(`👉 [${req.method}] ${req.url}`);
-  console.log('   Headers Content-Type:', req.headers['content-type']);
+// 4. [DEBUG MIDDLEWARE] - Log request để kiểm tra (Chỉ chạy trong development)
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    console.log(`👉 [${req.method}] ${req.url}`);
+    console.log('   Headers Content-Type:', req.headers['content-type']);
 
-  // Chỉ cảnh báo body undefined với các method thường có body
-  if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body === undefined) {
-    console.error('❌ CẢNH BÁO: req.body đang bị undefined!');
-  } else if (req.body && Object.keys(req.body).length > 0) {
-    // Log body (ẩn password nếu có)
-    const logBody = { ...req.body };
-    if (logBody.password) logBody.password = '***HIDDEN***';
-    console.log('   Body:', logBody);
-  }
-  next();
-});
+    // Chỉ cảnh báo body undefined với các method thường có body
+    if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body === undefined) {
+      console.error('❌ CẢNH BÁO: req.body đang bị undefined!');
+    } else if (req.body && Object.keys(req.body).length > 0) {
+      // Log body (ẩn password nếu có)
+      const logBody = { ...req.body };
+      if (logBody.password) logBody.password = '***HIDDEN***';
+      console.log('   Body:', logBody);
+    }
+    next();
+  });
+}
 
 // ✅ API Routes
 app.use('/api/auth', authSlowDown, authRoutes);
@@ -181,5 +183,4 @@ app.use((err, req, res, next) => {
 // [SỬA] Sử dụng server thay vì app để hỗ trợ Socket.io
 server.listen(PORT, () => {
   console.log(`✅ Backend server đang chạy tại http://localhost:${PORT}`);
-  console.log(`🔌 Socket.io đã sẵn sàng`);
 });

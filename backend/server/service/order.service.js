@@ -1,6 +1,7 @@
 // File: backend/server/service/order.service.js
 import prisma from '../lib/prisma.js';
 import ApiError from '../utils/ApiError.js';
+import { DEFAULT_TIMESLOT_ID } from '../utils/constants.js';
 import httpStatus from 'http-status';
 // import { emitNewOrder, emitOrderStatusChange, emitLowStockAlert } from '../lib/socket.js';
 
@@ -169,7 +170,7 @@ const createOrder = async (userId, orderData) => {
       }
 
       // ... (Kiểm tra timeSlot giữ nguyên)
-      if (deliveryTimeSlotId !== "00000000-0000-0000-0000-000000000000") {
+      if (deliveryTimeSlotId !== DEFAULT_TIMESLOT_ID) {
         const timeSlot = await tx.deliveryTimeSlot.findFirst({
           where: { id: deliveryTimeSlotId, isActive: true }
         });
