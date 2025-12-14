@@ -38,9 +38,29 @@ const getPublicStats = asyncHandler(async (req, res) => {
     res.status(httpStatus.OK).send(stats);
 });
 
+/**
+ * [MỚI] Lấy thống kê cho Staff Dashboard
+ */
+const getStaffSummary = asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const stats = await statsService.getStaffSummary(userId);
+    res.status(httpStatus.OK).send(stats);
+});
+
+/**
+ * [MỚI] Lấy thống kê cho Supplier Dashboard
+ */
+const getSupplierSummary = asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const stats = await statsService.getSupplierSummary(userId);
+    res.status(httpStatus.OK).send(stats);
+});
+
 export const statsController = {
     getDashboardStats,
     getRecentOrders,
     getLowStockItems,
     getPublicStats,
+    getStaffSummary,
+    getSupplierSummary,
 };

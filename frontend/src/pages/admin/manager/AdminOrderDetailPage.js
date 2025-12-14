@@ -12,8 +12,8 @@ import {
 } from '../../../services/adminOrderService.js';
 import { useAuthStore } from '../../../store/authStore.js';
 import { formatNumber } from '../../../utils/formatNumber.js';
-import { FaCoins, FaDollarSign, FaCheck, FaTimes, FaArrowRight, FaClock } from 'react-icons/fa';
-import OrderTimeline from '../../../components/order/OrderTimeline.js';
+import { FaCoins, FaDollarSign, FaCheck, FaTimes, FaArrowRight, FaClock, FaCreditCard } from 'react-icons/fa';
+import OrderStatusStepper from '../../../components/order/OrderStatusStepper.js';
 
 export default function AdminOrderDetailPage() {
   const { orderId: id } = useParams();
@@ -213,105 +213,98 @@ export default function AdminOrderDetailPage() {
               )}
             </div>
           </div>
-
-          {/* [MỚI] Timeline */}
-          <div className="mt-6">
-            <OrderTimeline order={order} />
-          </div>
         </div>
 
-        {/* Cột 2: Panel Hành động - [SỬA] Step-by-step flow */}
-        <div className="lg:col-span-1 bg-gray-900 shadow-xl rounded-lg p-6 h-fit">
-          <h2 className="text-2xl font-semibold text-white mb-4">Hành động</h2>
+        {/* Cột 2: Panel Tiến trình & Hành động */}
+        <div className="lg:col-span-1 space-y-6">
 
-          {/* Trạng thái hiện tại */}
-          <div className="mb-6 p-4 bg-gray-800 rounded-lg">
-            <p className="text-sm text-gray-400 mb-2">Trạng thái đơn hàng</p>
-            <p className={`text-xl font-bold ${isCompleted ? 'text-green-400' :
-                isCancelled ? 'text-red-400' :
-                  'text-yellow-400'
-              }`}>
-              {ORDER_STATUS_LABELS[order.status] || order.status}
-            </p>
+          {/* [MỚI] Step-by-step Stepper */}
+          <OrderStatusStepper
+            currentStatus={order.status}
+            isCancelled={isCancelled}
+            onAdvanceStep={handleAdvanceStatus}
+            isUpdating={isUpdating}
+            canAdvance={!isCancelled && !isCompleted}
+          />
 
-            <p className="text-sm text-gray-400 mt-3 mb-2">Thanh toán</p>
-            <p className={`text-xl font-bold ${isPaid ? 'text-green-400' : 'text-red-400'}`}>
-              {isPaid ? '✅ Đã thanh toán' : '❌ Chưa thanh toán'}
-            </p>
-          </div>
-
-          {/* Các nút hành động */}
+          {/* Panel Thanh toán & Hành động */}
           {!isCompleted && !isCancelled && (
-            <div className="space-y-3">
+            <div className="bg-slate-800/50 border border-white/10 rounded-xl p-6">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <FaCreditCard />
+                Thanh toán
+              </h3>
 
-              {/* Nút xác nhận thanh toán */}
-              {!isPaid && (
+              {/* Trạng thái thanh toán */}
+              <div className={`p-4 rounded-lg mb-4 ${isPaid ? 'bg-green-900/30 border border-green-500/50' : 'bg-red-900/30 border border-red-500/50'
+                }`}>
+                <p className={`text-lg font-bold ${isPaid ? 'text-green-400' : 'text-red-400'}`}>
+                  {isPaid ? '✅ Đã thanh toán' : '❌ Chưa thanh toán'}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {/* Nút xác nhận thanh toán - CHỈ khi READY_FOR_DELIVERY */}
+                {!isPaid && order.status === 'READY_FOR_DELIVERY' && (
+                  <button
+                    onClick={handleConfirmPayment}
+                    disabled={isUpdating}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <FaCheck /> Xác nhận đã thanh toán
+                  </button>
+                )}
+
+                {/* Thông báo nếu chưa đến bước thanh toán */}
+                {!isPaid && order.status !== 'READY_FOR_DELIVERY' && (
+                  <p className="text-sm text-gray-400 text-center italic">
+                    Chuyển đến "Sẵn sàng giao" để xác nhận thanh toán
+                  </p>
+                )}
+
+                {/* Nút hoàn thành (cần thanh toán trước) */}
+                {isPaid && nextStatus === 'COMPLETED' && (
+                  <button
+                    onClick={handleAdvanceStatus}
+                    disabled={isUpdating}
+                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-3 px-6 rounded-lg transition duration-300 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <FaCheck /> Hoàn thành đơn hàng
+                  </button>
+                )}
+
+                {/* Nút thanh toán + hoàn thành nhanh */}
+                {!isPaid && order.status === 'READY_FOR_DELIVERY' && (
+                  <button
+                    onClick={handleConfirmComplete}
+                    disabled={isUpdating}
+                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-3 px-6 rounded-lg transition duration-300 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <FaCheck /> Thanh toán & Hoàn thành ngay
+                  </button>
+                )}
+
+                {/* Nút hủy */}
                 <button
-                  onClick={handleConfirmPayment}
+                  onClick={handleCancelOrder}
                   disabled={isUpdating}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 disabled:bg-gray-600 flex items-center justify-center gap-2"
+                  className="w-full bg-red-600/80 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  <FaCheck /> Xác nhận Thanh toán
+                  <FaTimes /> Hủy đơn hàng
                 </button>
-              )}
-
-              {/* Nút chuyển bước tiếp theo */}
-              {nextStatus && nextStatus !== 'COMPLETED' && (
-                <button
-                  onClick={handleAdvanceStatus}
-                  disabled={isUpdating}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 disabled:bg-gray-600 flex items-center justify-center gap-2"
-                >
-                  <FaArrowRight /> Chuyển sang: {ORDER_STATUS_LABELS[nextStatus]}
-                </button>
-              )}
-
-              {/* Nút hoàn thành (yêu cầu đã thanh toán) */}
-              {nextStatus === 'COMPLETED' && isPaid && (
-                <button
-                  onClick={handleAdvanceStatus}
-                  disabled={isUpdating}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 disabled:bg-gray-600 flex items-center justify-center gap-2"
-                >
-                  <FaCheck /> Hoàn thành đơn hàng
-                </button>
-              )}
-
-              {/* Nút thanh toán + hoàn thành nhanh */}
-              {!isPaid && (
-                <button
-                  onClick={handleConfirmComplete}
-                  disabled={isUpdating}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 disabled:bg-gray-600 flex items-center justify-center gap-2"
-                >
-                  <FaCheck /> Thanh toán + Hoàn thành ngay
-                </button>
-              )}
-
-              {/* Nút hủy */}
-              <button
-                onClick={handleCancelOrder}
-                disabled={isUpdating}
-                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 disabled:bg-gray-600 flex items-center justify-center gap-2"
-              >
-                <FaTimes /> Hủy đơn hàng
-              </button>
+              </div>
             </div>
           )}
 
-          {/* Đơn hàng đã chốt */}
-          {(isCompleted || isCancelled) && (
-            <div className={`p-4 rounded-lg text-center ${isCompleted ? 'bg-green-900/30' : 'bg-red-900/30'}`}>
-              <p className={`text-lg font-bold ${isCompleted ? 'text-green-400' : 'text-red-400'}`}>
-                {isCompleted ? '✅ Đơn hàng đã hoàn thành' : '❌ Đơn hàng đã bị hủy'}
-              </p>
-              <p className="text-sm text-gray-400 mt-2">Không thể cập nhật thêm</p>
-            </div>
-          )}
-
-          <div className="mt-4 text-center text-sm text-gray-400">
-            <p>Người xử lý: {order.staff?.inGameName || 'Chưa có'}</p>
-            <p className="mt-1">Cập nhật lần cuối: {new Date(order.updatedAt).toLocaleString('vi-VN')}</p>
+          {/* Thông tin người xử lý */}
+          <div className="bg-slate-800/50 border border-white/10 rounded-xl p-4 text-center">
+            <p className="text-sm text-gray-400">
+              <FaClock className="inline mr-1" />
+              Người xử lý: <span className="text-white">{order.staff?.inGameName || 'Chưa có'}</span>
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Cập nhật: {new Date(order.updatedAt).toLocaleString('vi-VN')}
+            </p>
           </div>
         </div>
       </div>

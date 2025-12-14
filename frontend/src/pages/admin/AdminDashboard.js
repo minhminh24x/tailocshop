@@ -46,8 +46,8 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-    // Auto refresh mỗi 5 phút
-    const interval = setInterval(fetchDashboardData, 5 * 60 * 1000);
+    // [SỬA] Auto refresh mỗi 30 giây để hiện đơn hàng mới nhanh hơn
+    const interval = setInterval(fetchDashboardData, 30 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -156,8 +156,8 @@ export default function AdminDashboard() {
             </div>
             <div className="mt-4 flex items-center text-sm">
               <span className={`font-medium ${stat.change.includes('+') ? 'text-green-400' :
-                  stat.change.includes('-') ? 'text-red-400' :
-                    stat.change === 'Cảnh báo' ? 'text-red-400' : 'text-gray-400'
+                stat.change.includes('-') ? 'text-red-400' :
+                  stat.change === 'Cảnh báo' ? 'text-red-400' : 'text-gray-400'
                 }`}>
                 {stat.change}
               </span>

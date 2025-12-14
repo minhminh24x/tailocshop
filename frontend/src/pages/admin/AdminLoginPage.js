@@ -11,7 +11,7 @@ export default function AdminLoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    const { login } = useAuthStore();
+    const { login, user } = useAuthStore(); // [FIX] Lấy user từ store
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -24,18 +24,24 @@ export default function AdminLoginPage() {
 
         setIsLoading(true);
         try {
-            const result = await login({ email, password });
+            // login() trả về path (string), không phải user object
+            const redirectPath = await login({ email, password });
 
-            if (result) {
-                const userRole = result.role;
+            // [FIX] Lấy user từ store sau khi login
+            const currentUser = useAuthStore.getState().user;
+
+            if (currentUser) {
+                const userRole = currentUser.role;
 
                 // Chỉ cho phép ADMIN, STAFF, SUPPLIER
                 if (!['ADMIN', 'STAFF', 'SUPPLIER'].includes(userRole)) {
                     toast.error('Bạn không có quyền truy cập trang quản trị');
+                    // Logout nếu không có quyền
+                    useAuthStore.getState().logout();
                     return;
                 }
 
-                toast.success(`Đăng nhập thành công! Xin chào ${result.inGameName}`);
+                toast.success(`Đăng nhập thành công! Xin chào ${currentUser.inGameName}`);
 
                 // Redirect theo role
                 switch (userRole) {

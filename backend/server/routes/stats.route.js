@@ -8,7 +8,13 @@ const router = express.Router();
 // [THÊM] Public route - Cho About page
 router.get('/public', statsController.getPublicStats);
 
-// Tất cả routes bên dưới yêu cầu Admin hoặc Staff
+// [MỚI] Staff summary - Yêu cầu Staff hoặc Admin
+router.get('/staff-summary', protect, authorize('STAFF', 'ADMIN'), statsController.getStaffSummary);
+
+// [MỚI] Supplier summary - Yêu cầu Supplier hoặc Admin
+router.get('/supplier-summary', protect, authorize('SUPPLIER', 'ADMIN'), statsController.getSupplierSummary);
+
+// Routes bên dưới yêu cầu Admin hoặc Staff
 router.use(protect);
 router.use(authorize('ADMIN', 'STAFF'));
 
@@ -22,4 +28,3 @@ router.get('/recent-orders', statsController.getRecentOrders);
 router.get('/low-stock', statsController.getLowStockItems);
 
 export default router;
-

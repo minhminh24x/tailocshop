@@ -17,7 +17,7 @@ export const useAuthStore = create(persist(
     error: null,
     isAuthLoading: true,
 
-    // Hàm này chỉ dùng khi F5 (Reload) trang web
+    // Hàm này dùng để refresh user data (VIP, etc.)
     checkAuthStatus: async () => {
       try {
         const { data } = await getMyProfile();
@@ -27,8 +27,15 @@ export const useAuthStore = create(persist(
           isAuthLoading: false
         });
       } catch (err) {
-        // Nếu check fail (token hết hạn...), set user về null
-        set({ user: null, nextVipLevel: null, isAuthLoading: false });
+        // [FIX] Chỉ reset user nếu CHƯA có user (tức là đang check lần đầu khi F5)
+        // Nếu đã có user (đã login) thì giữ nguyên, chỉ set isAuthLoading = false
+        const currentUser = get().user;
+        if (!currentUser) {
+          set({ user: null, nextVipLevel: null, isAuthLoading: false });
+        } else {
+          // Giữ nguyên user hiện tại, chỉ cập nhật loading state
+          set({ isAuthLoading: false });
+        }
       }
     },
 
@@ -38,7 +45,7 @@ export const useAuthStore = create(persist(
         // 1. Gọi API đăng nhập
         const { data } = await loginUser(credentials);
 
-        // 2. Lưu ngay user vào state (Dữ liệu này từ Backend trả về đã đủ dùng)
+        // 2. Lưu ngay user vào state
         set({
           user: data.user,
           isLoading: false
@@ -50,18 +57,23 @@ export const useAuthStore = create(persist(
           return '/profile';
         }
 
-        // --- [QUAN TRỌNG] ĐÃ XÓA ĐOẠN GỌI checkAuthStatus() Ở ĐÂY ---
-        // Không gọi lại checkAuthStatus vì cookie có thể chưa sẵn sàng
-        // và API login đã trả về đủ thông tin user rồi.
+        // [FIX] Gọi checkAuthStatus để lấy đầy đủ VIP data
+        // Đợi 100ms để cookie được set xong
+        setTimeout(async () => {
+          try {
+            await get().checkAuthStatus();
+          } catch (e) {
+            console.log('Could not refresh VIP data');
+          }
+        }, 100);
 
         toast.success('Đăng nhập thành công!');
 
         // 4. Lấy role từ dữ liệu vừa login để điều hướng
-        const loggedInUser = data.user; // Dùng trực tiếp biến data, không cần get().user
+        const loggedInUser = data.user;
 
         if (!loggedInUser || !loggedInUser.role) {
-          // Trường hợp hy hữu API không trả về role
-          return '/'; 
+          return '/';
         }
 
         // 5. Điều hướng phân quyền
@@ -69,7 +81,7 @@ export const useAuthStore = create(persist(
           case 'ADMIN': return '/admin';
           case 'STAFF': return '/staff';
           case 'SUPPLIER': return '/supplier';
-          case 'CUSTOMER': return '/'; // Khách hàng về trang chủ
+          case 'CUSTOMER': return '/';
           default: return '/';
         }
 
@@ -79,7 +91,7 @@ export const useAuthStore = create(persist(
         toast.error(errorMsg);
         // Ném lỗi để component bắt được nếu cần, 
         // nhưng ở LoginPage bạn đang không try/catch nên return false/null sẽ an toàn hơn
-        return null; 
+        return null;
       }
     },
 

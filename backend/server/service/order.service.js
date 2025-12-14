@@ -10,19 +10,37 @@ const emitOrderStatusChange = () => { };
 
 // === HÀM HELPER (Giữ nguyên) ===
 const updateUserVipLevel = async (tx, userId, newTotalSpent) => {
+  // [FIX] Parse Decimal to float
+  const totalSpentFloat = parseFloat(newTotalSpent) || 0;
+
+  console.log('[VIP DEBUG] updateUserVipLevel:', {
+    userId,
+    newTotalSpent,
+    totalSpentFloat,
+  });
+
   // 1. Lấy tất cả các cấp VIP, sắp xếp GIẢM DẦN theo ngưỡng coin
   const allVipLevels = await tx.vipLevel.findMany({
     orderBy: { coinThreshold: 'desc' },
   });
 
+  console.log('[VIP DEBUG] All VIP levels:', allVipLevels.map(v => ({
+    level: v.level,
+    threshold: parseFloat(v.coinThreshold)
+  })));
+
   // 2. Tìm cấp VIP cao nhất mà user đạt được
   let newVipLevelInt = 0; // Mặc định là 0 (Level 0)
   for (const level of allVipLevels) {
-    if (newTotalSpent >= level.coinThreshold) {
+    const threshold = parseFloat(level.coinThreshold) || 0;
+    if (totalSpentFloat >= threshold) {
       newVipLevelInt = level.level; // Lấy level (là @id)
+      console.log('[VIP DEBUG] User qualifies for level:', newVipLevelInt, 'threshold:', threshold);
       break;
     }
   }
+
+  console.log('[VIP DEBUG] Final VIP level for user:', newVipLevelInt);
 
   // 3. Cập nhật cho user
   await tx.user.update({

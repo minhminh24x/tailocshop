@@ -228,9 +228,79 @@ const getPublicStats = async () => {
     };
 };
 
+/**
+ * [MỚI] Lấy thống kê cho Staff Dashboard
+ * - completedOrders: Số đơn COMPLETED mà staff này đã xử lý
+ * - totalRevenue: Tổng doanh thu từ các đơn đó
+ */
+const getStaffSummary = async (userId) => {
+    const [completedOrders, revenue] = await Promise.all([
+        // Số đơn đã hoàn thành bởi staff này
+        prisma.order.count({
+            where: {
+                status: 'COMPLETED',
+                staffUserId: userId,
+            }
+        }),
+
+        // Tổng doanh thu từ đơn COMPLETED của staff này
+        prisma.order.aggregate({
+            where: {
+                status: 'COMPLETED',
+                staffUserId: userId,
+            },
+            _sum: {
+                totalAmountCoin: true,
+            }
+        }),
+    ]);
+
+    return {
+        completedOrders,
+        totalRevenue: parseFloat(revenue._sum.totalAmountCoin) || 0,
+    };
+};
+
+/**
+ * [MỚI] Lấy thống kê cho Supplier Dashboard
+ * - approvedSubmissions: Số phiếu nhập hàng đã được duyệt
+ * - totalEarnings: Tổng giá trị hàng đã nhập (ước tính)
+ */
+const getSupplierSummary = async (userId) => {
+    const [approvedSubmissions, totalItems] = await Promise.all([
+        // Số phiếu đã approved
+        prisma.supplierSubmission.count({
+            where: {
+                supplierUserId: userId,
+                status: 'APPROVED',
+            }
+        }),
+
+        // Tổng số items từ phiếu approved (lấy aggregate quantity)
+        prisma.supplierSubmissionDetail.aggregate({
+            where: {
+                submission: {
+                    supplierUserId: userId,
+                    status: 'APPROVED',
+                }
+            },
+            _sum: {
+                quantity: true,
+            }
+        }),
+    ]);
+
+    return {
+        approvedSubmissions,
+        totalEarnings: totalItems._sum.quantity || 0, // Số lượng items đã nhập
+    };
+};
+
 export const statsService = {
     getDashboardStats,
     getRecentOrders,
     getLowStockItems,
     getPublicStats,
+    getStaffSummary,
+    getSupplierSummary,
 };

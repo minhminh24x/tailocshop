@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { getAllItems } from '../services/itemService';
 import { getAllCategoriesAdmin } from '../services/adminCategoryService';
 import ItemCard from '../components/items/ItemCard';
-import { Search, Sparkles } from 'lucide-react';
+import { Search, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const ITEMS_PER_PAGE = 12; // Số items mỗi trang
 
 export default function ItemsPage() {
   const [items, setItems] = useState([]);
@@ -15,9 +17,17 @@ export default function ItemsPage() {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [sortOrder, setSortOrder] = useState('newest');
 
+  // [MỚI] Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Reset về trang 1 khi filter thay đổi
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, sortOrder]);
 
   const fetchData = async () => {
     try {
@@ -26,13 +36,11 @@ export default function ItemsPage() {
         getAllCategoriesAdmin()
       ]);
 
-      // [SỬA LỖI QUAN TRỌNG]: Lấy dữ liệu từ .data của axios response
-      // Kiểm tra an toàn: nếu API trả về object có field 'items' (phân trang) hoặc trả về mảng trực tiếp
       const rawItems = itemsRes.data;
       const validItems = Array.isArray(rawItems) ? rawItems : (rawItems.items || []);
 
       setItems(validItems);
-      setCategories(catsRes.data || []); // Category thường trả về mảng trực tiếp
+      setCategories(catsRes.data || []);
 
     } catch (error) {
       console.error("Failed to fetch items:", error);
@@ -41,17 +49,32 @@ export default function ItemsPage() {
     }
   };
 
-  // Logic lọc và sắp xếp (Bây giờ items chắc chắn là mảng nên .filter sẽ hoạt động)
-  const filteredItems = (items || []).filter(item => {
-    const matchSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    // Lưu ý: categoryId có thể là chuỗi hoặc số tùy DB, nên ép kiểu để so sánh
-    const matchCat = selectedCategory === 'ALL' || String(item.categoryId) === String(selectedCategory);
-    return matchSearch && matchCat;
-  }).sort((a, b) => {
-    if (sortOrder === 'price-asc') return parseFloat(a.priceCoin) - parseFloat(b.priceCoin);
-    if (sortOrder === 'price-desc') return parseFloat(b.priceCoin) - parseFloat(a.priceCoin);
-    return new Date(b.createdAt) - new Date(a.createdAt); // newest
-  });
+  // Logic lọc và sắp xếp
+  const filteredItems = useMemo(() => {
+    return (items || []).filter(item => {
+      const matchSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchCat = selectedCategory === 'ALL' || String(item.categoryId) === String(selectedCategory);
+      return matchSearch && matchCat;
+    }).sort((a, b) => {
+      if (sortOrder === 'price-asc') return parseFloat(a.priceCoin) - parseFloat(b.priceCoin);
+      if (sortOrder === 'price-desc') return parseFloat(b.priceCoin) - parseFloat(a.priceCoin);
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+  }, [items, searchTerm, selectedCategory, sortOrder]);
+
+  // [MỚI] Pagination logic
+  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+  const paginatedItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredItems, currentPage]);
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   if (loading) {
     return (
@@ -78,38 +101,40 @@ export default function ItemsPage() {
       </div>
 
       {/* CONTROL BAR (FILTER & SEARCH) */}
-      <div className="glass-panel p-4 rounded-2xl sticky top-24 z-30 shadow-xl transition-all duration-300">
-        <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-
+      <div className="glass-panel p-4 rounded-xl border border-white/10">
+        <div className="flex flex-wrap gap-4 items-center justify-between">
           {/* Search */}
-          <div className="relative w-full md:w-1/3">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
-              placeholder="Tìm kiếm vật phẩm..."
-              className="w-full bg-slate-900/80 border border-gray-700 rounded-xl py-3 pl-10 text-white focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Tìm kiếm vật phẩm..."
+              className="w-full bg-slate-800 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
             />
           </div>
 
-          {/* Filters */}
-          <div className="flex gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+          {/* Category Filter */}
+          <div>
             <select
-              className="bg-slate-900/80 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 cursor-pointer hover:bg-slate-800 transition-colors"
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
+              className="bg-slate-800 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
             >
               <option value="ALL">Tất cả danh mục</option>
               {categories.map(cat => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
+          </div>
 
+          {/* Sort */}
+          <div>
             <select
-              className="bg-slate-900/80 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 cursor-pointer hover:bg-slate-800 transition-colors"
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
+              className="bg-slate-800 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
             >
               <option value="newest">Mới nhất</option>
               <option value="price-asc">Giá thấp - cao</option>
@@ -119,8 +144,18 @@ export default function ItemsPage() {
         </div>
       </div>
 
+      {/* [MỚI] Thông tin số lượng & trang */}
+      <div className="flex justify-between items-center text-sm text-gray-400">
+        <p>
+          Hiển thị <span className="text-yellow-400 font-bold">{paginatedItems.length}</span> / {filteredItems.length} vật phẩm
+        </p>
+        {totalPages > 1 && (
+          <p>Trang <span className="text-yellow-400 font-bold">{currentPage}</span> / {totalPages}</p>
+        )}
+      </div>
+
       {/* ITEMS GRID */}
-      {filteredItems.length === 0 ? (
+      {paginatedItems.length === 0 ? (
         <div className="text-center py-20 opacity-60">
           <div className="text-6xl mb-4">📦</div>
           <h3 className="text-xl font-bold text-gray-300">Không tìm thấy vật phẩm nào</h3>
@@ -128,11 +163,61 @@ export default function ItemsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredItems.map((item) => (
+          {paginatedItems.map((item) => (
             <Link key={item.id} to={`/items/${item.slug}/${item.unit}`} className="block h-full">
               <ItemCard item={item} />
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* [MỚI] Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-8">
+          <button
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="p-2 rounded-lg bg-slate-800 border border-white/10 text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-700 transition"
+          >
+            <ChevronLeft size={20} />
+          </button>
+
+          {/* Page numbers */}
+          <div className="flex gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(page => {
+                // Hiển thị: 1, currentPage-1, currentPage, currentPage+1, lastPage
+                return page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1;
+              })
+              .map((page, index, arr) => {
+                // Thêm dấu ... giữa các số không liền nhau
+                const prevPage = arr[index - 1];
+                const showDots = prevPage && page - prevPage > 1;
+
+                return (
+                  <React.Fragment key={page}>
+                    {showDots && <span className="px-2 text-gray-500">...</span>}
+                    <button
+                      onClick={() => goToPage(page)}
+                      className={`px-4 py-2 rounded-lg font-bold transition ${page === currentPage
+                          ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black'
+                          : 'bg-slate-800 border border-white/10 text-white hover:bg-slate-700'
+                        }`}
+                    >
+                      {page}
+                    </button>
+                  </React.Fragment>
+                );
+              })}
+          </div>
+
+          <button
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="p-2 rounded-lg bg-slate-800 border border-white/10 text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-700 transition"
+          >
+            <ChevronRight size={20} />
+          </button>
         </div>
       )}
     </div>

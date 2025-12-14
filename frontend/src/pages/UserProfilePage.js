@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { Navigate, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -78,6 +78,7 @@ const PasswordRequirements = ({ password }) => {
 const UserProfilePage = () => {
   const user = useAuthStore((state) => state.user);
   const nextVip = useAuthStore((state) => state.nextVipLevel);
+  const checkAuthStatus = useAuthStore((state) => state.checkAuthStatus);
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -90,6 +91,12 @@ const UserProfilePage = () => {
     new: false,
     confirm: false,
   });
+
+  // [FIX] Gọi checkAuthStatus khi mount để lấy VIP data đầy đủ
+  useEffect(() => {
+    checkAuthStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Chỉ chạy 1 lần khi mount
 
   if (!user) {
     return <Navigate to="/login" replace />;

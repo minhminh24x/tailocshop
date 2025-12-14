@@ -46,6 +46,7 @@ const getMyProfile = asyncHandler(async (req, res) => {
       totalSpentCoin: true,
       createdAt: true,
       mustChangePassword: true,
+      vipLevelInt: true, // [FIX] Cần có field này để relation hoạt động
       vipLevel: {
         select: {
           level: true,
@@ -60,6 +61,14 @@ const getMyProfile = asyncHandler(async (req, res) => {
   if (!user) {
     return res.status(404).json({ message: 'Không tìm thấy người dùng' });
   }
+
+  // [DEBUG] Log user VIP data
+  console.log('[VIP DEBUG] getMyProfile:', {
+    userId: user.id,
+    inGameName: user.inGameName,
+    totalSpentCoin: user.totalSpentCoin,
+    vipLevel: user.vipLevel,
+  });
 
   // 2. Tìm CẤP VIP TIẾP THEO
   let nextVipLevel = null;

@@ -20,11 +20,9 @@ export default function AdminManageInventory() {
     setIsLoading(true);
     try {
       if (activeTab === 'STOCK') {
-        // Giả định endpoint lấy tất cả item (bao gồm stock)
-        const res = await apiClient.get('/items/public');
-        // Nếu endpoint public không trả về stock chính xác cho admin, cần endpoint admin riêng
-        // Tạm thời dùng endpoint này và giả định nó có stockQuantity
-        setItems(res.data.items || []);
+        // [FIX] Đổi endpoint từ /public sang /admin/all
+        const res = await apiClient.get('/items/admin/all');
+        setItems(res.data || []);
       } else {
         // Giả định endpoint lấy lịch sử nhập xuất kho
         // Nếu chưa có, cần tạo backend route: /inventory/logs
@@ -60,8 +58,8 @@ export default function AdminManageInventory() {
         <button
           onClick={() => setActiveTab('STOCK')}
           className={`pb-2 px-4 font-semibold transition ${activeTab === 'STOCK'
-              ? 'text-pink-500 border-b-2 border-pink-500'
-              : 'text-gray-400 hover:text-white'
+            ? 'text-pink-500 border-b-2 border-pink-500'
+            : 'text-gray-400 hover:text-white'
             }`}
         >
           <FaBox className="inline mr-2" /> Tồn kho hiện tại
@@ -69,8 +67,8 @@ export default function AdminManageInventory() {
         <button
           onClick={() => setActiveTab('LOGS')}
           className={`pb-2 px-4 font-semibold transition ${activeTab === 'LOGS'
-              ? 'text-pink-500 border-b-2 border-pink-500'
-              : 'text-gray-400 hover:text-white'
+            ? 'text-pink-500 border-b-2 border-pink-500'
+            : 'text-gray-400 hover:text-white'
             }`}
         >
           <FaHistory className="inline mr-2" /> Lịch sử Nhập/Xuất
