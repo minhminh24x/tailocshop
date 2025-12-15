@@ -42,6 +42,7 @@ export default function StaffDashboard() {
         // Auto refresh mỗi 60 giây
         const interval = setInterval(fetchStats, 60 * 1000);
         return () => clearInterval(interval);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (

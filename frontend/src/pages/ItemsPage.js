@@ -32,12 +32,16 @@ export default function ItemsPage() {
   const fetchData = async () => {
     try {
       const [itemsRes, catsRes] = await Promise.all([
-        getAllItems(),
+        getAllItems({ limit: 1000 }), // Lấy nhiều items, frontend sẽ phân trang
         getAllCategoriesAdmin()
       ]);
 
+      // [SỬA] Xử lý response mới có pagination
       const rawItems = itemsRes.data;
-      const validItems = Array.isArray(rawItems) ? rawItems : (rawItems.items || []);
+      // Hỗ trợ cả format cũ (array) và mới (object với data)
+      const validItems = Array.isArray(rawItems)
+        ? rawItems
+        : (rawItems.data || rawItems.items || []);
 
       setItems(validItems);
       setCategories(catsRes.data || []);
@@ -200,8 +204,8 @@ export default function ItemsPage() {
                     <button
                       onClick={() => goToPage(page)}
                       className={`px-4 py-2 rounded-lg font-bold transition ${page === currentPage
-                          ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black'
-                          : 'bg-slate-800 border border-white/10 text-white hover:bg-slate-700'
+                        ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black'
+                        : 'bg-slate-800 border border-white/10 text-white hover:bg-slate-700'
                         }`}
                     >
                       {page}

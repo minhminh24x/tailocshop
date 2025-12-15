@@ -78,21 +78,57 @@ const getAllItemsAdmin = async () => {
 };
 
 /**
- * Lấy tất cả vật phẩm (có thể thêm filter/pagination sau)
- * @returns {Promise<Item[]>}
+ * [NÂNG CẤP] Lấy vật phẩm với pagination và filter
+ * @param {object} query - { page, limit, categoryId, search }
+ * @returns {Promise<{data: Item[], pagination: object}>}
  */
-const getAllItems = async () => {
-  return prisma.item.findMany({
-    where: { isActive: true }, // Chỉ lấy các item đang được kích hoạt
-    include: {
-      category: {
-        select: { id: true, name: true, slug: true },
+const getAllItems = async (query = {}) => {
+  const {
+    page = 1,
+    limit = 20,
+    categoryId,
+    search,
+  } = query;
+
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const take = parseInt(limit);
+
+  // Build where clause
+  const where = { isActive: true };
+
+  if (categoryId) {
+    where.categoryId = categoryId;
+  }
+
+  if (search) {
+    where.name = { contains: search, mode: 'insensitive' };
+  }
+
+  // Get total count for pagination
+  const [items, total] = await Promise.all([
+    prisma.item.findMany({
+      where,
+      include: {
+        category: {
+          select: { id: true, name: true, slug: true },
+        },
       },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take,
+    }),
+    prisma.item.count({ where }),
+  ]);
+
+  return {
+    data: items,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total,
+      totalPages: Math.ceil(total / take),
     },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
+  };
 };
 
 /**

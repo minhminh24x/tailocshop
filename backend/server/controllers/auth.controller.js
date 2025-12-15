@@ -2,6 +2,7 @@
 import prisma from '../lib/prisma.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { sanitizeEmail, sanitizeInGameName } from '../utils/sanitize.js';
 
 // =============================================
 // HÀM Register
@@ -9,12 +10,12 @@ import jwt from 'jsonwebtoken';
 
 export const register = async (req, res) => {
   // [FIX] Thêm inGameName vào destructuring
-  const { email, password, inGameName } = req.body || {}; 
+  const { email, password, inGameName } = req.body || {};
 
   try {
     // 2. Kiểm tra dữ liệu đầu vào - [FIX] Thêm validation cho inGameName
     if (!email || !password || !inGameName) {
-      console.log('Register failed - Body received:', req.body); 
+      console.log('Register failed - Body received:', req.body);
       console.log('Register failed - Content-Type:', req.headers['content-type']);
 
       return res
@@ -22,10 +23,18 @@ export const register = async (req, res) => {
         .json({ message: 'Vui lòng cung cấp email, mật khẩu và tên trong game' });
     }
 
+    // [THÊM] Sanitize inputs để ngăn XSS
+    const sanitizedEmail = sanitizeEmail(email);
+    const sanitizedInGameName = sanitizeInGameName(inGameName);
+
+    if (!sanitizedEmail) {
+      return res.status(400).json({ message: 'Email không hợp lệ' });
+    }
+
     // 3. Kiểm tra xem email hoặc inGameName đã tồn tại chưa
     const existingUser = await prisma.user.findFirst({
       where: {
-        OR: [{ email: email }, { inGameName: inGameName }],
+        OR: [{ email: sanitizedEmail }, { inGameName: sanitizedInGameName }],
       },
     });
 
@@ -42,8 +51,8 @@ export const register = async (req, res) => {
     // 5. Tạo người dùng mới
     const newUser = await prisma.user.create({
       data: {
-        email: email,
-        inGameName: inGameName,
+        email: sanitizedEmail,
+        inGameName: sanitizedInGameName,
         passwordHash: hashedPassword,
         // Các trường khác như 'role' sẽ dùng giá trị DEFAULT (CUSTOMER)
         mustChangePassword: false,
@@ -66,23 +75,29 @@ export const register = async (req, res) => {
 // HÀM LOGIN MỚI (ĐÃ SỬA COOKIE)
 // =============================================
 export const login = async (req, res) => {
-  const { email, password } = req.body || {}; 
+  const { email, password } = req.body || {};
 
   try {
     // 2. Kiểm tra dữ liệu đầu vào
     if (!email || !password) {
       // Log ra để debug xem server nhận được gì
-      console.log('Login failed - Body received:', req.body); 
+      console.log('Login failed - Body received:', req.body);
       console.log('Login failed - Content-Type:', req.headers['content-type']);
 
       return res
         .status(400)
         .json({ message: 'Vui lòng cung cấp email và mật khẩu' });
     }
-    
+
+    // [THÊM] Sanitize email
+    const sanitizedEmail = sanitizeEmail(email);
+    if (!sanitizedEmail) {
+      return res.status(400).json({ message: 'Email không hợp lệ' });
+    }
+
     // 3. Tìm người dùng bằng email
     const user = await prisma.user.findUnique({
-      where: { email: email },
+      where: { email: sanitizedEmail },
     });
 
     if (!user) {
@@ -116,14 +131,14 @@ export const login = async (req, res) => {
     const cookieOptions = {
       httpOnly: true,
       maxAge: age,
-      
+
       // [THÊM] Bắt buộc cho cookie cross-domain (khi deploy)
       // Chỉ gửi cookie qua HTTPS
-      secure: process.env.NODE_ENV === 'production', 
-      
+      secure: process.env.NODE_ENV === 'production',
+
       // [THÊM] Cho phép gửi cookie từ domain khác (Render -> Vercel)
       // 'Lax' cho môi trường dev (localhost), 'None' cho production
-      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', 
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
     };
 
     // 6. Gửi Token về cho client qua Cookie
@@ -152,7 +167,7 @@ export const logout = (req, res) => {
     const cookieOptions = {
       httpOnly: true,
       maxAge: 0, // Hết hạn ngay lập tức
-      
+
       // [THÊM] Phải khớp với cookie lúc login
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',

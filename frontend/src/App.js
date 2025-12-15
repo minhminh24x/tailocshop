@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
-import { useCartStore } from './store/cartStore';
 import { useCurrencyStore } from './store/currencyStore';
 
 // Layout Components

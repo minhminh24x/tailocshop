@@ -10,8 +10,8 @@ const createItem = asyncHandler(async (req, res) => {
 });
 
 const getAllItems = asyncHandler(async (req, res) => {
-  const items = await itemService.getAllItems();
-  res.status(httpStatus.OK).send(items);
+  const result = await itemService.getAllItems(req.query);
+  res.status(httpStatus.OK).send(result);
 });
 
 const getAllItemsAdmin = asyncHandler(async (req, res) => {

@@ -125,8 +125,11 @@ const createOrder = async (userId, orderData) => {
       // [SỬA ĐỔI] Chúng ta cần một mảng riêng để cập nhật kho
       const itemsToUpdateStock = [];
 
+      // [OPTIMIZE] Tạo Map để O(1) lookup thay vì O(n) với find()
+      const itemsMap = new Map(dbItems.map(item => [item.id, item]));
+
       for (const cartItem of items) {
-        const dbItem = dbItems.find((item) => item.id === cartItem.itemId);
+        const dbItem = itemsMap.get(cartItem.itemId); // O(1) lookup
         // ... (Kiểm tra !dbItem, kiểm tra stockQuantity giữ nguyên)
         if (!dbItem) {
           throw new ApiError(httpStatus.NOT_FOUND, `Vật phẩm với ID ${cartItem.itemId} không tồn tại.`);

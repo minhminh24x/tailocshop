@@ -10,7 +10,6 @@ import {
   ORDER_STATUS_LABELS,
   getNextStatus
 } from '../../../services/adminOrderService.js';
-import { useAuthStore } from '../../../store/authStore.js';
 import { formatNumber } from '../../../utils/formatNumber.js';
 import { FaCoins, FaDollarSign, FaCheck, FaTimes, FaArrowRight, FaClock, FaCreditCard } from 'react-icons/fa';
 import OrderStatusStepper from '../../../components/order/OrderStatusStepper.js';
@@ -18,7 +17,6 @@ import OrderStatusStepper from '../../../components/order/OrderStatusStepper.js'
 export default function AdminOrderDetailPage() {
   const { orderId: id } = useParams();
   const navigate = useNavigate();
-  const adminUser = useAuthStore((state) => state.user);
 
   const [order, setOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(true);

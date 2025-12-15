@@ -63,7 +63,7 @@ export default function OrderStatusStepper({
                     const Icon = step.icon;
                     const isPast = index < currentIndex;
                     const isCurrent = index === currentIndex;
-                    const isFuture = index > currentIndex;
+                    // isFuture không được sử dụng trực tiếp nhưng logic derived từ isPast và isCurrent
 
                     // Màu sắc dựa trên trạng thái
                     let circleClass = 'bg-slate-700 text-gray-500 border-gray-600';
