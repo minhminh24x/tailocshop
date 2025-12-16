@@ -71,8 +71,12 @@ const allowedOrigins = [
   'http://localhost:3002',
   'https://tailocshop.onrender.com',
   'https://tailocshop.vercel.app',
-  'https://tailocshop-6qtp-iefejt9eu-minhminh24xs-projects.vercel.app'
-];
+  'https://tailocshop-6qtp-iefejt9eu-minhminh24xs-projects.vercel.app',
+  // Production domains
+  'https://shop.minhminh24x.me',
+  'https://api.minhminh24x.me',
+  process.env.FRONTEND_URL, // Dynamic from .env
+].filter(Boolean);
 
 // Cấu hình CORS
 app.use(
