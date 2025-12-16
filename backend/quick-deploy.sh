@@ -1,98 +1,242 @@
 #!/bin/bash
 # ============================================
-# TaiLocShop - Quick Deploy Script
-# Chạy lệnh này trên VPS: bash <(curl -s https://raw.githubusercontent.com/minhminh24x/tailocshop/master/backend/quick-deploy.sh)
+# TaiLocShop - Complete VPS Deploy Script
+# Includes PostgreSQL installation on VPS
 # ============================================
 
 set -e
-echo "🚀 TaiLocShop Quick Deploy"
+echo "🚀 TaiLocShop Complete Deploy Script"
+echo "====================================="
 
-# Cleanup
-echo "🧹 Cleaning up..."
+# Configuration
+DOMAIN="api.minhminh24x.me"
+FRONTEND_URL="https://shop.minhminh24x.me"
+DB_NAME="tailocshop"
+DB_USER="tailocshop_user"
+DB_PASS="TaiLocShop2024SecureDB!"
+JWT_SECRET=$(openssl rand -hex 64)
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# ============================================
+# Step 1: Cleanup
+# ============================================
+echo -e "${YELLOW}[1/9] Cleaning up old applications...${NC}"
 pkill -f "node" 2>/dev/null || true
 pkill -f "python" 2>/dev/null || true
+pkill -f "gunicorn" 2>/dev/null || true
 pm2 kill 2>/dev/null || true
 rm -rf /var/www/tailocshop-backend 2>/dev/null || true
+rm -rf /root/bot* /root/python* 2>/dev/null || true
+crontab -r 2>/dev/null || true
+echo -e "${GREEN}✓ Cleanup done${NC}"
 
-# Install dependencies
-echo "📦 Installing dependencies..."
-apt update -qq
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash - >/dev/null 2>&1
-apt install -y nodejs nginx >/dev/null 2>&1
-npm install -g pm2 >/dev/null 2>&1
+# ============================================
+# Step 2: Update system & install dependencies
+# ============================================
+echo -e "${YELLOW}[2/9] Installing system dependencies...${NC}"
+apt update
+apt install -y curl git nginx certbot python3-certbot-nginx ufw
 
-# Clone repo
-echo "📥 Cloning repository..."
+# Install Node.js 20
+if ! command -v node &> /dev/null || [[ $(node -v) != v20* ]]; then
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    apt install -y nodejs
+fi
+
+# Install PM2
+npm install -g pm2
+
+echo "Node: $(node -v), NPM: $(npm -v)"
+echo -e "${GREEN}✓ Dependencies installed${NC}"
+
+# ============================================
+# Step 3: Install PostgreSQL
+# ============================================
+echo -e "${YELLOW}[3/9] Installing PostgreSQL...${NC}"
+
+if ! command -v psql &> /dev/null; then
+    apt install -y postgresql postgresql-contrib
+fi
+
+# Start PostgreSQL
+systemctl start postgresql
+systemctl enable postgresql
+
+# Create database and user
+sudo -u postgres psql <<EOF
+-- Drop existing if any
+DROP DATABASE IF EXISTS $DB_NAME;
+DROP USER IF EXISTS $DB_USER;
+
+-- Create user and database
+CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';
+CREATE DATABASE $DB_NAME OWNER $DB_USER;
+GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
+
+-- Allow connections
+ALTER USER $DB_USER CREATEDB;
+\q
+EOF
+
+echo -e "${GREEN}✓ PostgreSQL installed and configured${NC}"
+echo "  Database: $DB_NAME"
+echo "  User: $DB_USER"
+
+# ============================================
+# Step 4: Clone repository
+# ============================================
+echo -e "${YELLOW}[4/9] Cloning repository...${NC}"
 mkdir -p /var/www/tailocshop-backend
 cd /var/www/tailocshop-backend
-git clone https://github.com/minhminh24x/tailocshop.git . 2>/dev/null
+git clone https://github.com/minhminh24x/tailocshop.git .
 
-# Setup backend
-echo "⚙️ Setting up backend..."
-cd backend
-npm install --production --silent
+echo -e "${GREEN}✓ Repository cloned${NC}"
 
-# Create .env
-cat > .env << 'ENVFILE'
+# ============================================
+# Step 5: Setup backend
+# ============================================
+echo -e "${YELLOW}[5/9] Setting up backend...${NC}"
+cd /var/www/tailocshop-backend/backend
+npm install --production
+
+echo -e "${GREEN}✓ Dependencies installed${NC}"
+
+# ============================================
+# Step 6: Create production .env
+# ============================================
+echo -e "${YELLOW}[6/9] Creating environment file...${NC}"
+
+cat > .env << EOF
+# =====================================
+# PRODUCTION ENVIRONMENT
+# Auto-generated: $(date)
+# =====================================
 NODE_ENV=production
-DATABASE_URL="postgresql://tailocshopdb_user:VvxevradKIj8kXKyFPzMMPL3V0oxmmyw@dpg-d45hjrfdiees7389d8o0-a.singapore-postgres.render.com/tailocshopdb"
-JWT_SECRET_KEY="TaiLocShopSuperSecretKeyForProductionEnvironment2024VerySecure"
+
+# PostgreSQL on VPS
+DATABASE_URL="postgresql://${DB_USER}:${DB_PASS}@localhost:5432/${DB_NAME}"
+
+# JWT Secret (auto-generated, 64 bytes hex)
+JWT_SECRET_KEY="${JWT_SECRET}"
+
+# Email Configuration
 EMAIL_SERVICE="Gmail"
 EMAIL_USERNAME=loclm112.noreply@gmail.com
 EMAIL_PASSWORD=kolo pzhk uwcw ralv
-FRONTEND_URL=https://shop.minhminh24x.me
-ENVFILE
 
-# Prisma
-echo "🗄️ Setting up database..."
-npx prisma generate >/dev/null 2>&1
-npx prisma db push --accept-data-loss >/dev/null 2>&1
+# Frontend URL for CORS
+FRONTEND_URL=${FRONTEND_URL}
+EOF
 
-# Nginx config
-echo "🌐 Configuring Nginx..."
-cat > /etc/nginx/sites-available/tailocshop << 'NGINX'
+echo -e "${GREEN}✓ Environment file created${NC}"
+
+# ============================================
+# Step 7: Run Prisma migrations
+# ============================================
+echo -e "${YELLOW}[7/9] Setting up database schema...${NC}"
+npx prisma generate
+npx prisma db push --accept-data-loss
+
+echo -e "${GREEN}✓ Database schema created${NC}"
+
+# ============================================
+# Step 8: Configure Nginx
+# ============================================
+echo -e "${YELLOW}[8/9] Configuring Nginx...${NC}"
+
+cat > /etc/nginx/sites-available/tailocshop << EOF
 server {
     listen 80;
-    server_name api.minhminh24x.me;
+    server_name $DOMAIN;
+
     location / {
         proxy_pass http://localhost:8080;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+        
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
     }
 }
-NGINX
+EOF
 
 ln -sf /etc/nginx/sites-available/tailocshop /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
-systemctl restart nginx
+nginx -t && systemctl restart nginx
 
-# Start with PM2
-echo "🚀 Starting application..."
-pm2 start server/index.js --name tailocshop-backend -i 1
+echo -e "${GREEN}✓ Nginx configured${NC}"
+
+# ============================================
+# Step 9: Start with PM2
+# ============================================
+echo -e "${YELLOW}[9/9] Starting application...${NC}"
+
+cat > ecosystem.config.js << 'EOF'
+module.exports = {
+  apps: [{
+    name: 'tailocshop-backend',
+    script: 'server/index.js',
+    instances: 1,
+    autorestart: true,
+    watch: false,
+    max_memory_restart: '500M',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 8080
+    }
+  }]
+};
+EOF
+
+pm2 start ecosystem.config.js
 pm2 save
-pm2 startup >/dev/null 2>&1
+pm2 startup
 
-# Firewall
-ufw allow 22 >/dev/null 2>&1
-ufw allow 80 >/dev/null 2>&1
-ufw allow 443 >/dev/null 2>&1
-ufw --force enable >/dev/null 2>&1
+echo -e "${GREEN}✓ Application started${NC}"
 
+# ============================================
+# Setup Firewall
+# ============================================
+ufw allow ssh
+ufw allow 'Nginx Full'
+ufw --force enable
+
+# ============================================
+# DONE!
+# ============================================
 echo ""
-echo "✅ DEPLOYMENT COMPLETE!"
-echo "================================"
-echo "API: http://api.minhminh24x.me"
+echo -e "${GREEN}============================================${NC}"
+echo -e "${GREEN}🎉 DEPLOYMENT COMPLETED SUCCESSFULLY!${NC}"
+echo -e "${GREEN}============================================${NC}"
 echo ""
-echo "Next: Run this for HTTPS:"
-echo "  apt install -y certbot python3-certbot-nginx"
-echo "  certbot --nginx -d api.minhminh24x.me"
+echo "📍 API URL: http://$DOMAIN"
 echo ""
-echo "Commands:"
-echo "  pm2 logs    - View logs"
-echo "  pm2 restart tailocshop-backend - Restart"
+echo "📊 Database Info:"
+echo "   Host: localhost:5432"
+echo "   Database: $DB_NAME"
+echo "   User: $DB_USER"
+echo ""
+echo "🔐 JWT Secret has been auto-generated"
+echo ""
+echo "📋 Next Steps:"
+echo "   1. Setup SSL: certbot --nginx -d $DOMAIN"
+echo "   2. Redeploy frontend on Vercel"
+echo ""
+echo "🛠️ Useful Commands:"
+echo "   pm2 status              - Check status"
+echo "   pm2 logs                - View logs"
+echo "   pm2 restart all         - Restart app"
+echo "   sudo -u postgres psql   - Access database"
+echo ""
