@@ -46,7 +46,7 @@ async function main() {
         email: 'admin@tailocshop.com',
         passwordHash: pass,
         role: 'ADMIN',
-        inGameName: 'AdminTaiLoc',
+        inGameName: 'MinhMinh24x',
         mustChangePassword: false, // [SỬA] Admin không cần đổi mật khẩu
       },
     });

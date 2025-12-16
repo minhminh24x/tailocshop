@@ -141,7 +141,11 @@ echo -e "${YELLOW}[7/9] Setting up database schema...${NC}"
 npx prisma generate
 npx prisma db push --accept-data-loss
 
-echo -e "${GREEN}✓ Database schema created${NC}"
+# Run seed to populate initial data
+echo -e "${YELLOW}[7b/9] Seeding database with initial data...${NC}"
+npx prisma db seed
+
+echo -e "${GREEN}✓ Database schema created and seeded${NC}"
 
 # ============================================
 # Step 8: Configure Nginx
