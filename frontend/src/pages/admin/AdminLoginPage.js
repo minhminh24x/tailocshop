@@ -33,30 +33,21 @@ export default function AdminLoginPage() {
             if (currentUser) {
                 const userRole = currentUser.role;
 
-                // Chỉ cho phép ADMIN, STAFF, SUPPLIER
-                if (!['ADMIN', 'STAFF', 'SUPPLIER'].includes(userRole)) {
-                    toast.error('Bạn không có quyền truy cập trang quản trị');
-                    // Logout nếu không có quyền
+                // [SỬA] Chỉ cho phép ADMIN đăng nhập tại đây
+                if (userRole !== 'ADMIN') {
+                    // Logout và hướng dẫn đến đúng trang
                     useAuthStore.getState().logout();
+
+                    if (userRole === 'CUSTOMER') {
+                        toast.error('Khách hàng vui lòng đăng nhập tại /login');
+                    } else {
+                        toast.error('Staff/Supplier vui lòng đăng nhập tại /staff/login');
+                    }
                     return;
                 }
 
                 toast.success(`Đăng nhập thành công! Xin chào ${currentUser.inGameName}`);
-
-                // Redirect theo role
-                switch (userRole) {
-                    case 'ADMIN':
-                        navigate('/admin');
-                        break;
-                    case 'STAFF':
-                        navigate('/staff');
-                        break;
-                    case 'SUPPLIER':
-                        navigate('/supplier');
-                        break;
-                    default:
-                        navigate('/');
-                }
+                navigate('/admin/dashboard');
             }
         } catch (error) {
             toast.error(error.message || 'Đăng nhập thất bại');

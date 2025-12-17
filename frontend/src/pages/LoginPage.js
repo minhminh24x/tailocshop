@@ -31,21 +31,31 @@ export default function LoginPage() {
 
     try {
       // Gọi hàm login từ store
-      // Hàm login trong store đã trả về path để redirect
       const redirectPath = await login({ email, password });
 
-      if (redirectPath) {
-        // Kiểm tra nếu có trang trước đó cần quay lại (ví dụ bị đá ra khi vào cart)
-        const from = location.state?.from?.pathname;
+      // [MỚI] Kiểm tra role - chỉ CUSTOMER mới được đăng nhập tại đây
+      const user = useAuthStore.getState().user;
 
-        // Nếu là khách hàng (redirectPath là '/'), ưu tiên quay lại trang trước đó
+      if (user && user.role !== 'CUSTOMER') {
+        // Logout và thông báo lỗi
+        const logout = useAuthStore.getState().logout;
+        logout();
+
+        if (user.role === 'ADMIN') {
+          toast.error('Admin vui lòng đăng nhập tại /admin/login');
+        } else {
+          toast.error('Staff/Supplier vui lòng đăng nhập tại /staff/login');
+        }
+        return;
+      }
+
+      if (redirectPath) {
+        const from = location.state?.from?.pathname;
         if (redirectPath === '/' && from) {
           navigate(from);
         } else {
           navigate(redirectPath);
         }
-      } else {
-        // Nếu không trả về path (lỗi), không làm gì cả (đã toast error)
       }
 
     } catch (error) {

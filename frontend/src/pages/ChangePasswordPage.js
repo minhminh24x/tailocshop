@@ -61,6 +61,8 @@ export default function ChangePasswordPage() {
 
     // Redirect if not authenticated
     if (!isAuthenticated) {
+        // Staff/Supplier/Admin chưa đăng nhập → staff login
+        // Customer → login
         return <Navigate to="/login" />;
     }
 
@@ -80,6 +82,16 @@ export default function ChangePasswordPage() {
         if (!/[0-9]/.test(password)) errors.push('Cần số');
         if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) errors.push('Cần ký tự đặc biệt');
         return errors;
+    };
+
+    // Redirect based on role after password change
+    const getRedirectPath = () => {
+        switch (user?.role) {
+            case 'ADMIN': return '/admin/dashboard';
+            case 'STAFF': return '/staff/dashboard';
+            case 'SUPPLIER': return '/supplier/dashboard';
+            default: return '/profile';
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -111,8 +123,14 @@ export default function ChangePasswordPage() {
                 newPassword: newPassword,
             });
 
+            // [MỚI] Cập nhật user trong store để clear mustChangePassword
+            const fetchProfile = useAuthStore.getState().fetchProfile;
+            if (fetchProfile) {
+                await fetchProfile();
+            }
+
             toast.success('Đổi mật khẩu thành công!');
-            navigate('/profile');
+            navigate(getRedirectPath());
         } catch (error) {
             console.error('Password change error:', error);
             toast.error(error.response?.data?.message || 'Đổi mật khẩu thất bại');
