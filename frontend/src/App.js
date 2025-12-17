@@ -60,6 +60,7 @@ import WishlistPage from './pages/WishlistPage';
 import StaffLayout from './pages/staff/StaffLayout';
 import StaffDashboard from './pages/staff/StaffDashboard';
 import StaffOrderManagement from './pages/staff/StaffOrderManagement';
+import StaffLoginPage from './pages/staff/StaffLoginPage';
 import SupplierLayout from './pages/supplier/SupplierLayout';
 import SupplierDashboard from './pages/supplier/SupplierDashboard';
 import SupplierCreateSubmission from './pages/supplier/SupplierCreateSubmission';
@@ -154,7 +155,10 @@ function App() {
             <Route path="applications" element={<AdminManageApplications />} />
           </Route>
 
-          {/* --- STAFF ROUTES --- */}
+          {/* --- STAFF LOGIN (public) --- */}
+          <Route path="/staff/login" element={<StaffLoginPage />} />
+
+          {/* --- STAFF ROUTES (protected) --- */}
           <Route path="/staff" element={<StaffProtectedRoute><StaffLayout /></StaffProtectedRoute>}>
             <Route index element={<StaffDashboard />} />
             <Route path="dashboard" element={<StaffDashboard />} />
