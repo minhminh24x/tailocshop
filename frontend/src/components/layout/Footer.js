@@ -22,7 +22,7 @@ export default function Footer() {
               <li><Link to="/" className="hover:text-pink-500 transition-colors duration-200">Trang chủ</Link></li>
               <li><Link to="/items" className="hover:text-pink-500 transition-colors duration-200">Sản phẩm</Link></li>
               <li><Link to="/contact" className="hover:text-pink-500 transition-colors duration-200">Liên hệ</Link></li>
-              <li><Link to="/privacy" className="hover:text-pink-500 transition-colors duration-200">Chính sách bảo mật</Link></li>
+              <li><Link to="/privacy" className="hover:text-pink-500 transition-colors duration-200">Chính sách và Bảo mật</Link></li>
             </ul>
           </div>
 

@@ -78,15 +78,29 @@ const allowedOrigins = [
   process.env.FRONTEND_URL, // Dynamic from .env
 ].filter(Boolean);
 
+// Regex for Vercel preview URLs
+const vercelPreviewRegex = /^https:\/\/tailocshop(-[a-z0-9]+)?(-[a-z0-9]+)?\.vercel\.app$/;
+
 // Cấu hình CORS
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+
+      // Check exact match
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
       }
+
+      // Check Vercel preview URLs pattern
+      if (vercelPreviewRegex.test(origin)) {
+        return callback(null, true);
+      }
+
+      // Reject other origins
+      console.warn(`[CORS] Blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

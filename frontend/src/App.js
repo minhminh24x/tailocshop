@@ -21,7 +21,8 @@ import AboutPage from './pages/AboutPage';
 import RegisterStaffPage from './pages/RegisterStaffPage';
 import RegisterSupplierPage from './pages/RegisterSupplierPage';
 import ContactPage from './pages/ContactPage';
-import PrivacyPage from './pages/PrivacyPage';
+import PolicyPage from './pages/PolicyPage';
+import RegisterPartnerPage from './pages/RegisterPartnerPage';
 
 // Pages - Customer
 import CartPage from './pages/CartPage';
@@ -102,9 +103,11 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/register/staff" element={<RegisterStaffPage />} />
           <Route path="/register/supplier" element={<RegisterSupplierPage />} />
+          <Route path="/register/partner" element={<RegisterPartnerPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/privacy" element={<PolicyPage />} />
+          <Route path="/policy" element={<PolicyPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 

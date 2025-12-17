@@ -379,10 +379,19 @@ export default function RegisterStaffPage() {
                     </button>
                 </form>
 
-                <p className="text-center text-gray-400 text-sm mt-6">
-                    Đã có tài khoản?{' '}
-                    <Link to="/login" className="text-blue-400 hover:underline">Đăng nhập</Link>
-                </p>
+                <div className="text-center text-gray-400 text-sm mt-6 space-y-2">
+                    <p>
+                        Đã có tài khoản?{' '}
+                        <Link to="/login" className="text-blue-400 hover:underline">Đăng nhập</Link>
+                    </p>
+                    <p>
+                        Hoặc{' '}
+                        <Link to="/register/partner" className="text-yellow-400 hover:underline font-medium">
+                            🤝 Đăng ký làm Đối tác
+                        </Link>
+                        {' '}- Luôn chào đón shop PIN =]]
+                    </p>
+                </div>
             </div>
         </div>
     );
