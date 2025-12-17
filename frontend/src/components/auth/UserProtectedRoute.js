@@ -13,6 +13,11 @@ export default function UserProtectedRoute({ children }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // [MỚI] Nếu cần đổi mật khẩu và chưa ở trang change-password
+  if (user.mustChangePassword && location.pathname !== '/change-password') {
+    return <Navigate to="/change-password" replace />;
+  }
+
   // 2. Nếu đã đăng nhập, render children (nếu có) hoặc Outlet (nếu dùng nested routes)
   return children ? children : <Outlet />;
 }
