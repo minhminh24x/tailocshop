@@ -131,7 +131,10 @@ export const useAuthStore = create(persist(
   }),
   {
     name: 'auth-storage',
-    storage: createJSONStorage(() => localStorage),
+    // [FIX] Changed from localStorage to sessionStorage for security
+    // - Session data clears when browser/tab closes
+    // - Protects users on shared/public computers
+    storage: createJSONStorage(() => sessionStorage),
   }
 ));
 

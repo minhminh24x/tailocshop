@@ -5,6 +5,8 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import ApiError from '../utils/ApiError.js';
 import httpStatus from 'http-status';
+// [FIX] Import validatePasswordStrength để đảm bảo nhất quán với change password
+import { validatePasswordStrength } from './user.service.js';
 
 // Cấu hình email transporter (sử dụng Gmail hoặc SMTP server khác)
 const createTransporter = () => {
@@ -47,7 +49,7 @@ const requestPasswordReset = async (email) => {
     // Không tiết lộ user có tồn tại hay không (bảo mật)
     if (!user) {
         // Vẫn trả về success để không tiết lộ email có tồn tại hay không
-        console.log(`[Password Reset] Email không tồn tại: ${email}`);
+        if (process.env.NODE_ENV !== 'production') console.log(`[Password Reset] Email không tồn tại: ${email}`);
         return { message: 'Nếu email tồn tại, bạn sẽ nhận được email hướng dẫn.' };
     }
 
@@ -107,7 +109,7 @@ const requestPasswordReset = async (email) => {
       `,
         });
 
-        console.log(`[Password Reset] Email đã gửi đến: ${email}`);
+        if (process.env.NODE_ENV !== 'production') console.log(`[Password Reset] Email đã gửi đến: ${email}`);
     } catch (error) {
         console.error('[Password Reset] Lỗi gửi email:', error);
         // Reset token nếu gửi email thất bại
@@ -147,9 +149,10 @@ const resetPassword = async (token, email, newPassword) => {
         throw new ApiError(httpStatus.BAD_REQUEST, 'Token không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu đặt lại mật khẩu mới.');
     }
 
-    // 3. Validate mật khẩu mới
-    if (!newPassword || newPassword.length < 6) {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'Mật khẩu mới phải có ít nhất 6 ký tự.');
+    // [FIX] 3. Validate mật khẩu mới - sử dụng cùng logic mạnh như change password
+    const passwordErrors = validatePasswordStrength(newPassword);
+    if (passwordErrors.length > 0) {
+        throw new ApiError(httpStatus.BAD_REQUEST, `Mật khẩu yếu: ${passwordErrors.join(', ')}`);
     }
 
     // 4. Hash mật khẩu mới
@@ -167,7 +170,7 @@ const resetPassword = async (token, email, newPassword) => {
         }
     });
 
-    console.log(`[Password Reset] Đã đặt lại mật khẩu cho: ${email}`);
+    if (process.env.NODE_ENV !== 'production') console.log(`[Password Reset] Đã đặt lại mật khẩu cho: ${email}`);
     return { message: 'Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới.' };
 };
 

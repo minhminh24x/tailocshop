@@ -1,20 +1,29 @@
 // File: frontend/src/pages/staff/StaffLayout.js
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import StaffSidebar from './StaffSidebar'; //
-import AdminHeader from '../admin/AdminHeader';
-import AdminFooter from '../admin/AdminFooter';
+import StaffSidebar from './StaffSidebar';
+import StaffHeader from './StaffHeader'; // [THÊM] Tạo header riêng cho Staff
 
+/**
+ * [FIX] Cấu trúc layout giống AdminLayout:
+ * - Header cố định ở trên
+ * - Sidebar bên trái
+ * - Nội dung chính ở giữa
+ */
 const StaffLayout = () => {
   return (
-    <div className="flex h-screen bg-gray-200">
-      <StaffSidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <AdminHeader />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-900 p-6 text-white">
+    <div className="flex flex-col min-h-screen bg-gray-900 text-white">
+      {/* Header cố định ở trên */}
+      <StaffHeader />
+
+      <div className="flex flex-1">
+        {/* Sidebar cố định bên trái */}
+        <StaffSidebar />
+
+        {/* Phần nội dung chính */}
+        <main className="flex-1 p-6 bg-gray-800 overflow-y-auto">
           <Outlet />
         </main>
-        <AdminFooter />
       </div>
     </div>
   );

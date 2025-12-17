@@ -106,6 +106,30 @@ export const login = async (req, res) => {
         .json({ message: 'Email hoặc mật khẩu không chính xác' });
     }
 
+    // [FIX] 3.5. Kiểm tra user có bị ban không
+    if (user.isBanned) {
+      // Kiểm tra xem ban có thời hạn không và đã hết hạn chưa
+      const now = new Date();
+      const banExpired = user.banUntil && new Date(user.banUntil) < now;
+
+      if (!banExpired) {
+        // Vẫn đang bị ban
+        const banDuration = user.banUntil
+          ? `đến ${new Date(user.banUntil).toLocaleDateString('vi-VN')}`
+          : 'vĩnh viễn';
+        const banReason = user.banReason || 'Vi phạm quy định';
+
+        return res.status(403).json({
+          message: `Tài khoản bị khóa ${banDuration}. Lý do: ${banReason}`,
+          code: 'ACCOUNT_BANNED',
+          banUntil: user.banUntil,
+          banReason: banReason
+        });
+      }
+      // Nếu ban đã hết hạn, cho phép đăng nhập bình thường
+      // (Có thể thêm logic tự động unban ở đây nếu cần)
+    }
+
     // 4. So sánh mật khẩu
     const isPasswordCorrect = await bcrypt.compare(password, user.passwordHash);
 

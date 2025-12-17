@@ -3,32 +3,58 @@ import prisma from '../lib/prisma.js';
 import ApiError from '../utils/ApiError.js';
 import { DEFAULT_TIMESLOT_ID } from '../utils/constants.js';
 import httpStatus from 'http-status';
-// import { emitNewOrder, emitOrderStatusChange, emitLowStockAlert } from '../lib/socket.js';
 
-// Dummy socket functions for now (disabled for debugging)
-const emitNewOrder = () => { };
-const emitOrderStatusChange = () => { };
+// [RESTORED] Real Socket.io functions with fail-safe wrapper
+import { emitNewOrder as socketEmitNewOrder, emitOrderStatusChange as socketEmitOrderStatusChange } from '../lib/socket.js';
+import { emailService } from './email.service.js'; // [THÊM] For order completion email
+
+// [FIX] Fail-safe wrapper for Socket.io emit functions
+const emitNewOrder = (order) => {
+  try {
+    socketEmitNewOrder(order);
+  } catch (e) {
+    // Log error but don't crash - Socket failure shouldn't break order flow
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[Socket.io] Failed to emit new order:', e.message);
+    }
+  }
+};
+
+const emitOrderStatusChange = (order) => {
+  try {
+    socketEmitOrderStatusChange(order);
+  } catch (e) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[Socket.io] Failed to emit order status:', e.message);
+    }
+  }
+};
 
 // === HÀM HELPER (Giữ nguyên) ===
 const updateUserVipLevel = async (tx, userId, newTotalSpent) => {
   // [FIX] Parse Decimal to float
   const totalSpentFloat = parseFloat(newTotalSpent) || 0;
 
-  console.log('[VIP DEBUG] updateUserVipLevel:', {
-    userId,
-    newTotalSpent,
-    totalSpentFloat,
-  });
+  // [FIX] Wrap debug logs in NODE_ENV check
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[VIP DEBUG] updateUserVipLevel:', {
+      userId,
+      newTotalSpent,
+      totalSpentFloat,
+    });
+  }
 
   // 1. Lấy tất cả các cấp VIP, sắp xếp GIẢM DẦN theo ngưỡng coin
   const allVipLevels = await tx.vipLevel.findMany({
     orderBy: { coinThreshold: 'desc' },
   });
 
-  console.log('[VIP DEBUG] All VIP levels:', allVipLevels.map(v => ({
-    level: v.level,
-    threshold: parseFloat(v.coinThreshold)
-  })));
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[VIP DEBUG] All VIP levels:', allVipLevels.map(v => ({
+      level: v.level,
+      threshold: parseFloat(v.coinThreshold)
+    })));
+  }
 
   // 2. Tìm cấp VIP cao nhất mà user đạt được
   let newVipLevelInt = 0; // Mặc định là 0 (Level 0)
@@ -36,12 +62,16 @@ const updateUserVipLevel = async (tx, userId, newTotalSpent) => {
     const threshold = parseFloat(level.coinThreshold) || 0;
     if (totalSpentFloat >= threshold) {
       newVipLevelInt = level.level; // Lấy level (là @id)
-      console.log('[VIP DEBUG] User qualifies for level:', newVipLevelInt, 'threshold:', threshold);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[VIP DEBUG] User qualifies for level:', newVipLevelInt, 'threshold:', threshold);
+      }
       break;
     }
   }
 
-  console.log('[VIP DEBUG] Final VIP level for user:', newVipLevelInt);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[VIP DEBUG] Final VIP level for user:', newVipLevelInt);
+  }
 
   // 3. Cập nhật cho user
   await tx.user.update({
@@ -561,6 +591,29 @@ const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
     );
   }
 
+  // [MỚI] 2.5 Kiểm tra quyền sở hữu đơn hàng
+  // Nếu đơn hàng đã có người nhận (staffUserId), chỉ người đó hoặc Admin mới được sửa
+  if (order.staffUserId && order.staffUserId !== adminUserId) {
+    // Lấy thông tin người đang thực hiện
+    const currentUser = await prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true, inGameName: true }
+    });
+
+    // Chỉ Admin mới được override đơn hàng của người khác
+    if (currentUser?.role !== 'ADMIN') {
+      // Lấy tên người sở hữu để hiển thị
+      const ownerStaff = await prisma.user.findUnique({
+        where: { id: order.staffUserId },
+        select: { inGameName: true }
+      });
+      throw new ApiError(
+        httpStatus.FORBIDDEN,
+        `Bạn không có quyền chỉnh sửa đơn hàng này. Đơn hàng đã được giao cho "${ownerStaff?.inGameName || 'Staff khác'}".`
+      );
+    }
+  }
+
   // 3. Bắt đầu GIAO DỊCH để đảm bảo toàn vẹn dữ liệu
   return prisma.$transaction(async (tx) => {
 
@@ -636,16 +689,18 @@ const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
         const usdSpentInCoinValue = Math.floor(parseFloat(order.totalAmountUsd) / conversionRate);
         const totalEquivalentSpent = parseFloat(order.totalAmountCoin) + usdSpentInCoinValue;
 
-        // [DEBUG] Log VIP calculation
-        console.log('[VIP DEBUG] Order COMPLETED:', {
-          orderId: order.id,
-          customerId: order.customerUserId,
-          totalAmountCoin: order.totalAmountCoin,
-          totalAmountUsd: order.totalAmountUsd,
-          conversionRate,
-          usdSpentInCoinValue,
-          totalEquivalentSpent,
-        });
+        // [DEBUG] Log VIP calculation - wrapped in NODE_ENV check
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[VIP DEBUG] Order COMPLETED:', {
+            orderId: order.id,
+            customerId: order.customerUserId,
+            totalAmountCoin: order.totalAmountCoin,
+            totalAmountUsd: order.totalAmountUsd,
+            conversionRate,
+            usdSpentInCoinValue,
+            totalEquivalentSpent,
+          });
+        }
 
         if (totalEquivalentSpent > 0) {
           // Cập nhật tổng chi tiêu cho user
@@ -659,15 +714,19 @@ const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
             select: { totalSpentCoin: true },
           });
 
-          // [DEBUG] Log after update
-          console.log('[VIP DEBUG] User totalSpentCoin updated:', {
-            userId: order.customerUserId,
-            newTotalSpentCoin: updatedUser.totalSpentCoin,
-          });
+          // [DEBUG] Log after update - wrapped in NODE_ENV check
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('[VIP DEBUG] User totalSpentCoin updated:', {
+              userId: order.customerUserId,
+              newTotalSpentCoin: updatedUser.totalSpentCoin,
+            });
+          }
 
           // Cập nhật lại cấp VIP
           await updateUserVipLevel(tx, order.customerUserId, updatedUser.totalSpentCoin);
-          console.log('[VIP DEBUG] VIP level updated for user:', order.customerUserId);
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('[VIP DEBUG] VIP level updated for user:', order.customerUserId);
+          }
         }
       }
     }
@@ -677,8 +736,14 @@ const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
     const updateData = {
       status: status,
       paymentStatus: paymentStatus,
-      staffUserId: adminUserId, // Ghi lại admin đã xử lý
     };
+
+    // [FIX] Chỉ set staffUserId khi:
+    // - Đơn hàng chưa có người nhận (order.staffUserId is null)
+    // - VÀ đang chuyển sang PREPARING (nhận đơn lần đầu)
+    if (!order.staffUserId && status === 'PREPARING') {
+      updateData.staffUserId = adminUserId;
+    }
 
     // [THÊM] Set timeline timestamp dựa trên status mới
     if (status) {
@@ -718,6 +783,35 @@ const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
       });
     } catch (e) {
       console.error('[Socket.io] Failed to emit order status:', e.message);
+    }
+
+    // [MỚI] Gửi email thông báo hoàn thành đơn hàng
+    if (status === 'COMPLETED' && order.customer?.email) {
+      try {
+        // Lấy thông tin staff
+        const staffUser = await prisma.user.findUnique({
+          where: { id: order.staffUserId || adminUserId },
+          select: { inGameName: true }
+        });
+
+        await emailService.sendOrderCompletionEmail({
+          customerEmail: order.customer.email,
+          customerName: order.inGameName,
+          orderNumber: order.orderNumber,
+          orderDetails: order.orderDetails.map(d => ({
+            itemName: d.item?.name || 'Vật phẩm',
+            quantity: d.quantity,
+            totalLineAmount: d.totalLineAmount,
+            currencyAtPurchase: d.currencyAtPurchase
+          })),
+          totalAmountCoin: parseFloat(order.totalAmountCoin) || 0,
+          totalAmountUsd: parseFloat(order.totalAmountUsd) || 0,
+          staffName: staffUser?.inGameName || 'Admin',
+          completedAt: new Date(),
+        });
+      } catch (emailError) {
+        console.error('[Email] Failed to send completion email:', emailError.message);
+      }
     }
 
     return updatedOrder;

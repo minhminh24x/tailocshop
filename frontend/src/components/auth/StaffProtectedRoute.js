@@ -1,9 +1,10 @@
 // File: frontend/src/components/auth/StaffProtectedRoute.js
 import React from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 
-const StaffProtectedRoute = () => {
+// [FIX] Nhận children prop để render StaffLayout đúng cách
+const StaffProtectedRoute = ({ children }) => {
   const { user } = useAuthStore();
   const location = useLocation();
   const isStaffOrAdmin = user?.role === 'STAFF' || user?.role === 'ADMIN';
@@ -22,7 +23,8 @@ const StaffProtectedRoute = () => {
     return <Navigate to="/change-password" replace />;
   }
 
-  return <Outlet />;
+  // [FIX] Render children (StaffLayout) thay vì Outlet
+  return children;
 };
 
 export default StaffProtectedRoute;

@@ -167,7 +167,7 @@ export default function RegisterPartnerPage() {
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="text-blue-400">•</span>
-                                <span><strong>Nhà cung cấp:</strong> Cung cấp vật phẩm số lượng lớn với giá sỉ</span>
+                                <span><strong>Đại lý:</strong> Bán hàng nhận hoa hồng từ các đơn giới thiệu</span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="text-blue-400">•</span>
@@ -250,8 +250,8 @@ export default function RegisterPartnerPage() {
                             >
                                 <option value="">-- Chọn loại hình --</option>
                                 <option value="linked_shop">Shop liên kết (giới thiệu khách hàng)</option>
-                                <option value="supplier">Nhà cung cấp (bán sỉ vật phẩm)</option>
                                 <option value="agent">Đại lý (bán hàng nhận hoa hồng)</option>
+                                <option value="ads">Quảng cáo (mua banner/spotlight)</option>
                                 <option value="other">Khác (ghi rõ bên dưới)</option>
                             </select>
                         </div>

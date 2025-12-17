@@ -1,10 +1,11 @@
 // File: frontend/src/pages/staff/StaffOrderManagement.js
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom'; // [THÊM]
 import toast from 'react-hot-toast';
 import apiClient from '../../services/apiClient';
 import { formatNumber } from '../../utils/formatNumber';
 import CancelOrderModal from '../../components/staff/CancelOrderModal';
-import { FaBan } from 'react-icons/fa';
+import { FaBan, FaEye } from 'react-icons/fa'; // [THÊM] FaEye
 
 export default function StaffOrderManagement() {
     const [orders, setOrders] = useState([]);
@@ -34,11 +35,12 @@ export default function StaffOrderManagement() {
 
     const handleUpdateStatus = async (orderId, newStatus) => {
         try {
-            await apiClient.put(`/orders/${orderId}/status`, { status: newStatus });
+            // [FIX] Changed from PUT /orders/:id/status to PATCH /orders/admin/:id
+            await apiClient.patch(`/orders/admin/${orderId}`, { status: newStatus });
             toast.success(`Cập nhật trạng thái thành: ${newStatus}`);
             fetchOrders();
         } catch (error) {
-            toast.error('Cập nhật thất bại');
+            toast.error(error.response?.data?.message || 'Cập nhật thất bại');
         }
     };
 
@@ -50,7 +52,8 @@ export default function StaffOrderManagement() {
 
     const handleCancelOrder = async (reason) => {
         try {
-            await apiClient.put(`/orders/${selectedOrder.id}/status`, {
+            // [FIX] Changed from PUT /orders/:id/status to PATCH /orders/admin/:id
+            await apiClient.patch(`/orders/admin/${selectedOrder.id}`, {
                 status: 'CANCELLED',
                 cancelReason: reason,
             });
@@ -121,6 +124,7 @@ export default function StaffOrderManagement() {
                                 <th className="py-3 px-4 text-left">Khách hàng</th>
                                 <th className="py-3 px-4 text-center">Tổng tiền</th>
                                 <th className="py-3 px-4 text-center">Trạng thái</th>
+                                <th className="py-3 px-4 text-center">Người xử lý</th>
                                 <th className="py-3 px-4 text-center">Hành động</th>
                             </tr>
                         </thead>
@@ -144,6 +148,9 @@ export default function StaffOrderManagement() {
                                                 Lý do: {order.cancelReason}
                                             </p>
                                         )}
+                                    </td>
+                                    <td className="py-3 px-4 text-center text-sm text-gray-400">
+                                        {order.staff?.inGameName || <span className="text-yellow-400">Chưa nhận</span>}
                                     </td>
                                     <td className="py-3 px-4 text-center">
                                         <div className="flex items-center justify-center gap-2">
@@ -187,13 +194,20 @@ export default function StaffOrderManagement() {
                                                     Hoàn tất
                                                 </button>
                                             )}
+                                            {/* [THÊM] Link xem chi tiết */}
+                                            <Link
+                                                to={`/staff/orders/${order.id}`}
+                                                className="bg-gray-600 hover:bg-gray-500 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
+                                            >
+                                                <FaEye /> Chi tiết
+                                            </Link>
                                         </div>
                                     </td>
                                 </tr>
                             ))}
                             {filteredOrders.length === 0 && (
                                 <tr>
-                                    <td colSpan="5" className="text-center py-8 text-gray-500">
+                                    <td colSpan="6" className="text-center py-8 text-gray-500">
                                         Không có đơn hàng nào.
                                     </td>
                                 </tr>

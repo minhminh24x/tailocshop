@@ -111,16 +111,17 @@ model User {
   inventoryLogs        InventoryLog[]
   supplierSubmissions  SupplierSubmission[]   @relation("SupplierSubmissions") // Phiếu Supplier tạo
   approvedSubmissions  SupplierSubmission[]   @relation("AdminApprovedSubmissions") // Phiếu Admin duyệt
-  
+
   // [THÊM] Phase 3 relations
-  wishlists            Wishlist[]
-  reviews              Review[]
+  wishlists    Wishlist[]
+  reviews      Review[] // Đánh giá sản phẩm
+  orderReviews OrderReview[] // Đánh giá đơn hàng
 
   // [THÊM] Ban/Lock fields
-  isBanned    Boolean   @default(false) @map("is_banned")
-  banReason   String?   @map("ban_reason")
-  banUntil    DateTime? @map("ban_until") @db.Timestamptz
-  bannedAt    DateTime? @map("banned_at") @db.Timestamptz
+  isBanned  Boolean   @default(false) @map("is_banned")
+  banReason String?   @map("ban_reason")
+  banUntil  DateTime? @map("ban_until") @db.Timestamptz
+  bannedAt  DateTime? @map("banned_at") @db.Timestamptz
 
   @@index([inGameName])
   @@map("users")
@@ -128,25 +129,25 @@ model User {
 
 // [MỚI] Model cho đơn đăng ký Staff/Partner/Supplier
 model Application {
-  id              String            @id @default(uuid()) @db.Uuid
-  type            ApplicationType   // STAFF, SUPPLIER, PARTNER
-  status          ApplicationStatus @default(PENDING)
-  
+  id     String            @id @default(uuid()) @db.Uuid
+  type   ApplicationType // STAFF, SUPPLIER, PARTNER
+  status ApplicationStatus @default(PENDING)
+
   // Thông tin cơ bản
-  email           String            @db.VarChar(255)
-  inGameName      String            @map("in_game_name") @db.VarChar(100)
-  discord         String?           @db.VarChar(100)
-  
+  email      String  @db.VarChar(255)
+  inGameName String  @map("in_game_name") @db.VarChar(100)
+  discord    String? @db.VarChar(100)
+
   // Thông tin bổ sung (JSON để linh hoạt)
-  formData        Json?             @map("form_data") // Lưu toàn bộ form data
-  
+  formData Json? @map("form_data") // Lưu toàn bộ form data
+
   // Xử lý
-  reviewedBy      String?           @map("reviewed_by") @db.Uuid
-  reviewedAt      DateTime?         @map("reviewed_at") @db.Timestamptz
-  rejectReason    String?           @map("reject_reason")
-  
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+  reviewedBy   String?   @map("reviewed_by") @db.Uuid
+  reviewedAt   DateTime? @map("reviewed_at") @db.Timestamptz
+  rejectReason String?   @map("reject_reason")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   @@map("applications")
 }
@@ -200,10 +201,10 @@ model Item {
   orderDetails              OrderDetail[]
   inventoryLogs             InventoryLog[]
   supplierSubmissionDetails SupplierSubmissionDetail[]
-  
+
   // [THÊM] Phase 3 relations
-  wishlists                 Wishlist[]
-  reviews                   Review[]
+  wishlists Wishlist[]
+  reviews   Review[] // Đánh giá sản phẩm
 
   @@unique([slug, unit]) // UNIQUE(slug, unit)
   @@index([categoryId])
@@ -277,22 +278,23 @@ model Order {
   // (Chúng ta giả định VIP discount chỉ áp dụng cho COIN)
   totalAmountUsd Decimal @default(0) @map("total_amount_usd") @db.Decimal(12, 2)
 
-  notes     String?
-  
+  notes String?
+
   // [THÊM] Order Status Timeline - Track thời điểm mỗi trạng thái
-  pendingAt           DateTime? @map("pending_at") @db.Timestamptz
-  preparingAt         DateTime? @map("preparing_at") @db.Timestamptz
-  readyForDeliveryAt  DateTime? @map("ready_for_delivery_at") @db.Timestamptz
-  completedAt         DateTime? @map("completed_at") @db.Timestamptz
-  cancelledAt         DateTime? @map("cancelled_at") @db.Timestamptz
-  cancelReason        String?   @map("cancel_reason") // Predefined reasons for cancellation
-  
+  pendingAt          DateTime? @map("pending_at") @db.Timestamptz
+  preparingAt        DateTime? @map("preparing_at") @db.Timestamptz
+  readyForDeliveryAt DateTime? @map("ready_for_delivery_at") @db.Timestamptz
+  completedAt        DateTime? @map("completed_at") @db.Timestamptz
+  cancelledAt        DateTime? @map("cancelled_at") @db.Timestamptz
+  cancelReason       String?   @map("cancel_reason") // Predefined reasons for cancellation
+
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   // Quan hệ ngược
   orderDetails  OrderDetail[]
   inventoryLogs InventoryLog[]
+  review        OrderReview? // [THÊM] Mỗi đơn có 1 đánh giá
 
   @@index([customerUserId])
   @@index([status])
@@ -426,7 +428,7 @@ model Review {
   itemId String @map("item_id") @db.Uuid
   item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
-  rating  Int    // 1-5 sao
+  rating  Int // 1-5 sao
   comment String? @db.Text
 
   isApproved Boolean @default(false) @map("is_approved") // Admin duyệt review
@@ -444,21 +446,21 @@ model Review {
 model Voucher {
   id String @id @default(uuid()) @db.Uuid
 
-  code        String   @unique @db.VarChar(50)
-  description String?  @db.VarChar(255)
-  
-  discountType   VoucherDiscountType @default(PERCENTAGE) @map("discount_type")
-  discountValue  Decimal @map("discount_value") @db.Decimal(12, 2) // % hoặc số tiền
-  
-  minOrderValue  Decimal? @map("min_order_value") @db.Decimal(12, 2) // Giá trị đơn hàng tối thiểu
-  maxDiscount    Decimal? @map("max_discount") @db.Decimal(12, 2) // Giảm tối đa (cho %)
-  
-  usageLimit     Int?     @map("usage_limit") // Số lần sử dụng tối đa
-  usedCount      Int      @default(0) @map("used_count") // Số lần đã sử dụng
-  
-  isActive       Boolean  @default(true) @map("is_active")
-  startDate      DateTime? @map("start_date") @db.Timestamptz
-  endDate        DateTime? @map("end_date") @db.Timestamptz
+  code        String  @unique @db.VarChar(50)
+  description String? @db.VarChar(255)
+
+  discountType  VoucherDiscountType @default(PERCENTAGE) @map("discount_type")
+  discountValue Decimal             @map("discount_value") @db.Decimal(12, 2) // % hoặc số tiền
+
+  minOrderValue Decimal? @map("min_order_value") @db.Decimal(12, 2) // Giá trị đơn hàng tối thiểu
+  maxDiscount   Decimal? @map("max_discount") @db.Decimal(12, 2) // Giảm tối đa (cho %)
+
+  usageLimit Int? @map("usage_limit") // Số lần sử dụng tối đa
+  usedCount  Int  @default(0) @map("used_count") // Số lần đã sử dụng
+
+  isActive  Boolean   @default(true) @map("is_active")
+  startDate DateTime? @map("start_date") @db.Timestamptz
+  endDate   DateTime? @map("end_date") @db.Timestamptz
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
@@ -487,3 +489,30 @@ model PendingOTP {
   @@map("pending_otps")
 }
 
+// --- [MỚI] Bảng đánh giá đơn hàng ---
+model OrderReview {
+  id String @id @default(uuid()) @db.Uuid
+
+  // Liên kết với đơn hàng (mỗi đơn chỉ có 1 đánh giá)
+  orderId String @unique @map("order_id") @db.Uuid
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // Người đánh giá (khách hàng)
+  userId String @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Các mục đánh giá (1-5 sao)
+  productRating Int @map("product_rating") // Đánh giá về sản phẩm
+  serviceRating Int @map("service_rating") // Đánh giá về dịch vụ đặt hàng
+  staffRating   Int @map("staff_rating") // Đánh giá về staff phục vụ
+
+  // Nhận xét (tùy chọn)
+  comment String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([orderId])
+  @@index([userId])
+  @@map("order_reviews")
+}

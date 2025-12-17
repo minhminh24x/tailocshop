@@ -60,6 +60,7 @@ import WishlistPage from './pages/WishlistPage';
 import StaffLayout from './pages/staff/StaffLayout';
 import StaffDashboard from './pages/staff/StaffDashboard';
 import StaffOrderManagement from './pages/staff/StaffOrderManagement';
+import StaffOrderDetailPage from './pages/staff/StaffOrderDetailPage'; // [THÊM]
 import StaffLoginPage from './pages/staff/StaffLoginPage';
 import SupplierLayout from './pages/supplier/SupplierLayout';
 import SupplierDashboard from './pages/supplier/SupplierDashboard';
@@ -168,6 +169,7 @@ function App() {
             <Route index element={<StaffDashboard />} />
             <Route path="dashboard" element={<StaffDashboard />} />
             <Route path="orders" element={<StaffOrderManagement />} />
+            <Route path="orders/:orderId" element={<StaffOrderDetailPage />} />
           </Route>
 
           {/* --- SUPPLIER ROUTES --- */}

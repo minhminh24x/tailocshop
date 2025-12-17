@@ -230,11 +230,33 @@ const getPublicStats = async () => {
 
 /**
  * [MỚI] Lấy thống kê cho Staff Dashboard
+ * - pendingOrders: Tất cả đơn PENDING (chưa ai nhận) - để staff biết có đơn mới
+ * - processingOrders: Đơn PREPARING/READY mà staff NÀY đang xử lý
  * - completedOrders: Số đơn COMPLETED mà staff này đã xử lý
  * - totalRevenue: Tổng doanh thu từ các đơn đó
+ * - todayOrders: Đơn hàng staff này xử lý hôm nay
  */
 const getStaffSummary = async (userId) => {
-    const [completedOrders, revenue] = await Promise.all([
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const [pendingOrders, processingOrders, completedOrders, revenue, todayOrders] = await Promise.all([
+        // Đơn PENDING (chưa ai nhận) - để staff thấy đơn mới cần nhận
+        prisma.order.count({
+            where: {
+                status: 'PENDING',
+                staffUserId: null, // Chưa có ai nhận
+            }
+        }),
+
+        // Đơn đang xử lý CỦA STAFF NÀY
+        prisma.order.count({
+            where: {
+                status: { in: ['PREPARING', 'READY_FOR_DELIVERY'] },
+                staffUserId: userId,
+            }
+        }),
+
         // Số đơn đã hoàn thành bởi staff này
         prisma.order.count({
             where: {
@@ -253,11 +275,25 @@ const getStaffSummary = async (userId) => {
                 totalAmountCoin: true,
             }
         }),
+
+        // Đơn hàng của staff này hôm nay (đã nhận hoặc hoàn thành)
+        prisma.order.count({
+            where: {
+                staffUserId: userId,
+                OR: [
+                    { preparingAt: { gte: todayStart } },
+                    { completedAt: { gte: todayStart } },
+                ]
+            }
+        }),
     ]);
 
     return {
+        pendingOrders,
+        processingOrders,
         completedOrders,
         totalRevenue: parseFloat(revenue._sum.totalAmountCoin) || 0,
+        todayOrders,
     };
 };
 

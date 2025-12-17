@@ -268,6 +268,108 @@ export default function PolicyPage() {
                     </div>
                 </section>
 
+                {/* CHÍNH SÁCH NHÀ CUNG CẤP */}
+                <section className="glass-panel rounded-2xl p-6 border border-green-500/20">
+                    <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                        📦 Chính sách Nhà Cung Cấp
+                    </h2>
+
+                    <div className="space-y-4 text-gray-300">
+                        <div className="p-4 bg-slate-800/50 rounded-xl">
+                            <h3 className="font-bold text-green-400 mb-2">1. Thu nhập và Thanh toán</h3>
+                            <ul className="list-disc list-inside space-y-1 text-sm">
+                                <li>Nhà cung cấp nhận <strong className="text-green-400">70%</strong> giá shop treo cho mỗi vật phẩm bán ra</li>
+                                <li>Thanh toán được xử lý tự động qua hệ thống</li>
+                                <li>Có thể theo dõi doanh thu realtime trên Dashboard</li>
+                            </ul>
+                        </div>
+
+                        <div className="p-4 bg-slate-800/50 rounded-xl">
+                            <h3 className="font-bold text-green-400 mb-2">2. Chỉ tiêu Hàng ngày</h3>
+                            <ul className="list-disc list-inside space-y-1 text-sm">
+                                <li>Chỉ tiêu dựa trên <strong className="text-blue-400">số lượng tồn kho</strong> của từng loại vật phẩm</li>
+                                <li>Khi tồn kho thấp → Ưu tiên bổ sung cho loại đó</li>
+                                <li>Linh hoạt, không bắt buộc - khuyến khích hoàn thành</li>
+                            </ul>
+                        </div>
+
+                        <div className="p-4 bg-slate-800/50 rounded-xl">
+                            <h3 className="font-bold text-green-400 mb-2">3. Cam kết Đầu ra</h3>
+                            <ul className="list-disc list-inside space-y-1 text-sm">
+                                <li>Shop <strong className="text-yellow-400">cam kết tiêu thụ toàn bộ</strong> nguyên liệu nhập từ Nhà cung cấp</li>
+                                <li>Không lo ế hàng - đầu ra ổn định</li>
+                                <li>Hỗ trợ ưu tiên từ đội ngũ Admin</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                {/* CHÍNH SÁCH NHÂN VIÊN (STAFF) */}
+                <section className="glass-panel rounded-2xl p-6 border border-blue-500/20">
+                    <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                        👥 Chính sách Nhân Viên (Staff)
+                    </h2>
+
+                    <div className="space-y-4 text-gray-300">
+                        <div className="p-4 bg-slate-800/50 rounded-xl">
+                            <h3 className="font-bold text-blue-400 mb-2">1. Yêu cầu Tham gia</h3>
+                            <ul className="list-disc list-inside space-y-1 text-sm">
+                                <li>Rank tối thiểu: <strong className="text-yellow-400">Landlord</strong> trong game</li>
+                                <li>Đặt cọc (dằn) tối thiểu <strong className="text-yellow-400">150 Xu</strong></li>
+                                <li>Có thể online vào giờ cao điểm (18h-22h)</li>
+                            </ul>
+                        </div>
+
+                        <div className="p-4 bg-slate-800/50 rounded-xl">
+                            <h3 className="font-bold text-blue-400 mb-2">2. Quyền lợi</h3>
+                            <ul className="list-disc list-inside space-y-1 text-sm">
+                                <li>Nhận <strong className="text-green-400">20%</strong> doanh thu từ các đơn hàng xử lý</li>
+                                <li>Hỗ trợ up rank trong game</li>
+                                <li>Thời gian làm việc linh hoạt</li>
+                                <li>Môi trường làm việc chuyên nghiệp</li>
+                            </ul>
+                        </div>
+
+                        <div className="p-4 bg-slate-800/50 rounded-xl">
+                            <h3 className="font-bold text-blue-400 mb-2">3. Trách nhiệm</h3>
+                            <ul className="list-disc list-inside space-y-1 text-sm">
+                                <li>Xử lý đơn hàng nhanh chóng và chính xác</li>
+                                <li>Giao tiếp lịch sự với khách hàng</li>
+                                <li>Báo cáo vấn đề kịp thời cho Admin</li>
+                                <li>Tuân thủ quy trình của shop</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                {/* GIẢI QUYẾT TRANH CHẤP */}
+                <section className="glass-panel rounded-2xl p-6 border border-orange-500/20">
+                    <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                        ⚖️ Giải quyết Tranh chấp
+                    </h2>
+
+                    <div className="space-y-4 text-gray-300">
+                        <div className="p-4 bg-slate-800/50 rounded-xl">
+                            <h3 className="font-bold text-orange-400 mb-2">Quy trình xử lý</h3>
+                            <ol className="list-decimal list-inside space-y-2 text-sm">
+                                <li><strong>Bước 1:</strong> Liên hệ Admin qua Discord với mã đơn hàng</li>
+                                <li><strong>Bước 2:</strong> Cung cấp bằng chứng (screenshot, video nếu có)</li>
+                                <li><strong>Bước 3:</strong> Admin xem xét và phản hồi trong 24-48h</li>
+                                <li><strong>Bước 4:</strong> Giải quyết theo hướng đôi bên cùng có lợi</li>
+                            </ol>
+                        </div>
+
+                        <div className="p-4 bg-orange-900/20 border border-orange-500/30 rounded-xl">
+                            <h3 className="font-bold text-orange-400 mb-2">📌 Lưu ý quan trọng</h3>
+                            <ul className="list-disc list-inside space-y-1 text-sm">
+                                <li>Mọi giao dịch đều được ghi log trong hệ thống</li>
+                                <li>Quyết định cuối cùng thuộc về Admin</li>
+                                <li>Trường hợp phức tạp có thể mất thêm thời gian</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
                 {/* LIÊN HỆ */}
                 <section className="glass-panel rounded-2xl p-6 border border-white/10">
                     <h2 className="text-xl font-bold text-white mb-4">

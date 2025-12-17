@@ -11,8 +11,8 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 
-// [THÊM] Socket.io (disabled temporarily for debugging)
-// import { initSocket } from './lib/socket.js';
+// [RESTORED] Socket.io for real-time notifications
+import { initSocket } from './lib/socket.js';
 
 import authRoutes from './routes/auth.route.js';
 import userRoutes from './routes/user.route.js';
@@ -33,18 +33,23 @@ import voucherRoutes from './routes/voucher.route.js';
 // [THÊM] Phase 4 routes
 import exportRoutes from './routes/export.route.js';
 import applicationRoutes from './routes/application.route.js';
+import orderReviewRoutes from './routes/orderReview.route.js'; // [MỚI]
 
 dotenv.config();
 const app = express();
 const server = http.createServer(app); // [THÊM] HTTP server for Socket.io
 const PORT = process.env.PORT || 8080;
 
-// [THÊM] Initialize Socket.io (disabled temporarily for debugging)
-// try {
-//   initSocket(server);
-// } catch (e) {
-//   console.warn('[Socket.io] Failed to initialize:', e.message);
-// }
+// [RESTORED] Initialize Socket.io with fail-safe error handling
+try {
+  initSocket(server);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[Socket.io] Initialized successfully');
+  }
+} catch (e) {
+  // Log error but don't crash server
+  console.error('[Socket.io] Failed to initialize:', e.message);
+}
 
 app.use(helmet({
   contentSecurityPolicy: false, // Disable CSP for now
@@ -152,6 +157,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/vouchers', voucherRoutes);
+app.use('/api/order-reviews', orderReviewRoutes); // [ĐÁNH GIÁ ĐƠN HÀNG]
 
 // [THÊM] Phase 4 API Routes
 app.use('/api/export', exportRoutes);

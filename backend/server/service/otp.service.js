@@ -106,7 +106,7 @@ const sendRegistrationOTP = async (email, inGameName) => {
       `,
         });
 
-        console.log(`[OTP] Đã gửi mã xác thực đến: ${email}`);
+        if (process.env.NODE_ENV !== 'production') console.log(`[OTP] Đã gửi mã xác thực đến: ${email}`);
         return { message: 'Mã xác thực đã được gửi đến email của bạn!' };
     } catch (error) {
         console.error('[OTP] Lỗi gửi email:', error);

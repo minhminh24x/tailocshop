@@ -9,7 +9,6 @@ export default function RegisterStaffPage() {
 
     const [formData, setFormData] = useState({
         email: '',
-        password: '',
         inGameName: '',
         discordUsername: '', // Discord để liên hệ phỏng vấn
         currentRank: '', // Rank hiện tại trong game
@@ -31,8 +30,8 @@ export default function RegisterStaffPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Validate required fields
-        const requiredFields = ['email', 'password', 'inGameName', 'discordUsername', 'currentRank', 'depositAmount', 'isStudent', 'availableHours', 'canWorkPeakHours', 'whyJoin'];
+        // Validate required fields (password removed - will be auto-generated)
+        const requiredFields = ['email', 'inGameName', 'discordUsername', 'currentRank', 'depositAmount', 'isStudent', 'availableHours', 'canWorkPeakHours', 'whyJoin'];
         const missingFields = requiredFields.filter(f => !formData[f]);
 
         if (missingFields.length > 0) {
@@ -216,18 +215,12 @@ export default function RegisterStaffPage() {
                             />
                         </div>
 
-                        {/* Mật khẩu */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Mật khẩu *</label>
-                            <input
-                                type="password"
-                                name="password"
-                                value={formData.password}
-                                onChange={handleChange}
-                                className="w-full px-4 py-3 bg-slate-900 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500"
-                                placeholder="Ít nhất 8 ký tự"
-                                required
-                            />
+                        {/* [NOTE] Mật khẩu tự động */}
+                        <div className="md:col-span-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+                            <p className="text-sm text-blue-300 flex items-center gap-2">
+                                <span>🔐</span>
+                                <span>Mật khẩu sẽ được <strong>tự động tạo và gửi qua email</strong> sau khi đơn được duyệt.</span>
+                            </p>
                         </div>
 
                         {/* Tên trong game */}

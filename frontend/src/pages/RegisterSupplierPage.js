@@ -160,16 +160,78 @@ export default function RegisterSupplierPage() {
                         />
                     </div>
 
-                    <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-xl">
-                        <div className="flex gap-3">
-                            <Shield className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                            <div className="text-sm text-gray-300">
-                                <p className="font-medium text-white mb-1">Quyền lợi nhà cung cấp:</p>
-                                <ul className="list-disc list-inside space-y-1 text-gray-400">
-                                    <li>Nhập hàng và nhận thanh toán nhanh chóng</li>
-                                    <li>Dashboard quản lý phiếu nhập riêng</li>
-                                    <li>Hỗ trợ ưu tiên từ đội ngũ Admin</li>
-                                </ul>
+                    {/* CHÍNH SÁCH NHÀ CUNG CẤP */}
+                    <div className="space-y-4 mb-6">
+                        {/* Thu nhập */}
+                        <div className="p-4 bg-gradient-to-r from-green-900/30 to-emerald-900/20 border border-green-500/30 rounded-xl">
+                            <h3 className="font-bold text-green-400 flex items-center gap-2 mb-3">
+                                💰 THU NHẬP HẤP DẪN
+                            </h3>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex items-center gap-2 text-gray-300">
+                                    <span className="text-green-400 font-bold text-lg">70%</span>
+                                    <span>giá shop treo cho mỗi vật phẩm bán ra</span>
+                                </div>
+                                <p className="text-gray-400 text-xs">
+                                    Ví dụ: Shop treo 10 Xu → Bạn nhận 7 Xu khi bán được
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Chỉ tiêu hàng ngày */}
+                        <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+                            <h3 className="font-bold text-blue-400 flex items-center gap-2 mb-3">
+                                📊 CHỈ TIÊU LINH HOẠT
+                            </h3>
+                            <ul className="text-sm text-gray-300 space-y-2">
+                                <li className="flex items-start gap-2">
+                                    <span className="text-blue-400">•</span>
+                                    <span>Chỉ tiêu <strong className="text-blue-300">tùy thuộc vào tồn kho</strong> của từng loại vật phẩm</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="text-blue-400">•</span>
+                                    <span>Khi tồn kho thấp → Chỉ tiêu cao hơn để bổ sung</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="text-blue-400">•</span>
+                                    <span>Không áp lực, linh hoạt theo khả năng của bạn</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Đảm bảo đầu ra */}
+                        <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+                            <h3 className="font-bold text-yellow-400 flex items-center gap-2 mb-3">
+                                ✅ ĐẢM BẢO ĐẦU RA
+                            </h3>
+                            <ul className="text-sm text-gray-300 space-y-2">
+                                <li className="flex items-start gap-2">
+                                    <span className="text-yellow-400">•</span>
+                                    <span>Shop cam kết <strong className="text-yellow-300">tiêu thụ toàn bộ</strong> nguyên liệu bạn cung cấp</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="text-yellow-400">•</span>
+                                    <span>Thanh toán nhanh chóng qua hệ thống</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="text-yellow-400">•</span>
+                                    <span>Hỗ trợ ưu tiên từ đội ngũ Admin</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Quyền lợi bổ sung */}
+                        <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
+                            <div className="flex gap-3">
+                                <Shield className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
+                                <div className="text-sm text-gray-300">
+                                    <p className="font-medium text-white mb-1">Quyền lợi bổ sung:</p>
+                                    <ul className="list-disc list-inside space-y-1 text-gray-400">
+                                        <li>Dashboard quản lý phiếu nhập riêng</li>
+                                        <li>Theo dõi doanh thu và thống kê chi tiết</li>
+                                        <li>Hỗ trợ 24/7 từ đội ngũ Admin</li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>

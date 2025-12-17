@@ -11,7 +11,8 @@ import { emailService } from './email.service.js';
  * @param {string} password
  * @returns {string[]} - Array of error messages (empty if password is strong)
  */
-const validatePasswordStrength = (password) => {
+// [FIX] Export để có thể sử dụng ở passwordReset.service.js
+export const validatePasswordStrength = (password) => {
   const errors = [];
 
   if (!password || password.length < 8) {
