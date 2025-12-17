@@ -51,6 +51,7 @@ import AdminManageSubmissions from './pages/admin/manager/AdminManageSubmissions
 import AdminSubmissionDetailPage from './pages/admin/manager/AdminSubmissionDetailPage';
 import AdminManageVouchers from './pages/admin/manager/AdminManageVouchers';
 import AdminExportData from './pages/admin/manager/AdminExportData';
+import AdminManageApplications from './pages/admin/manager/AdminManageApplications';
 
 // Pages - Customer (Phase 3)
 import WishlistPage from './pages/WishlistPage';
@@ -150,6 +151,7 @@ function App() {
             <Route path="manage-submissions" element={<AdminManageSubmissions />} />
             <Route path="vouchers" element={<AdminManageVouchers />} />
             <Route path="export" element={<AdminExportData />} />
+            <Route path="applications" element={<AdminManageApplications />} />
           </Route>
 
           {/* --- STAFF ROUTES --- */}

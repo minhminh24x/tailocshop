@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
 import { toast } from 'react-hot-toast';
 import { Users, ArrowLeft, Shield, CheckCircle, Clock, Award, DollarSign, Briefcase, AlertTriangle, FileCheck } from 'lucide-react';
+import apiClient from '../services/apiClient';
 
 export default function RegisterStaffPage() {
-    const register = useAuthStore((state) => state.register);
-    const isLoading = useAuthStore((state) => state.isLoading);
+    const [isLoading, setIsLoading] = useState(false);
 
     const [formData, setFormData] = useState({
         email: '',
@@ -53,14 +52,30 @@ export default function RegisterStaffPage() {
         }
 
         try {
-            // Đăng ký tài khoản với role CUSTOMER trước
-            await register(formData.email, formData.password, formData.inGameName);
+            setIsLoading(true);
+            // [SỬA] Gửi đơn đăng ký lên API thay vì tạo user trực tiếp
+            await apiClient.post('/applications', {
+                type: 'STAFF',
+                email: formData.email,
+                inGameName: formData.inGameName,
+                discord: formData.discordUsername,
+                formData: {
+                    currentRank: formData.currentRank,
+                    depositAmount: formData.depositAmount,
+                    isStudent: formData.isStudent,
+                    availableHours: formData.availableHours,
+                    canWorkPeakHours: formData.canWorkPeakHours,
+                    whyJoin: formData.whyJoin,
+                    experience: formData.experience,
+                },
+            });
 
-            // TODO: Gửi yêu cầu staff application lên backend với đầy đủ thông tin
             setIsSubmitted(true);
-            toast.success('Đăng ký thành công! Vui lòng chờ liên hệ phỏng vấn qua Discord.');
+            toast.success('Đơn đăng ký đã được gửi! Vui lòng chờ liên hệ qua Discord.');
         } catch (error) {
-            toast.error(error.message || 'Đăng ký thất bại');
+            toast.error(error.response?.data?.message || 'Gửi đơn thất bại');
+        } finally {
+            setIsLoading(false);
         }
     };
 

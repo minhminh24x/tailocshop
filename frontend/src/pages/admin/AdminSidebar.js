@@ -71,6 +71,10 @@ export default function AdminSidebar() {
           🎟️ Quản lý Voucher
         </NavLink>
 
+        <NavLink to="/admin/applications" className={getNavLinkClass}>
+          📝 Đơn Đăng Ký
+        </NavLink>
+
         <NavLink to="/admin/export" className={getNavLinkClass}>
           📥 Xuất dữ liệu
         </NavLink>

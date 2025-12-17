@@ -32,6 +32,7 @@ import voucherRoutes from './routes/voucher.route.js';
 
 // [THÊM] Phase 4 routes
 import exportRoutes from './routes/export.route.js';
+import applicationRoutes from './routes/application.route.js';
 
 dotenv.config();
 const app = express();
@@ -154,6 +155,7 @@ app.use('/api/vouchers', voucherRoutes);
 
 // [THÊM] Phase 4 API Routes
 app.use('/api/export', exportRoutes);
+app.use('/api/applications', applicationRoutes);
 
 // Route test
 app.get('/api', (req, res) => {

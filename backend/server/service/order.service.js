@@ -631,8 +631,10 @@ const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
         const conversionRate = parseFloat(xuToUsdRateEntry.rate);
 
         // Tính tổng chi tiêu quy đổi
-        const usdSpentInCoinValue = parseFloat(order.totalAmountUsd) / conversionRate; //
-        const totalEquivalentSpent = parseFloat(order.totalAmountCoin) + usdSpentInCoinValue; //
+        // [SỬA] USD -> Xu thì dùng Math.floor() để làm tròn xuống
+        // Ví dụ: 340.000$ / 100.000 = 3.4 -> floor() = 3 Xu tích lũy
+        const usdSpentInCoinValue = Math.floor(parseFloat(order.totalAmountUsd) / conversionRate);
+        const totalEquivalentSpent = parseFloat(order.totalAmountCoin) + usdSpentInCoinValue;
 
         // [DEBUG] Log VIP calculation
         console.log('[VIP DEBUG] Order COMPLETED:', {

@@ -53,6 +53,19 @@ enum StockReason {
   ADMIN_ADJUSTMENT
 }
 
+// [MỚI] Enums cho đơn đăng ký
+enum ApplicationType {
+  STAFF
+  SUPPLIER
+  PARTNER
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 // 4. Định nghĩa các Model (Tương ứng với Bảng)
 
 //==============================================================
@@ -111,6 +124,31 @@ model User {
 
   @@index([inGameName])
   @@map("users")
+}
+
+// [MỚI] Model cho đơn đăng ký Staff/Partner/Supplier
+model Application {
+  id              String            @id @default(uuid()) @db.Uuid
+  type            ApplicationType   // STAFF, SUPPLIER, PARTNER
+  status          ApplicationStatus @default(PENDING)
+  
+  // Thông tin cơ bản
+  email           String            @db.VarChar(255)
+  inGameName      String            @map("in_game_name") @db.VarChar(100)
+  discord         String?           @db.VarChar(100)
+  
+  // Thông tin bổ sung (JSON để linh hoạt)
+  formData        Json?             @map("form_data") // Lưu toàn bộ form data
+  
+  // Xử lý
+  reviewedBy      String?           @map("reviewed_by") @db.Uuid
+  reviewedAt      DateTime?         @map("reviewed_at") @db.Timestamptz
+  rejectReason    String?           @map("reject_reason")
+  
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("applications")
 }
 
 //==============================================================
