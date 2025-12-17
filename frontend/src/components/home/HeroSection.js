@@ -1,8 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import apiClient from '../../services/apiClient';
 
 export default function HeroSection() {
+  const [stats, setStats] = useState({
+    totalCustomers: 0,
+    totalOrders: 0,
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const { data } = await apiClient.get('/stats/public');
+        setStats({
+          totalCustomers: data.totalCustomers || 0,
+          totalOrders: data.totalOrders || 0,
+        });
+      } catch {
+        // Use fallback silently
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const formatNumber = (num) => {
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K+';
+    return num.toLocaleString();
+  };
+
   return (
     <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
       {/* Decor elements */}
@@ -50,19 +76,25 @@ export default function HeroSection() {
           </div>
         </motion.div>
 
-        {/* Stats bar giả lập */}
+        {/* [SỬA] Stats bar - lấy dữ liệu thực */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5, duration: 1 }}
           className="mt-16 flex flex-wrap justify-center gap-8 md:gap-16 opacity-70 grayscale hover:grayscale-0 transition-all duration-500"
         >
-          {['10,000+ Khách Hàng', 'Giao Dịch Tự Động', 'Uy Tín 100%'].map((text, idx) => (
-            <div key={idx} className="flex items-center gap-2 text-gray-400 font-semibold uppercase tracking-widest text-sm">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              {text}
-            </div>
-          ))}
+          <div className="flex items-center gap-2 text-gray-400 font-semibold uppercase tracking-widest text-sm">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            {stats.totalCustomers > 0 ? formatNumber(stats.totalCustomers) : '---'} Khách Hàng
+          </div>
+          <div className="flex items-center gap-2 text-gray-400 font-semibold uppercase tracking-widest text-sm">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            {stats.totalOrders > 0 ? formatNumber(stats.totalOrders) : '---'} Đơn Hàng
+          </div>
+          <div className="flex items-center gap-2 text-gray-400 font-semibold uppercase tracking-widest text-sm">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            Uy Tín 100%
+          </div>
         </motion.div>
 
       </div>

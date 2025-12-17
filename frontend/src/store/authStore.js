@@ -22,7 +22,6 @@ export const useAuthStore = create(persist(
       try {
         // [FIX] getMyProfile đã return response.data, không cần destructure nữa
         const data = await getMyProfile();
-        console.log('[AuthStore DEBUG] getMyProfile data:', data);
 
         if (data && data.user) {
           set({
@@ -70,7 +69,7 @@ export const useAuthStore = create(persist(
           try {
             await get().checkAuthStatus();
           } catch (e) {
-            console.log('Could not refresh VIP data');
+            // Silent fail
           }
         }, 100);
 

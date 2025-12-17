@@ -20,7 +20,7 @@ export default function AboutPage() {
                 setStats(data);
             } catch (error) {
                 // Use fallback data if API fails
-                console.log('Using fallback stats');
+                // Use fallback stats silently
             } finally {
                 setIsLoading(false);
             }

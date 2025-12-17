@@ -82,6 +82,11 @@ function App() {
     fetchRate();
   }, [checkAuthStatus, fetchRate]);
 
+  // [THÊM] Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [location.pathname]);
+
   // Kiểm tra đường dẫn để ẩn Header/Footer mặc định
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isStaffRoute = location.pathname.startsWith('/staff');

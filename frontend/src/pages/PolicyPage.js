@@ -61,12 +61,96 @@ export default function PolicyPage() {
                         </div>
 
                         <div className="p-4 bg-slate-800/50 rounded-xl">
-                            <h3 className="font-bold text-green-400 mb-2">3. Giảm giá VIP</h3>
-                            <ul className="list-disc list-inside space-y-1 text-sm">
-                                <li>Mua hàng tích lũy Xu → Lên cấp VIP</li>
-                                <li>VIP cao hơn = Giảm giá nhiều hơn (tối đa 20%)</li>
-                                <li>Giảm giá áp dụng tự động khi thanh toán bằng Xu</li>
-                            </ul>
+                            <h3 className="font-bold text-green-400 mb-4">3. Hệ thống VIP</h3>
+                            <p className="text-sm mb-4">
+                                Mua hàng tích lũy Xu → Tự động lên cấp VIP → Hưởng giảm giá khi thanh toán bằng Xu
+                            </p>
+
+                            {/* VIP Table */}
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="border-b border-white/10">
+                                            <th className="py-2 px-3 text-left">Cấp VIP</th>
+                                            <th className="py-2 px-3 text-center">Xu tích lũy</th>
+                                            <th className="py-2 px-3 text-center">Giảm giá</th>
+                                            <th className="py-2 px-3 text-left">Quyền lợi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        <tr>
+                                            <td className="py-3 px-3">
+                                                <span className="flex items-center gap-2">
+                                                    <span className="text-xl">🌱</span>
+                                                    <span className="font-medium text-gray-300">Thường</span>
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-3 text-center text-gray-400">0 Xu</td>
+                                            <td className="py-3 px-3 text-center text-gray-400">0%</td>
+                                            <td className="py-3 px-3 text-gray-400 text-xs">Mua hàng cơ bản</td>
+                                        </tr>
+                                        <tr className="bg-green-900/10">
+                                            <td className="py-3 px-3">
+                                                <span className="flex items-center gap-2">
+                                                    <span className="text-xl">🥉</span>
+                                                    <span className="font-medium text-green-400">VIP 1</span>
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-3 text-center text-green-400 font-medium">40 Xu</td>
+                                            <td className="py-3 px-3 text-center text-green-400 font-bold">2%</td>
+                                            <td className="py-3 px-3 text-green-300 text-xs">Giảm giá + Badge VIP</td>
+                                        </tr>
+                                        <tr className="bg-blue-900/10">
+                                            <td className="py-3 px-3">
+                                                <span className="flex items-center gap-2">
+                                                    <span className="text-xl">🥈</span>
+                                                    <span className="font-medium text-blue-400">VIP 2</span>
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-3 text-center text-blue-400 font-medium">100 Xu</td>
+                                            <td className="py-3 px-3 text-center text-blue-400 font-bold">5%</td>
+                                            <td className="py-3 px-3 text-blue-300 text-xs">Giảm giá + Ưu tiên hỗ trợ</td>
+                                        </tr>
+                                        <tr className="bg-purple-900/10">
+                                            <td className="py-3 px-3">
+                                                <span className="flex items-center gap-2">
+                                                    <span className="text-xl">🥇</span>
+                                                    <span className="font-medium text-purple-400">VIP 3</span>
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-3 text-center text-purple-400 font-medium">250 Xu</td>
+                                            <td className="py-3 px-3 text-center text-purple-400 font-bold">10%</td>
+                                            <td className="py-3 px-3 text-purple-300 text-xs">Giảm giá + Quà tặng định kỳ</td>
+                                        </tr>
+                                        <tr className="bg-yellow-900/10">
+                                            <td className="py-3 px-3">
+                                                <span className="flex items-center gap-2">
+                                                    <span className="text-xl">👑</span>
+                                                    <span className="font-medium text-yellow-400">VIP 4</span>
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-3 text-center text-yellow-400 font-medium">500 Xu</td>
+                                            <td className="py-3 px-3 text-center text-yellow-400 font-bold">15%</td>
+                                            <td className="py-3 px-3 text-yellow-300 text-xs">Giảm giá tối đa + Ưu tiên cao nhất</td>
+                                        </tr>
+                                        <tr className="bg-gradient-to-r from-orange-900/20 to-red-900/20">
+                                            <td className="py-3 px-3">
+                                                <span className="flex items-center gap-2">
+                                                    <span className="text-xl">💎</span>
+                                                    <span className="font-medium text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">VIP 5</span>
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-3 text-center text-orange-400 font-medium">1000 Xu</td>
+                                            <td className="py-3 px-3 text-center text-red-400 font-bold">20%</td>
+                                            <td className="py-3 px-3 text-orange-300 text-xs">ELITE - Tất cả đặc quyền</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <p className="text-xs text-gray-500 mt-3">
+                                * Giảm giá chỉ áp dụng khi thanh toán bằng Xu. Quyền lợi có thể thay đổi theo chính sách shop.
+                            </p>
                         </div>
                     </div>
                 </section>
