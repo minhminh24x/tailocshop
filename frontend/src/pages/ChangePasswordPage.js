@@ -119,6 +119,7 @@ export default function ChangePasswordPage() {
             await changePassword({
                 oldPassword: currentPassword,
                 newPassword: newPassword,
+                confirmNewPassword: confirmPassword, // [SỬA] Thêm field này cho backend validation
             });
 
             // [MỚI] Cập nhật user trong store để clear mustChangePassword
