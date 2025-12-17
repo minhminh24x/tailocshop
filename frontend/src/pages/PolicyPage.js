@@ -42,8 +42,9 @@ export default function PolicyPage() {
                             <h3 className="font-bold text-green-400 mb-2">1. Đơn vị tiền tệ</h3>
                             <ul className="list-disc list-inside space-y-1 text-sm">
                                 <li><strong>Xu (Coin)</strong>: Đơn vị chính, quy đổi từ vật phẩm trong game</li>
-                                <li><strong>USD</strong>: Thanh toán bằng tiền thật (qua PayPal, Banking)</li>
-                                <li>Tỷ giá quy đổi được hiển thị trên website</li>
+                                <li><strong>$ (USD)</strong>: Tiền trong server (không phải tiền thật)</li>
+                                <li>Tỷ giá quy đổi: <strong className="text-yellow-400">1 Xu = 100.000$</strong> (theo tỷ giá XU_TO_USD)</li>
+                                <li>Thanh toán bằng vật phẩm hoặc tiền trong game</li>
                             </ul>
                         </div>
 

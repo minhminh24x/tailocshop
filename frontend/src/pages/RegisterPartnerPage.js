@@ -112,20 +112,43 @@ export default function RegisterPartnerPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                             <div className="flex items-start gap-2 text-gray-300">
                                 <Store className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
-                                <span>Được <strong className="text-yellow-400">giới thiệu trên website</strong></span>
+                                <span>Được <strong className="text-yellow-400">treo vật phẩm</strong> trên website TaiLocShop</span>
                             </div>
                             <div className="flex items-start gap-2 text-gray-300">
                                 <Gift className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                                <span>Nhận <strong className="text-green-400">ưu đãi đặc biệt</strong> khi mua hàng</span>
+                                <span>Tiếp cận <strong className="text-green-400">hàng ngàn khách hàng</strong></span>
                             </div>
                             <div className="flex items-start gap-2 text-gray-300">
                                 <Users className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                                <span>Chia sẻ <strong className="text-blue-400">khách hàng</strong> tiềm năng</span>
+                                <span>Được <strong className="text-blue-400">quảng bá shop</strong> trên website</span>
                             </div>
                             <div className="flex items-start gap-2 text-gray-300">
                                 <MessageCircle className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
-                                <span>Hỗ trợ <strong className="text-purple-400">quảng bá</strong> shop của bạn</span>
+                                <span>Hỗ trợ <strong className="text-purple-400">24/7</strong> từ admin</span>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* CHÍNH SÁCH VÀ PHÍ */}
+                    <div className="p-5 bg-red-500/10 border border-red-500/30 rounded-xl">
+                        <h3 className="font-bold text-red-400 flex items-center gap-2 mb-3">
+                            💰 CHÍNH SÁCH PHÍ ĐỐI TÁC
+                        </h3>
+                        <div className="space-y-3 text-sm">
+                            <div className="p-3 bg-slate-800/50 rounded-lg">
+                                <p className="font-bold text-orange-400 mb-1">📌 Phí treo hàng (Listing Fee)</p>
+                                <p className="text-gray-300">Mỗi vật phẩm treo: <strong className="text-yellow-400">5.000$ - 20.000$/tuần</strong> (tùy loại)</p>
+                            </div>
+                            <div className="p-3 bg-slate-800/50 rounded-lg">
+                                <p className="font-bold text-orange-400 mb-1">📌 Phí chiết khấu (Commission)</p>
+                                <p className="text-gray-300">Mỗi đơn bán được: <strong className="text-yellow-400">5% - 10%</strong> giá trị đơn</p>
+                            </div>
+                            <div className="p-3 bg-slate-800/50 rounded-lg">
+                                <p className="font-bold text-orange-400 mb-1">📌 Phí quảng cáo (Ads)</p>
+                                <p className="text-gray-300">Banner homepage: <strong className="text-yellow-400">50.000$/tuần</strong></p>
+                                <p className="text-gray-300">Spotlight item: <strong className="text-yellow-400">30.000$/tuần</strong></p>
+                            </div>
+                            <p className="text-gray-500 text-xs italic mt-2">* Tỷ giá: 1 Xu = 100.000$. Giá có thể thương lượng.</p>
                         </div>
                     </div>
 
@@ -138,7 +161,7 @@ export default function RegisterPartnerPage() {
                         <ul className="text-sm text-gray-300 space-y-2">
                             <li className="flex items-start gap-2">
                                 <span className="text-blue-400">•</span>
-                                <span><strong>Shop liên kết:</strong> Giới thiệu khách hàng cho nhau, chia sẻ tài nguyên</span>
+                                <span><strong>Shop ký gửi:</strong> Treo vật phẩm trên TaiLocShop, chúng tôi thu phí treo + chiết khấu khi bán</span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="text-blue-400">•</span>
@@ -146,7 +169,7 @@ export default function RegisterPartnerPage() {
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="text-blue-400">•</span>
-                                <span><strong>Đại lý:</strong> Bán hàng cho TaiLocShop và nhận hoa hồng</span>
+                                <span><strong>Đối tác quảng cáo:</strong> Mua banner/spotlight để quảng bá shop</span>
                             </li>
                         </ul>
                     </div>

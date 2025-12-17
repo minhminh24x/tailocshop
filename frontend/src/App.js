@@ -8,6 +8,7 @@ import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 
 import { Toaster } from 'react-hot-toast';
+import WarningModal from './components/WarningModal';
 
 // Pages - Public
 import HomePage from './pages/HomePage';
@@ -87,6 +88,7 @@ function App() {
   return (
     <div className="App min-h-screen text-gray-100 flex flex-col relative z-0">
       <Toaster position="top-center" reverseOrder={false} />
+      <WarningModal />
       {/* Header khách hàng (ẩn khi vào dashboard) */}
       {!isDashboard && <Header />}
 

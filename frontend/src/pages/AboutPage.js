@@ -131,7 +131,7 @@ export default function AboutPage() {
                 <p className="text-gray-400 max-w-xl mx-auto">
                     Bạn muốn trở thành một phần của Tài Lộc Shop? Đăng ký ngay để trở thành nhân viên hoặc nhà cung cấp!
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
                     <Link
                         to="/register/staff"
                         className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-xl transition-all"
@@ -145,6 +145,13 @@ export default function AboutPage() {
                     >
                         <HeartHandshake className="w-5 h-5" />
                         Đăng ký Nhà Cung Cấp
+                    </Link>
+                    <Link
+                        to="/register/partner"
+                        className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-slate-900 font-bold rounded-xl transition-all"
+                    >
+                        <Sparkles className="w-5 h-5" />
+                        🤝 Đăng ký làm Đối tác
                     </Link>
                 </div>
             </section>
