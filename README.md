@@ -3,7 +3,7 @@
 **TaiLocShop** là một nền tảng thương mại điện tử Full-stack hiện đại, chuyên biệt cho việc giao dịch vật phẩm Game (In-game assets), được xây dựng với kiến trúc Scalable, bảo mật cao và tối ưu trải nghiệm người dùng.
 
 > **Project Link:** [shop.minhminh24x.me](https://shop.minhminh24x.me)  
-> **Author:** Nguyen Van Minh (MinhMinh24x)
+> **Author:** Lê Minh Lộc (MinhMinh24x)
 
 ---
 
