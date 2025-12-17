@@ -9,7 +9,7 @@ import { userValidation } from '../validations/user.validation.js';
 import { userController } from '../controllers/user.controller.js'; //
 
 // [SỬA] Import 'protect' và 'authorize'
-import { protect, authorize } from '../middleware/auth.middleware.js'; 
+import { protect, authorize } from '../middleware/auth.middleware.js';
 import validate from '../middleware/validate.js'; // Thêm import validate
 
 const router = express.Router();
@@ -33,7 +33,7 @@ router.put(
 
 // [CHUẨN HÓA] GET /api/v1/users/profile (Lấy thông tin cá nhân)
 router.get(
-  '/profile', 
+  '/profile',
   protect, // 1. Phải đăng nhập
   userController.getMyProfile // Gọi qua controller
 );
@@ -64,6 +64,14 @@ router.get(
   protect,
   authorize('ADMIN'),
   userController.adminGetUserDetail
+);
+
+// [MỚI] Admin ban/unban user
+router.put(
+  '/:userId/ban',
+  protect,
+  authorize('ADMIN'),
+  userController.adminBanUser
 );
 
 export default router;

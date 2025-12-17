@@ -138,6 +138,18 @@ const changeMyPassword = asyncHandler(async (req, res) => {
   res.status(httpStatus.OK).json({ message: 'Đổi mật khẩu thành công!' });
 });
 
+/**
+ * [MỚI] Admin ban/unban user
+ */
+const adminBanUser = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const result = await userService.adminBanUser(userId, req.body);
+  res.status(httpStatus.OK).json({
+    message: result.isBanned ? 'Đã khóa tài khoản' : 'Đã mở khóa tài khoản',
+    user: result,
+  });
+});
+
 
 // --- EXPORT CONTROLLER ---
 
@@ -147,4 +159,5 @@ export const userController = {
   adminGetUserDetail,
   getMyProfile,
   changeMyPassword,
+  adminBanUser, // [MỚI]
 };

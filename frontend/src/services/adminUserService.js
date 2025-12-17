@@ -46,3 +46,17 @@ export const createUser = async (userData) => {
     throw error.response?.data || error;
   }
 };
+
+/**
+ * [MỚI] Admin ban/unban user
+ * @param {string} userId
+ * @param {object} banData { banned: boolean, reason?: string, banUntil?: string }
+ */
+export const banUser = async (userId, banData) => {
+  try {
+    const { data } = await apiClient.put(`/users/${userId}/ban`, banData);
+    return data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};

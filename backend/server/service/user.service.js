@@ -238,6 +238,52 @@ const adminGetUserDetail = async (userId) => {
   delete user.passwordHash;
   return user;
 };
+/**
+ * [MỚI - Admin] Ban/Unban user
+ * @param {string} userId
+ * @param {object} banData - { banned, reason, banUntil }
+ * @returns {Promise<User>}
+ */
+const adminBanUser = async (userId, banData) => {
+  const { banned, reason, banUntil } = banData;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Không tìm thấy người dùng');
+  }
+
+  // Prevent banning ADMIN
+  if (user.role === 'ADMIN') {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Không thể ban Admin');
+  }
+
+  const updateData = {
+    isBanned: Boolean(banned),
+    banReason: banned ? (reason || 'Vi phạm quy định') : null,
+    bannedAt: banned ? new Date() : null,
+    banUntil: banned && banUntil ? new Date(banUntil) : null,
+  };
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: updateData,
+    select: {
+      id: true,
+      email: true,
+      inGameName: true,
+      role: true,
+      isBanned: true,
+      banReason: true,
+      banUntil: true,
+      bannedAt: true,
+    },
+  });
+
+  return updatedUser;
+};
 
 
 // Cập nhật export
@@ -246,4 +292,5 @@ export const userService = {
   changeMyPassword,
   adminGetUsers, //
   adminGetUserDetail, //
+  adminBanUser, // [MỚI]
 };

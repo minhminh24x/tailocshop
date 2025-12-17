@@ -1,23 +1,25 @@
 // File: frontend/src/pages/staff/StaffOrderManagement.js
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import apiClient from '../../services/apiClient'; // Giả định dùng chung apiClient
+import apiClient from '../../services/apiClient';
 import { formatNumber } from '../../utils/formatNumber';
+import CancelOrderModal from '../../components/staff/CancelOrderModal';
+import { FaBan } from 'react-icons/fa';
 
 export default function StaffOrderManagement() {
     const [orders, setOrders] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filterStatus, setFilterStatus] = useState('ALL');
+    const [cancelModalOpen, setCancelModalOpen] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState(null);
 
     // Hàm tải đơn hàng
     const fetchOrders = async () => {
         setIsLoading(true);
         try {
-            // Gọi API admin với filter status pending/preparing để lấy đơn cần xử lý
             const response = await apiClient.get('/orders/admin', {
-                params: { limit: 100 } // Lấy nhiều đơn hàng để staff xử lý
+                params: { limit: 100 }
             });
-            // [FIX] API giờ trả về { data: [...], pagination: {...} }
             setOrders(response.data.data || []);
         } catch (error) {
             toast.error('Không thể tải danh sách đơn hàng');
@@ -34,9 +36,29 @@ export default function StaffOrderManagement() {
         try {
             await apiClient.put(`/orders/${orderId}/status`, { status: newStatus });
             toast.success(`Cập nhật trạng thái thành: ${newStatus}`);
-            fetchOrders(); // Reload
+            fetchOrders();
         } catch (error) {
             toast.error('Cập nhật thất bại');
+        }
+    };
+
+    // Cancel with reason
+    const handleCancelClick = (order) => {
+        setSelectedOrder(order);
+        setCancelModalOpen(true);
+    };
+
+    const handleCancelOrder = async (reason) => {
+        try {
+            await apiClient.put(`/orders/${selectedOrder.id}/status`, {
+                status: 'CANCELLED',
+                cancelReason: reason,
+            });
+            toast.success('Đã hủy đơn hàng');
+            fetchOrders();
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Hủy đơn thất bại');
+            throw error;
         }
     };
 
@@ -57,13 +79,24 @@ export default function StaffOrderManagement() {
         }
     };
 
+    const getStatusLabel = (status) => {
+        switch (status) {
+            case 'PENDING': return 'Chờ xử lý';
+            case 'PREPARING': return 'Đang chuẩn bị';
+            case 'READY_FOR_DELIVERY': return 'Sẵn sàng giao';
+            case 'COMPLETED': return 'Hoàn thành';
+            case 'CANCELLED': return 'Đã hủy';
+            default: return status;
+        }
+    };
+
     return (
         <div>
             <h1 className="text-3xl font-bold text-white mb-6">Quản lý Đơn hàng (Staff)</h1>
 
             {/* Filter Tabs */}
             <div className="flex space-x-2 mb-6 overflow-x-auto pb-2">
-                {['ALL', 'PENDING', 'PREPARING', 'READY_FOR_DELIVERY', 'COMPLETED'].map(status => (
+                {['ALL', 'PENDING', 'PREPARING', 'READY_FOR_DELIVERY', 'COMPLETED', 'CANCELLED'].map(status => (
                     <button
                         key={status}
                         onClick={() => setFilterStatus(status)}
@@ -72,7 +105,7 @@ export default function StaffOrderManagement() {
                             : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                             }`}
                     >
-                        {status === 'ALL' ? 'Tất cả' : status}
+                        {status === 'ALL' ? 'Tất cả' : getStatusLabel(status)}
                     </button>
                 ))}
             </div>
@@ -104,34 +137,57 @@ export default function StaffOrderManagement() {
                                     </td>
                                     <td className="py-3 px-4 text-center">
                                         <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(order.status)}`}>
-                                            {order.status}
+                                            {getStatusLabel(order.status)}
                                         </span>
+                                        {order.cancelReason && (
+                                            <p className="text-xs text-red-400 mt-1">
+                                                Lý do: {order.cancelReason}
+                                            </p>
+                                        )}
                                     </td>
                                     <td className="py-3 px-4 text-center">
-                                        {order.status === 'PENDING' && (
-                                            <button
-                                                onClick={() => handleUpdateStatus(order.id, 'PREPARING')}
-                                                className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm"
-                                            >
-                                                Nhận đơn
-                                            </button>
-                                        )}
-                                        {order.status === 'PREPARING' && (
-                                            <button
-                                                onClick={() => handleUpdateStatus(order.id, 'READY_FOR_DELIVERY')}
-                                                className="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1 rounded text-sm"
-                                            >
-                                                Xong
-                                            </button>
-                                        )}
-                                        {order.status === 'READY_FOR_DELIVERY' && (
-                                            <button
-                                                onClick={() => handleUpdateStatus(order.id, 'COMPLETED')}
-                                                className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-sm"
-                                            >
-                                                Hoàn tất
-                                            </button>
-                                        )}
+                                        <div className="flex items-center justify-center gap-2">
+                                            {order.status === 'PENDING' && (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleUpdateStatus(order.id, 'PREPARING')}
+                                                        className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm"
+                                                    >
+                                                        Nhận đơn
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleCancelClick(order)}
+                                                        className="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
+                                                    >
+                                                        <FaBan /> Hủy
+                                                    </button>
+                                                </>
+                                            )}
+                                            {order.status === 'PREPARING' && (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleUpdateStatus(order.id, 'READY_FOR_DELIVERY')}
+                                                        className="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1 rounded text-sm"
+                                                    >
+                                                        Xong
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleCancelClick(order)}
+                                                        className="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
+                                                    >
+                                                        <FaBan /> Hủy
+                                                    </button>
+                                                </>
+                                            )}
+                                            {order.status === 'READY_FOR_DELIVERY' && (
+                                                <button
+                                                    onClick={() => handleUpdateStatus(order.id, 'COMPLETED')}
+                                                    className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-sm"
+                                                >
+                                                    Hoàn tất
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -146,6 +202,14 @@ export default function StaffOrderManagement() {
                     </table>
                 </div>
             )}
+
+            {/* Cancel Order Modal */}
+            <CancelOrderModal
+                isOpen={cancelModalOpen}
+                onClose={() => setCancelModalOpen(false)}
+                order={selectedOrder}
+                onCancel={handleCancelOrder}
+            />
         </div>
     );
 }

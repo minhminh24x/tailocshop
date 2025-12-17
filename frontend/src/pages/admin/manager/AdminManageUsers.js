@@ -2,16 +2,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { getUsers } from '../../../services/adminUserService';
+import { getUsers, banUser } from '../../../services/adminUserService';
 import CreateUserModal from '../../../components/admin/CreateUserModal';
+import BanUserModal from '../../../components/admin/BanUserModal';
 import Pagination from '../../../components/common/Pagination';
-import { FaSearch, FaCoins, FaPlus } from 'react-icons/fa';
+import { FaSearch, FaCoins, FaPlus, FaBan, FaUnlock } from 'react-icons/fa';
 import { formatNumber } from '../../../utils/formatNumber';
 
 export default function AdminManageUsers({ type = 'STAFF' }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [banModalOpen, setBanModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const navigate = useNavigate();
 
   // Pagination & Filter State
@@ -24,7 +27,6 @@ export default function AdminManageUsers({ type = 'STAFF' }) {
 
   const isCustomerMode = type === 'CUSTOMER';
   const pageTitle = isCustomerMode ? 'Quản lý Khách hàng' : 'Quản lý Nhân sự';
-  const rolesToFetch = isCustomerMode ? ['CUSTOMER'] : ['STAFF', 'SUPPLIER'];
 
   // Debounce search term
   useEffect(() => {
@@ -34,14 +36,11 @@ export default function AdminManageUsers({ type = 'STAFF' }) {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Fetch users function - wrapped in useCallback
-  // [SỬA] Dùng type prop trực tiếp thay vì rolesToFetch array để tránh infinite loop
+  // Fetch users function
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      // Tính roles trực tiếp bên trong để tránh dependency thay đổi
       const roles = type === 'CUSTOMER' ? 'CUSTOMER' : 'STAFF,SUPPLIER';
-
       const params = {
         page: currentPage,
         limit: itemsPerPage,
@@ -52,11 +51,7 @@ export default function AdminManageUsers({ type = 'STAFF' }) {
         params.search = debouncedSearch;
       }
 
-      console.log('[AdminManageUsers] Fetching with params:', params);
       const response = await getUsers(params);
-      console.log('[AdminManageUsers] Response:', response);
-
-      // API trả về { data: [...], pagination: {...} }
       setUsers(response?.data || []);
       setTotalPages(response?.pagination?.totalPages || 1);
       setTotalItems(response?.pagination?.total || 0);
@@ -67,14 +62,13 @@ export default function AdminManageUsers({ type = 'STAFF' }) {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, debouncedSearch, type]); // [SỬA] Dùng 'type' thay vì rolesToFetch
+  }, [currentPage, itemsPerPage, debouncedSearch, type]);
 
-  // [SỬA] Fetch khi dependencies thay đổi
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
-  // Reset khi đổi type (Customer vs Staff)
+  // Reset khi đổi type
   useEffect(() => {
     setSearchTerm('');
     setCurrentPage(1);
@@ -82,12 +76,43 @@ export default function AdminManageUsers({ type = 'STAFF' }) {
 
   const handleUserCreated = () => {
     setIsModalOpen(false);
-    fetchUsers(); // Reload data
+    fetchUsers();
     toast.success('Tạo tài khoản thành công!');
   };
 
   const handleRowClick = (userId) => {
     navigate(`/admin/users/${userId}`);
+  };
+
+  // Ban/Unban handlers
+  const handleBanClick = (e, user) => {
+    e.stopPropagation();
+    setSelectedUser(user);
+    setBanModalOpen(true);
+  };
+
+  const handleUnbanClick = async (e, user) => {
+    e.stopPropagation();
+    if (!window.confirm(`Mở khóa tài khoản ${user.inGameName}?`)) return;
+
+    try {
+      await banUser(user.id, { banned: false });
+      toast.success(`Đã mở khóa ${user.inGameName}`);
+      fetchUsers();
+    } catch (error) {
+      toast.error(error.message || 'Lỗi khi mở khóa');
+    }
+  };
+
+  const handleBanUser = async (banData) => {
+    try {
+      await banUser(selectedUser.id, banData);
+      toast.success(`Đã khóa ${selectedUser.inGameName}`);
+      fetchUsers();
+    } catch (error) {
+      toast.error(error.message || 'Lỗi khi khóa');
+      throw error;
+    }
   };
 
   return (
@@ -128,24 +153,26 @@ export default function AdminManageUsers({ type = 'STAFF' }) {
               <th className="py-3 px-4 text-left">Tên In-game</th>
               <th className="py-3 px-4 text-left">Email</th>
               <th className="py-3 px-4 text-center">Vai trò</th>
+              <th className="py-3 px-4 text-center">Trạng thái</th>
               {isCustomerMode && (
                 <>
                   <th className="py-3 px-4 text-center">Cấp VIP</th>
                   <th className="py-3 px-4 text-right">Tổng chi tiêu</th>
                 </>
               )}
+              <th className="py-3 px-4 text-center">Hành động</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
             {loading ? (
               <tr>
-                <td colSpan={isCustomerMode ? 5 : 3} className="py-8 text-center text-gray-400">
+                <td colSpan={isCustomerMode ? 7 : 5} className="py-8 text-center text-gray-400">
                   Đang tải...
                 </td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={isCustomerMode ? 5 : 3} className="py-8 text-center text-gray-400">
+                <td colSpan={isCustomerMode ? 7 : 5} className="py-8 text-center text-gray-400">
                   Không tìm thấy người dùng nào
                 </td>
               </tr>
@@ -160,12 +187,23 @@ export default function AdminManageUsers({ type = 'STAFF' }) {
                   <td className="py-3 px-4 text-gray-400">{user.email}</td>
                   <td className="py-3 px-4 text-center">
                     <span className={`px-2 py-1 rounded text-xs font-bold ${user.role === 'ADMIN' ? 'bg-red-900/50 text-red-300' :
-                      user.role === 'STAFF' ? 'bg-blue-900/50 text-blue-300' :
-                        user.role === 'SUPPLIER' ? 'bg-green-900/50 text-green-300' :
-                          'bg-gray-700 text-gray-300'
+                        user.role === 'STAFF' ? 'bg-blue-900/50 text-blue-300' :
+                          user.role === 'SUPPLIER' ? 'bg-green-900/50 text-green-300' :
+                            'bg-gray-700 text-gray-300'
                       }`}>
                       {user.role}
                     </span>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    {user.isBanned ? (
+                      <span className="px-2 py-1 rounded text-xs font-bold bg-red-900/50 text-red-300">
+                        🔒 Bị khóa
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 rounded text-xs font-bold bg-green-900/50 text-green-300">
+                        ✓ Hoạt động
+                      </span>
+                    )}
                   </td>
                   {isCustomerMode && (
                     <>
@@ -182,6 +220,25 @@ export default function AdminManageUsers({ type = 'STAFF' }) {
                       </td>
                     </>
                   )}
+                  <td className="py-3 px-4 text-center">
+                    {user.role !== 'ADMIN' && (
+                      user.isBanned ? (
+                        <button
+                          onClick={(e) => handleUnbanClick(e, user)}
+                          className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg flex items-center gap-1 mx-auto"
+                        >
+                          <FaUnlock /> Mở khóa
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => handleBanClick(e, user)}
+                          className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg flex items-center gap-1 mx-auto"
+                        >
+                          <FaBan /> Khóa
+                        </button>
+                      )
+                    )}
+                  </td>
                 </tr>
               ))
             )}
@@ -205,11 +262,19 @@ export default function AdminManageUsers({ type = 'STAFF' }) {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Create User Modal */}
       <CreateUserModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={handleUserCreated}
+      />
+
+      {/* Ban User Modal */}
+      <BanUserModal
+        isOpen={banModalOpen}
+        onClose={() => setBanModalOpen(false)}
+        user={selectedUser}
+        onBan={handleBanUser}
       />
     </div>
   );

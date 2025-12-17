@@ -537,7 +537,7 @@ const confirmPaymentAndComplete = async (orderId, adminUserId) => {
  * @param {string} adminUserId - ID của admin/staff thực hiện
  */
 const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
-  const { status, paymentStatus } = updateBody;
+  const { status, paymentStatus, cancelReason } = updateBody;
 
   // 1. Lấy trạng thái đơn hàng HIỆN TẠI
   // Cần include orderDetails (để hoàn kho) và customer (để cộng VIP)
@@ -696,6 +696,9 @@ const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
           break;
         case 'CANCELLED':
           updateData.cancelledAt = now;
+          if (cancelReason) {
+            updateData.cancelReason = cancelReason;
+          }
           break;
       }
     }
