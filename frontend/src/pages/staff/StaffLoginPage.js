@@ -41,17 +41,21 @@ export default function StaffLoginPage() {
                 return;
             }
 
-            // Chỉ cho phép STAFF, SUPPLIER, ADMIN đăng nhập tại đây
+            // [SỬA] Chỉ cho phép STAFF và SUPPLIER đăng nhập tại đây
             if (user.role === 'CUSTOMER') {
-                toast.error('Tài khoản khách hàng không thể đăng nhập tại đây. Vui lòng dùng trang /login');
+                toast.error('Khách hàng vui lòng đăng nhập tại /login');
                 useAuthStore.getState().logout();
                 return;
             }
 
-            // Điều hướng theo role
             if (user.role === 'ADMIN') {
-                navigate('/admin/dashboard');
-            } else if (user.role === 'STAFF') {
+                toast.error('Admin vui lòng đăng nhập tại /admin/login');
+                useAuthStore.getState().logout();
+                return;
+            }
+
+            // Điều hướng theo role - chỉ còn STAFF và SUPPLIER
+            if (user.role === 'STAFF') {
                 navigate('/staff/dashboard');
             } else if (user.role === 'SUPPLIER') {
                 navigate('/supplier/dashboard');

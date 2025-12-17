@@ -44,7 +44,7 @@ function PasswordRequirements({ password }) {
 }
 
 export default function ChangePasswordPage() {
-    const { user, isAuthenticated } = useAuthStore();
+    const user = useAuthStore((state) => state.user);
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
@@ -59,10 +59,8 @@ export default function ChangePasswordPage() {
     });
     const [isLoading, setIsLoading] = useState(false);
 
-    // Redirect if not authenticated
-    if (!isAuthenticated) {
-        // Staff/Supplier/Admin chưa đăng nhập → staff login
-        // Customer → login
+    // [SỬA] Redirect if not logged in - dùng user thay vì isAuthenticated
+    if (!user) {
         return <Navigate to="/login" />;
     }
 
