@@ -290,109 +290,22 @@ const UserProfilePage = () => {
         </div>
       </div>
 
-      {/* [SỬA] Đổi Mật Khẩu - DARK THEME + PASSWORD REQUIREMENTS */}
+      {/* Đổi Mật Khẩu - Link to separate page */}
       <div className="glass-panel rounded-2xl overflow-hidden border border-white/10">
         <div className="p-6">
-          <h2 className="text-xl font-bold text-white mb-4">Đổi Mật Khẩu</h2>
-          <form onSubmit={handleSubmitPassword} className="space-y-4">
-            {/* Mật khẩu cũ */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="currentPassword">
-                Mật khẩu cũ
-              </label>
-              <div className="relative">
-                <input
-                  id="currentPassword"
-                  type={showPass.current ? 'text' : 'password'}
-                  name="currentPassword"
-                  value={passwordData.currentPassword}
-                  onChange={handlePasswordChange}
-                  className="w-full px-4 py-3 bg-slate-900 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500"
-                  placeholder="Nhập mật khẩu hiện tại"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(p => ({ ...p, current: !p.current }))}
-                  className="absolute inset-y-0 right-0 flex items-center px-4 text-gray-400 hover:text-white"
-                >
-                  {showPass.current ? <FaEyeSlash /> : <FaEye />}
-                </button>
-              </div>
-            </div>
-
-            {/* Mật khẩu mới */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="newPassword">
-                Mật khẩu mới
-              </label>
-              <div className="relative">
-                <input
-                  id="newPassword"
-                  type={showPass.new ? 'text' : 'password'}
-                  name="newPassword"
-                  value={passwordData.newPassword}
-                  onChange={handlePasswordChange}
-                  className="w-full px-4 py-3 bg-slate-900 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500"
-                  placeholder="Nhập mật khẩu mới"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(p => ({ ...p, new: !p.new }))}
-                  className="absolute inset-y-0 right-0 flex items-center px-4 text-gray-400 hover:text-white"
-                >
-                  {showPass.new ? <FaEyeSlash /> : <FaEye />}
-                </button>
-              </div>
-
-              {/* [THÊM] Hiển thị yêu cầu mật khẩu */}
-              <PasswordRequirements password={passwordData.newPassword} />
-            </div>
-
-            {/* Xác nhận mật khẩu mới */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="confirmNewPassword">
-                Xác nhận mật khẩu mới
-              </label>
-              <div className="relative">
-                <input
-                  id="confirmNewPassword"
-                  type={showPass.confirm ? 'text' : 'password'}
-                  name="confirmNewPassword"
-                  value={passwordData.confirmNewPassword}
-                  onChange={handlePasswordChange}
-                  className="w-full px-4 py-3 bg-slate-900 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500"
-                  placeholder="Nhập lại mật khẩu mới"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(p => ({ ...p, confirm: !p.confirm }))}
-                  className="absolute inset-y-0 right-0 flex items-center px-4 text-gray-400 hover:text-white"
-                >
-                  {showPass.confirm ? <FaEyeSlash /> : <FaEye />}
-                </button>
-              </div>
-              {/* Match indicator */}
-              {passwordData.confirmNewPassword && (
-                <p className={`text-sm mt-2 ${passwordData.newPassword === passwordData.confirmNewPassword ? 'text-green-400' : 'text-red-400'}`}>
-                  {passwordData.newPassword === passwordData.confirmNewPassword
-                    ? '✓ Mật khẩu khớp'
-                    : '✗ Mật khẩu không khớp'}
-                </p>
-              )}
-            </div>
-
-            {/* Nút Submit */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-slate-900 font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Đang xử lý...' : 'Cập nhật mật khẩu'}
-            </button>
-          </form>
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <FaShieldAlt className="text-purple-400" />
+            Bảo Mật Tài Khoản
+          </h2>
+          <p className="text-gray-400 mb-4">
+            Để bảo vệ tài khoản, bạn nên thay đổi mật khẩu định kỳ và không sử dụng mật khẩu trùng với game.
+          </p>
+          <Link
+            to="/change-password"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold rounded-xl transition-all"
+          >
+            🔐 Đổi Mật Khẩu
+          </Link>
         </div>
       </div>
     </div>

@@ -103,6 +103,12 @@ model User {
   wishlists            Wishlist[]
   reviews              Review[]
 
+  // [THÊM] Ban/Lock fields
+  isBanned    Boolean   @default(false) @map("is_banned")
+  banReason   String?   @map("ban_reason")
+  banUntil    DateTime? @map("ban_until") @db.Timestamptz
+  bannedAt    DateTime? @map("banned_at") @db.Timestamptz
+
   @@index([inGameName])
   @@map("users")
 }
@@ -241,6 +247,7 @@ model Order {
   readyForDeliveryAt  DateTime? @map("ready_for_delivery_at") @db.Timestamptz
   completedAt         DateTime? @map("completed_at") @db.Timestamptz
   cancelledAt         DateTime? @map("cancelled_at") @db.Timestamptz
+  cancelReason        String?   @map("cancel_reason") // Predefined reasons for cancellation
   
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz

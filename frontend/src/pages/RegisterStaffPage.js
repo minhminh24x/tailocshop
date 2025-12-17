@@ -256,10 +256,10 @@ export default function RegisterStaffPage() {
                             >
                                 <option value="">-- Chọn rank --</option>
                                 <option value="Landlord">Landlord</option>
-                                <option value="Mayor">Mayor</option>
-                                <option value="Governor">Governor</option>
-                                <option value="Tycoon">Tycoon</option>
-                                <option value="Prestige">Prestige</option>
+                                <option value="King">King</option>
+                                <option value="Emperor">Emperor</option>
+                                <option value="God">God</option>
+                                <option value="Custom">Custom</option>
                                 <option value="Khác">Khác</option>
                             </select>
                         </div>

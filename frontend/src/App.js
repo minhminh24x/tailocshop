@@ -24,6 +24,7 @@ import RegisterSupplierPage from './pages/RegisterSupplierPage';
 import ContactPage from './pages/ContactPage';
 import PolicyPage from './pages/PolicyPage';
 import RegisterPartnerPage from './pages/RegisterPartnerPage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
 
 // Pages - Customer
 import CartPage from './pages/CartPage';
@@ -121,6 +122,7 @@ function App() {
           <Route path="/my-orders" element={<UserProtectedRoute><MyOrdersPage /></UserProtectedRoute>} />
           <Route path="/my-orders/:id" element={<UserProtectedRoute><MyOrderDetailPage /></UserProtectedRoute>} />
           <Route path="/wishlist" element={<UserProtectedRoute><WishlistPage /></UserProtectedRoute>} />
+          <Route path="/change-password" element={<UserProtectedRoute><ChangePasswordPage /></UserProtectedRoute>} />
 
           {/* --- ADMIN ROUTES --- */}
           {/* [MỚI] Admin Login Page - không cần protected */}

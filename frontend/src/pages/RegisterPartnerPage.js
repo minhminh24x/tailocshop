@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Handshake, ArrowLeft, CheckCircle, Star, Store, Gift, Users, MessageCircle } from 'lucide-react';
+import { useCurrencyStore } from '../store/currencyStore';
 
 export default function RegisterPartnerPage() {
     const [formData, setFormData] = useState({
@@ -18,6 +19,7 @@ export default function RegisterPartnerPage() {
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const { rate } = useCurrencyStore();
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -148,7 +150,7 @@ export default function RegisterPartnerPage() {
                                 <p className="text-gray-300">Banner homepage: <strong className="text-yellow-400">50.000$/tuần</strong></p>
                                 <p className="text-gray-300">Spotlight item: <strong className="text-yellow-400">30.000$/tuần</strong></p>
                             </div>
-                            <p className="text-gray-500 text-xs italic mt-2">* Tỷ giá: 1 Xu = 100.000$. Giá có thể thương lượng.</p>
+                            <p className="text-gray-500 text-xs italic mt-2">* Tỷ giá: 1 Xu = {rate.toLocaleString()}$. Giá có thể thương lượng.</p>
                         </div>
                     </div>
 

@@ -151,7 +151,7 @@ export default function AboutPage() {
                         className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-slate-900 font-bold rounded-xl transition-all"
                     >
                         <Sparkles className="w-5 h-5" />
-                        🤝 Đăng ký làm Đối tác
+                        Đăng ký làm Đối tác
                     </Link>
                 </div>
             </section>

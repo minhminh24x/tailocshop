@@ -1,8 +1,9 @@
-// File: frontend/src/pages/PolicyPage.js
 import React from 'react';
 import { Shield, Lock, Eye, FileText, AlertTriangle, ShoppingCart, RefreshCw, Scale } from 'lucide-react';
+import { useCurrencyStore } from '../store/currencyStore';
 
 export default function PolicyPage() {
+    const { rate } = useCurrencyStore();
     return (
         <div className="max-w-4xl mx-auto px-4 py-8">
             <div className="text-center mb-12">
@@ -43,7 +44,7 @@ export default function PolicyPage() {
                             <ul className="list-disc list-inside space-y-1 text-sm">
                                 <li><strong>Xu (Coin)</strong>: Đơn vị chính, quy đổi từ vật phẩm trong game</li>
                                 <li><strong>$ (USD)</strong>: Tiền trong server (không phải tiền thật)</li>
-                                <li>Tỷ giá quy đổi: <strong className="text-yellow-400">1 Xu = 100.000$</strong> (theo tỷ giá XU_TO_USD)</li>
+                                <li>Tỷ giá quy đổi: <strong className="text-yellow-400">1 Xu = {rate.toLocaleString()}$</strong> (theo tỷ giá XU_TO_USD)</li>
                                 <li>Thanh toán bằng vật phẩm hoặc tiền trong game</li>
                             </ul>
                         </div>
