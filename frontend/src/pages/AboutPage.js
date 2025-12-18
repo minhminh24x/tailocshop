@@ -161,8 +161,8 @@ export default function AboutPage() {
                 <h2 className="text-2xl font-bold text-white mb-4">Liên Hệ Với Chúng Tôi</h2>
                 <p className="text-gray-400 mb-6">Có câu hỏi? Chúng tôi luôn sẵn sàng hỗ trợ!</p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <a href="mailto:support@tailocshop.com" className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-gray-300 hover:text-white transition-all">
-                        📧 support@tailocshop.com
+                    <a href="mailto:loclm112.noreply@gmail.com" className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-gray-300 hover:text-white transition-all">
+                        📧 loclm112.noreply@gmail.com
                     </a>
                     <Link to="/support" className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold rounded-xl transition-all">
                         Gửi yêu cầu hỗ trợ

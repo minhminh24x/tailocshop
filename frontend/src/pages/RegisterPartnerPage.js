@@ -333,10 +333,6 @@ export default function RegisterPartnerPage() {
                         <Link to="/register/supplier" className="text-green-400 hover:underline text-sm">
                             Đăng ký làm Supplier
                         </Link>
-                        <span className="text-gray-600">|</span>
-                        <Link to="/register" className="text-yellow-400 hover:underline text-sm">
-                            Đăng ký tài khoản thường
-                        </Link>
                     </div>
                 </div>
             </div>

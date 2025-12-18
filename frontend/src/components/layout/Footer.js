@@ -30,8 +30,8 @@ export default function Footer() {
           <div>
             <h3 className="text-xl font-bold text-white mb-4">Liên hệ chúng tôi</h3>
             <p>Email: <a href="mailto:loclm112.noreply@gmail.com" className="text-yellow-400 hover:underline">loclm112.noreply@gmail.com</a></p>
-            <p>Discord: KingMCCommunity</p>
-            <p>Server: play.kingmc.vn</p>
+            <p>Discord: <a href="https://discord.gg/qZZZqr6x" className="text-yellow-400 hover:underline">Lọ Tự</a></p>
+            <p>Server: <a href="https://kingmc.vn" className="text-yellow-400 hover:underline">kingmc.vn</a></p>
           </div>
         </div>
 
