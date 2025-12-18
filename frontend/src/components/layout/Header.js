@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useCartStore } from '../../store/cartStore';
-import { Menu, X, ShoppingCart, User, LogOut, Sparkles, Heart, ChevronDown, Settings, HelpCircle, Shield, Package } from 'lucide-react';
+import { Menu, X, ShoppingCart, User, LogOut, Heart, ChevronDown, Settings, HelpCircle, Shield, Package } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import logoImg from '../../logo.png';
 
 export default function Header() {
   const { user, logout } = useAuthStore();
@@ -85,9 +86,7 @@ export default function Header() {
         <Link to="/" className="flex items-center gap-3 group">
           <div className="relative flex items-center justify-center">
             <div className="absolute -inset-2 bg-yellow-500/30 rounded-full blur-lg group-hover:bg-yellow-500/50 transition-all duration-500"></div>
-            <div className="relative bg-gradient-to-br from-slate-900 to-black p-2.5 rounded-xl border border-yellow-500/30 group-hover:border-yellow-400 transition-all">
-              <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
-            </div>
+            <img src={logoImg} alt="TaiLocShop Logo" className="relative h-12 w-12 object-contain rounded-xl" />
           </div>
           <div className="flex flex-col">
             <span className="text-2xl font-black tracking-tighter text-white uppercase leading-none drop-shadow-lg">

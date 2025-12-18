@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore.js';
 import toast from 'react-hot-toast';
-import { Shield, Eye, EyeOff, LogIn, Sparkles } from 'lucide-react';
+import { Shield, Eye, EyeOff, LogIn } from 'lucide-react';
+import logoImg from '../../logo.png';
 
 export default function AdminLoginPage() {
     const [email, setEmail] = useState('');
@@ -70,13 +71,11 @@ export default function AdminLoginPage() {
                     <Link to="/" className="inline-flex items-center gap-3 group">
                         <div className="relative">
                             <div className="absolute -inset-2 bg-yellow-500/30 rounded-full blur-lg group-hover:bg-yellow-500/50 transition-all"></div>
-                            <div className="relative bg-gradient-to-br from-slate-900 to-black p-3 rounded-xl border border-yellow-500/30">
-                                <Sparkles className="h-8 w-8 text-yellow-400" />
-                            </div>
+                            <img src={logoImg} alt="TaiLocShop Logo" className="relative h-14 w-14 object-contain rounded-xl" />
                         </div>
                         <div className="text-left">
                             <span className="text-3xl font-black text-white">Tài Lộc <span className="text-yellow-400">Shop</span></span>
-                            <p className="text-xs text-gray-400 tracking-wider">STAFF PORTAL</p>
+                            <p className="text-xs text-gray-400 tracking-wider">ADMIN PORTAL</p>
                         </div>
                     </Link>
                 </div>
