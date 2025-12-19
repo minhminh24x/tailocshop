@@ -2,6 +2,7 @@
 import prisma from '../lib/prisma.js';
 import ApiError from '../utils/ApiError.js';
 import { DEFAULT_TIMESLOT_ID } from '../utils/constants.js';
+import { UNIT_MULTIPLIER, calculatePriceForUnit } from '../utils/unitConstants.js';
 import httpStatus from 'http-status';
 
 // [RESTORED] Real Socket.io functions with fail-safe wrapper
@@ -160,29 +161,58 @@ const createOrder = async (userId, orderData) => {
 
       for (const cartItem of items) {
         const dbItem = itemsMap.get(cartItem.itemId); // O(1) lookup
-        // ... (Kiểm tra !dbItem, kiểm tra stockQuantity giữ nguyên)
+
         if (!dbItem) {
           throw new ApiError(httpStatus.NOT_FOUND, `Vật phẩm với ID ${cartItem.itemId} không tồn tại.`);
         }
-        if (dbItem.stockQuantity < cartItem.quantity) {
-          throw new ApiError(httpStatus.BAD_REQUEST, `Vật phẩm "${dbItem.name}" không đủ số lượng (còn ${dbItem.stockQuantity}).`);
+
+        // [MỚI] Lấy đơn vị từ cart item, mặc định là baseUnit của item
+        const purchaseUnit = cartItem.unit || dbItem.baseUnit || 'PIECE';
+        const unitMultiplier = UNIT_MULTIPLIER[purchaseUnit] || 1;
+
+        // [MỚI] Validate đơn vị có trong allowedUnits không
+        const allowedUnits = dbItem.allowedUnits || ['PIECE'];
+        if (!allowedUnits.includes(purchaseUnit)) {
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            `Vật phẩm "${dbItem.name}" không hỗ trợ đơn vị "${purchaseUnit}". Cho phép: ${allowedUnits.join(', ')}`
+          );
         }
 
-        // ... (Logic tính giá, preferredCurrency giữ nguyên)
-        const hasCoinPrice = dbItem.priceCoin !== null;
-        const hasUsdPrice = dbItem.priceUsd !== null;
+        // [MỚI] Tính số PIECE cần trừ kho (quantity × unit multiplier)
+        const piecesToDeduct = cartItem.quantity * unitMultiplier;
+
+        // Kiểm tra tồn kho (stock luôn lưu theo PIECE)
+        if (dbItem.stockQuantity < piecesToDeduct) {
+          const stockInUnit = Math.floor(dbItem.stockQuantity / unitMultiplier);
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            `Vật phẩm "${dbItem.name}" không đủ số lượng (còn ${stockInUnit} ${purchaseUnit}).`
+          );
+        }
+
+        // [MỚI] Tính giá dựa trên basePrice và unit multiplier
+        const basePriceCoin = parseFloat(dbItem.basePriceCoin) || parseFloat(dbItem.priceCoin) || 0;
+        const basePriceUsd = parseFloat(dbItem.basePriceUsd) || parseFloat(dbItem.priceUsd) || 0;
+        const baseUnit = dbItem.baseUnit || 'PIECE';
+
+        // Tính giá cho đơn vị được chọn
+        const pricePerUnitCoin = calculatePriceForUnit(basePriceCoin, baseUnit, purchaseUnit);
+        const pricePerUnitUsd = calculatePriceForUnit(basePriceUsd, baseUnit, purchaseUnit);
+
         let price = 0;
         let currencyForThisItem = 'COIN';
-        if (preferredCurrency === 'USD' && hasUsdPrice) {
-          price = parseFloat(dbItem.priceUsd);
+
+        if (preferredCurrency === 'USD' && pricePerUnitUsd > 0) {
+          price = pricePerUnitUsd;
           currencyForThisItem = 'USD';
           subTotalUsd += (price * cartItem.quantity);
-        } else if (hasCoinPrice) {
-          price = parseFloat(dbItem.priceCoin);
+        } else if (pricePerUnitCoin > 0) {
+          price = pricePerUnitCoin;
           currencyForThisItem = 'COIN';
           subTotalCoin += (price * cartItem.quantity);
         } else {
-          throw new ApiError(httpStatus.BAD_REQUEST, `Vật phẩm "${dbItem.name}" không có thông tin giá XU.`);
+          throw new ApiError(httpStatus.BAD_REQUEST, `Vật phẩm "${dbItem.name}" không có thông tin giá.`);
         }
 
         const lineTotal = price * cartItem.quantity;
@@ -190,15 +220,15 @@ const createOrder = async (userId, orderData) => {
           itemId: dbItem.id,
           quantity: cartItem.quantity,
           priceAtPurchase: price,
-          unitAtPurchase: dbItem.unit,
+          unitAtPurchase: purchaseUnit, // [SỬA] Lưu đơn vị khách chọn
           currencyAtPurchase: currencyForThisItem,
           totalLineAmount: lineTotal,
         });
 
-        // [SỬA] Thêm vào mảng để cập nhật stock
+        // [SỬA] Trừ kho theo PIECE (quantity × multiplier)
         itemsToUpdateStock.push({
           id: dbItem.id,
-          quantityToDecrement: cartItem.quantity,
+          quantityToDecrement: piecesToDeduct, // Số PIECE cần trừ
         });
       }
 

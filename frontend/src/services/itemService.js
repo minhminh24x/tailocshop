@@ -16,10 +16,11 @@ export const getItems = (params) => {
 };
 
 /**
- * Lấy chi tiết một vật phẩm bằng slug và unit
+ * [SỬA] Lấy chi tiết một vật phẩm bằng slug (không cần unit nữa vì slug là unique)
  * @param {string} slug 
- * @param {string} unit 
+ * @param {string} unit - [DEPRECATED] Không dùng nữa, giữ lại để tương thích
  */
 export const getSingleItem = (slug, unit) => {
-  return apiClient.get(`/items/${slug}/${unit}`);
+  // Chỉ dùng slug, bỏ qua unit (giữ lại param để tương thích ngược)
+  return apiClient.get(`/items/${slug}`);
 };

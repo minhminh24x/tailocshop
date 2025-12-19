@@ -1,63 +1,116 @@
 // File: frontend/src/pages/ItemDetailPage.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { getSingleItem } from '../services/itemService.js';
 import { useCartStore } from '../store/cartStore.js';
 import { formatNumber } from '../utils/formatNumber.js';
+import {
+  UNIT_MULTIPLIER,
+  UNIT_LABELS,
+  getStockInUnit,
+  getUnitBreakdown
+} from '../utils/unitUtils.js';
 import WishlistButton from '../components/item/WishlistButton.js';
 import ItemReviews from '../components/item/ItemReviews.js';
 
-// Ngưỡng tối thiểu
 const MIN_USD_DISPLAY_THRESHOLD = 1.00;
 
 export default function ItemDetailPage() {
-  // [XÓA] Xóa lấy tỷ giá từ store
-
-  const { slug, unit } = useParams();
+  const { slug } = useParams();
   const [item, setItem] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [selectedUnit, setSelectedUnit] = useState(null); // Unit được chọn
   const addItemToCart = useCartStore((state) => state.addItem);
 
-  // ... (useEffect, handleAddToCart, handleQuantityChange giữ nguyên) ...
+  // Fetch item data
   useEffect(() => {
     const fetchItem = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await getSingleItem(slug, unit);
-        setItem(response.data);
+        const response = await getSingleItem(slug);
+        const itemData = response.data;
+        setItem(itemData);
+
+        // Set default unit là đơn vị đầu tiên trong allowedUnits
+        if (itemData?.allowedUnits?.length > 0) {
+          setSelectedUnit(itemData.allowedUnits[0]);
+        } else {
+          setSelectedUnit(itemData?.baseUnit || 'PIECE');
+        }
       } catch (err) {
         setError(err.response?.data?.message || 'Không tìm thấy vật phẩm');
       } finally {
         setIsLoading(false);
       }
     };
-    if (slug && unit) {
+    if (slug) {
       fetchItem();
     }
-  }, [slug, unit]);
+  }, [slug]);
+
+  // Tính giá và stock cho unit đã chọn
+  const { currentPriceCoin, currentPriceUsd, currentStock } = useMemo(() => {
+    if (!item || !selectedUnit) {
+      return { currentPriceCoin: 0, currentPriceUsd: 0, currentStock: 0 };
+    }
+
+    // Nếu có pricesPerUnit từ API, dùng nó
+    if (item.pricesPerUnit && item.pricesPerUnit[selectedUnit]) {
+      const unitPrices = item.pricesPerUnit[selectedUnit];
+      return {
+        currentPriceCoin: unitPrices.priceCoin || 0,
+        currentPriceUsd: unitPrices.priceUsd || 0,
+        currentStock: unitPrices.stock || 0
+      };
+    }
+
+    // Fallback: tính từ basePrice
+    const basePriceCoin = parseFloat(item.basePriceCoin) || parseFloat(item.priceCoin) || 0;
+    const basePriceUsd = parseFloat(item.basePriceUsd) || parseFloat(item.priceUsd) || 0;
+    const baseUnit = item.baseUnit || 'PIECE';
+
+    const baseMultiplier = UNIT_MULTIPLIER[baseUnit] || 1;
+    const targetMultiplier = UNIT_MULTIPLIER[selectedUnit] || 1;
+    const ratio = targetMultiplier / baseMultiplier;
+
+    return {
+      currentPriceCoin: Math.round(basePriceCoin * ratio * 100) / 100,
+      currentPriceUsd: Math.round(basePriceUsd * ratio * 100) / 100,
+      currentStock: getStockInUnit(item.stockQuantity || 0, selectedUnit)
+    };
+  }, [item, selectedUnit]);
+
+  // Tính breakdown khi nhập số lượng
+  const breakdown = useMemo(() => {
+    if (!selectedUnit) return null;
+    const pieces = quantity * (UNIT_MULTIPLIER[selectedUnit] || 1);
+    return getUnitBreakdown(pieces);
+  }, [quantity, selectedUnit]);
+
   const handleAddToCart = () => {
-    if (!item) return;
+    if (!item || !selectedUnit) return;
     let qtyToAdd = Number(quantity);
     if (isNaN(qtyToAdd) || qtyToAdd <= 0) {
       qtyToAdd = 1;
     }
-    addItemToCart(item, qtyToAdd);
+    // [SỬA] Thêm unit vào cart item
+    addItemToCart(item, qtyToAdd, selectedUnit);
   };
+
   const handleQuantityChange = (e) => {
     let newQty = parseInt(e.target.value, 10);
     if (isNaN(newQty) || newQty < 1) {
       newQty = 1;
     }
-    if (item && newQty > item.stockQuantity) {
-      newQty = item.stockQuantity;
+    if (currentStock > 0 && newQty > currentStock) {
+      newQty = currentStock;
     }
     setQuantity(newQty);
   };
 
-  // [SỬA] Xóa isRateLoading
   if (isLoading) {
     return <p className="text-center text-xl text-gray-400">Đang tải chi tiết...</p>;
   }
@@ -69,15 +122,12 @@ export default function ItemDetailPage() {
   }
 
   const imageUrl = item.thumbnailImageUrl || 'https://placehold.co/600x400/2D3748/FFFFFF?text=TaiLocShop';
+  const allowedUnits = item.allowedUnits || ['PIECE'];
 
-  // [SỬA] Đọc cả 2 giá từ DB
-  const priceCoinNum = parseFloat(item.priceCoin) || 0;
-  const priceUsdNum = parseFloat(item.priceUsd) || 0;
-
-  const isUsdAvailable = priceUsdNum >= MIN_USD_DISPLAY_THRESHOLD;
-  const isCoinOnly = priceCoinNum > 0 && !isUsdAvailable;
-  const isUsdOnly = isUsdAvailable && priceCoinNum <= 0;
-  const hasBothPrices = priceCoinNum > 0 && isUsdAvailable;
+  const isUsdAvailable = currentPriceUsd >= MIN_USD_DISPLAY_THRESHOLD;
+  const isCoinOnly = currentPriceCoin > 0 && !isUsdAvailable;
+  const isUsdOnly = isUsdAvailable && currentPriceCoin <= 0;
+  const hasBothPrices = currentPriceCoin > 0 && isUsdAvailable;
 
   return (
     <div className="bg-gray-800 rounded-lg shadow-xl overflow-hidden max-w-7xl mx-auto">
@@ -85,7 +135,6 @@ export default function ItemDetailPage() {
         {/* Cột ảnh */}
         <div className="md:w-1/2 relative">
           <img src={imageUrl} alt={item.name} className="w-full h-64 md:h-full object-cover" />
-          {/* [THÊM] Wishlist Button */}
           <div className="absolute top-4 right-4">
             <WishlistButton itemId={item.id} size="lg" />
           </div>
@@ -94,19 +143,32 @@ export default function ItemDetailPage() {
         {/* Cột thông tin */}
         <div className="md:w-1/2 p-8 flex flex-col">
           <h1 className="text-4xl font-bold text-white mb-2">{item.name}</h1>
-          <span className="text-sm bg-pink-600 text-white px-3 py-1 rounded-full font-semibold self-start">
-            Đơn vị: {item.unit}
-          </span>
+
+          {/* [MỚI] Unit Selector */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {allowedUnits.map((unit) => (
+              <button
+                key={unit}
+                onClick={() => setSelectedUnit(unit)}
+                className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${selectedUnit === unit
+                    ? 'bg-yellow-500 text-black shadow-lg'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+              >
+                {UNIT_LABELS[unit] || unit}
+              </button>
+            ))}
+          </div>
 
           {item.category && (
-            <p className="text-gray-400 text-md mt-4">Phân loại: {item.category.name}</p>
+            <p className="text-gray-400 text-md">Phân loại: {item.category.name}</p>
           )}
 
           <p className="text-gray-300 mt-4 text-lg">
             {item.description || "Vật phẩm này chưa có mô tả."}
           </p>
 
-          {/* KHỐI GIÁ MỚI */}
+          {/* KHỐI GIÁ - Hiển thị theo unit đã chọn */}
           <div className="my-6">
             {isCoinOnly && (
               <>
@@ -114,7 +176,7 @@ export default function ItemDetailPage() {
                   Chỉ Được Bán Bằng Xu
                 </span>
                 <span className="block text-4xl font-bold text-yellow-400">
-                  {formatNumber(priceCoinNum)} Xu
+                  {formatNumber(currentPriceCoin)} Xu <span className="text-lg text-gray-400">/ {selectedUnit}</span>
                 </span>
               </>
             )}
@@ -125,7 +187,7 @@ export default function ItemDetailPage() {
                   Có thể mua bằng USD
                 </span>
                 <span className="block text-4xl font-bold text-green-400">
-                  ${formatNumber(priceUsdNum)}
+                  ${formatNumber(currentPriceUsd)} <span className="text-lg text-gray-400">/ {selectedUnit}</span>
                 </span>
               </>
             )}
@@ -133,36 +195,49 @@ export default function ItemDetailPage() {
             {hasBothPrices && (
               <>
                 <span className="block text-4xl font-bold text-green-400">
-                  ${formatNumber(priceUsdNum)}
+                  ${formatNumber(currentPriceUsd)} <span className="text-lg text-gray-400">/ {selectedUnit}</span>
                 </span>
                 <span className="block text-3xl font-bold text-yellow-400">
-                  {formatNumber(priceCoinNum)} Xu
+                  {formatNumber(currentPriceCoin)} Xu <span className="text-lg text-gray-400">/ {selectedUnit}</span>
                 </span>
               </>
             )}
           </div>
 
-          <p className="text-lg text-yellow-400 mb-4">
-            Số lượng tồn kho: {formatNumber(item.stockQuantity)}
+          {/* Stock theo unit đã chọn */}
+          <p className="text-lg text-yellow-400 mb-2">
+            Tồn kho: {formatNumber(currentStock)} {selectedUnit}
           </p>
+
+          {/* [MỚI] Hiển thị breakdown khi nhập số lượng */}
+          {breakdown && quantity > 0 && (
+            <div className="bg-gray-700/50 rounded-lg p-3 mb-4">
+              <p className="text-sm text-gray-300">
+                <span className="text-white font-semibold">{quantity} {selectedUnit}</span> = {' '}
+                <span className="text-yellow-400">{formatNumber(breakdown.pieces)} pieces</span> = {' '}
+                <span className="text-blue-400">{breakdown.stacks} stacks</span> = {' '}
+                <span className="text-purple-400">{breakdown.shulkers} shulkers</span>
+              </p>
+            </div>
+          )}
 
           {/* Khu vực thêm vào giỏ hàng */}
           <div className="mt-auto">
-            {item.stockQuantity > 0 ? (
+            {currentStock > 0 ? (
               <div className="flex items-center space-x-4">
                 <input
                   type="number"
                   value={quantity}
                   onChange={handleQuantityChange}
                   min="1"
-                  max={item.stockQuantity}
-                  className="w-24 px-3 py-3 bg-gray-700 border border-gray-600 rounded text-white text-center text-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+                  max={currentStock}
+                  className="w-24 px-3 py-3 bg-gray-700 border border-gray-600 rounded text-white text-center text-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
                 />
                 <button
                   onClick={handleAddToCart}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-300"
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 px-6 rounded-lg text-lg transition duration-300"
                 >
-                  Thêm vào giỏ hàng
+                  Thêm {quantity} {selectedUnit} vào giỏ
                 </button>
               </div>
             ) : (
@@ -174,11 +249,10 @@ export default function ItemDetailPage() {
               </button>
             )}
           </div>
-
         </div>
       </div>
 
-      {/* [THÊM] Reviews Section */}
+      {/* Reviews Section */}
       <div className="mt-8">
         <ItemReviews itemId={item.id} />
       </div>

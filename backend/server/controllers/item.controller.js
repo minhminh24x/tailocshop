@@ -19,9 +19,10 @@ const getAllItemsAdmin = asyncHandler(async (req, res) => {
   res.status(httpStatus.OK).send(items);
 });
 
+// [SỬA] Slug là unique, không cần unit nữa
 const getItem = asyncHandler(async (req, res) => {
-  const { slug, unit } = req.params;
-  const item = await itemService.getItemBySlugAndUnit(slug, unit);
+  const { slug } = req.params;
+  const item = await itemService.getItemBySlug(slug);
 
   if (!item) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Không tìm thấy vật phẩm');

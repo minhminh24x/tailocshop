@@ -183,19 +183,31 @@ model Item {
   category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   name              String   @db.VarChar(255)
-  slug              String   @db.VarChar(255) // Ràng buộc unique được dời xuống @@unique
+  slug              String   @unique @db.VarChar(255)
   description       String?
   thumbnailImageUrl String?  @map("thumbnail_image_url")
-  unit              ItemUnit @default(PIECE)
 
+  // [MỚI] Hệ thống multi-unit
+  // Đơn vị được phép bán (vd: ["PIECE", "STACK"] hoặc ["STACK", "SHULKER"])
+  allowedUnits String[] @default(["PIECE"]) @map("allowed_units")
+
+  // Đơn vị cơ sở để tính giá (đơn vị nhỏ nhất trong allowedUnits)
+  baseUnit ItemUnit @default(PIECE) @map("base_unit")
+
+  // Giá theo đơn vị cơ sở (baseUnit)
+  basePriceCoin Decimal? @map("base_price_coin") @db.Decimal(12, 2)
+  basePriceUsd  Decimal? @map("base_price_usd") @db.Decimal(12, 2)
+
+  // [DEPRECATED] Giữ lại để tương thích ngược, sẽ xóa sau
   priceUsd  Decimal? @map("price_usd") @db.Decimal(12, 2)
   priceCoin Decimal? @map("price_coin") @db.Decimal(12, 2)
 
+  // Stock luôn lưu theo PIECE (đơn vị nhỏ nhất)
   stockQuantity Int     @default(0) @map("stock_quantity")
   isActive      Boolean @default(true) @map("is_active")
 
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz // <-- ĐÃ SỬA
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz // <-- ĐÃ SỬA
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   // Quan hệ ngược
   orderDetails              OrderDetail[]
@@ -206,7 +218,6 @@ model Item {
   wishlists Wishlist[]
   reviews   Review[] // Đánh giá sản phẩm
 
-  @@unique([slug, unit]) // UNIQUE(slug, unit)
   @@index([categoryId])
   @@index([slug])
   @@map("items")

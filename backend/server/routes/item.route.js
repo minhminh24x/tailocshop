@@ -44,10 +44,11 @@ router.delete(
 // === PUBLIC ROUTES (Để cuối để tránh trùng route) ===
 router.get('/featured', itemController.getFeaturedItems);
 router.get('/', itemController.getAllItems);
-router.get(
-  '/:slug/:unit',
-  validate(itemValidation.getItemSchema),
-  itemController.getItem
-);
+
+// [SỬA] Slug là unique nên chỉ cần slug, không cần unit
+router.get('/:slug', itemController.getItem);
+
+// [DEPRECATED] Giữ lại route cũ để tương thích ngược - bỏ qua unit
+router.get('/:slug/:unit', itemController.getItem);
 
 export default router;
