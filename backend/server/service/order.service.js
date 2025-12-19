@@ -785,37 +785,49 @@ const updateOrderAdmin = async (orderId, updateBody, adminUserId) => {
       console.error('[Socket.io] Failed to emit order status:', e.message);
     }
 
-    // [MỚI] Gửi email thông báo hoàn thành đơn hàng
-    if (status === 'COMPLETED' && order.customer?.email) {
+    // [FIX] Trả về thêm email data để gửi email NGOÀI transaction
+    return {
+      order: updatedOrder,
+      shouldSendEmail: status === 'COMPLETED' && order.customer?.email,
+      emailData: status === 'COMPLETED' ? {
+        customerEmail: order.customer?.email,
+        customerName: order.inGameName,
+        orderNumber: order.orderNumber,
+        orderDetails: order.orderDetails.map(d => ({
+          itemName: d.item?.name || 'Vật phẩm',
+          quantity: d.quantity,
+          totalLineAmount: d.totalLineAmount,
+          currencyAtPurchase: d.currencyAtPurchase
+        })),
+        totalAmountCoin: parseFloat(order.totalAmountCoin) || 0,
+        totalAmountUsd: parseFloat(order.totalAmountUsd) || 0,
+        staffUserId: order.staffUserId || adminUserId,
+      } : null,
+    };
+  });
+
+  // [FIX] Gửi email NGOÀI transaction để không block database operations
+  if (result.shouldSendEmail && result.emailData) {
+    // Fire-and-forget: không await để không block response
+    (async () => {
       try {
-        // Lấy thông tin staff
         const staffUser = await prisma.user.findUnique({
-          where: { id: order.staffUserId || adminUserId },
+          where: { id: result.emailData.staffUserId },
           select: { inGameName: true }
         });
 
         await emailService.sendOrderCompletionEmail({
-          customerEmail: order.customer.email,
-          customerName: order.inGameName,
-          orderNumber: order.orderNumber,
-          orderDetails: order.orderDetails.map(d => ({
-            itemName: d.item?.name || 'Vật phẩm',
-            quantity: d.quantity,
-            totalLineAmount: d.totalLineAmount,
-            currencyAtPurchase: d.currencyAtPurchase
-          })),
-          totalAmountCoin: parseFloat(order.totalAmountCoin) || 0,
-          totalAmountUsd: parseFloat(order.totalAmountUsd) || 0,
+          ...result.emailData,
           staffName: staffUser?.inGameName || 'Admin',
           completedAt: new Date(),
         });
       } catch (emailError) {
         console.error('[Email] Failed to send completion email:', emailError.message);
       }
-    }
+    })();
+  }
 
-    return updatedOrder;
-  });
+  return result.order;
 };
 
 
