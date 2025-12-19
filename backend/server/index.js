@@ -95,10 +95,9 @@ const corsOptions = {
 };
 
 // [FIX] Đặt CORS đầu tiên, trước tất cả middleware khác
+// Note: Express 5 không hỗ trợ app.options('*', ...) nên chỉ dùng app.use(cors())
+// cors middleware sẽ tự động xử lý preflight OPTIONS requests
 app.use(cors(corsOptions));
-
-// [FIX] Xử lý preflight OPTIONS cho tất cả routes
-app.options('*', cors(corsOptions));
 
 // [SECURITY] Helmet - đặt sau CORS
 app.use(helmet({
