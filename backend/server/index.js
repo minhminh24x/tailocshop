@@ -2,6 +2,7 @@
 import express from 'express';
 import http from 'http';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import slowDown from 'express-slow-down';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
@@ -111,13 +112,94 @@ app.use(compression());
 // [NÂNG CẤP] 3. Logging
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
-// Cấu hình slowDown (Chống spam request)
+// ======================================
+// 🛡️ RATE LIMITING & SECURITY CONFIG
+// ======================================
+
+// [MỚI] Rate Limit chung cho tất cả API (100 requests per 15 phút per IP)
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 phút
+  max: 100, // Giới hạn 100 requests per IP
+  message: {
+    status: 'error',
+    message: 'Quá nhiều yêu cầu từ IP này, vui lòng thử lại sau 15 phút.'
+  },
+  standardHeaders: true, // Return rate limit info in headers
+  legacyHeaders: false,
+  // [QUAN TRỌNG] Skip khi chạy sau Cloudflare/Nginx proxy
+  // Cloudflare sẽ gửi IP thật trong header CF-Connecting-IP
+  keyGenerator: (req) => {
+    return req.headers['cf-connecting-ip'] ||
+      req.headers['x-real-ip'] ||
+      req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+      req.ip;
+  },
+});
+
+// [MỚI] Rate Limit nghiêm ngặt hơn cho Auth routes (10 requests per 15 phút)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10, // Chỉ 10 lần đăng nhập/đăng ký per IP per 15 phút
+  message: {
+    status: 'error',
+    message: 'Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau 15 phút.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    return req.headers['cf-connecting-ip'] ||
+      req.headers['x-real-ip'] ||
+      req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+      req.ip;
+  },
+});
+
+// [MỚI] Rate Limit nhẹ hơn cho Public routes (200 requests per 15 phút)
+const publicLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200, // Cho phép nhiều hơn vì đây là public data
+  message: {
+    status: 'error',
+    message: 'Quá nhiều yêu cầu, vui lòng thử lại sau.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    return req.headers['cf-connecting-ip'] ||
+      req.headers['x-real-ip'] ||
+      req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+      req.ip;
+  },
+});
+
+// Cấu hình slowDown (Thêm delay nếu spam - kết hợp với rate limit)
 const authSlowDown = slowDown({
   windowMs: 15 * 60 * 1000,
   delayAfter: 5,
   delayMs: () => 500,
   maxDelayMs: 3000,
   validate: { delayMs: false }
+});
+
+// [MỚI] Áp dụng rate limit chung CHO TẤT CẢ routes
+app.use('/api', generalLimiter);
+
+// [MỚI] Block các đường dẫn tấn công phổ biến (bots, scanners)
+app.use((req, res, next) => {
+  const blockedPaths = [
+    '/.env', '/.git', '/wp-admin', '/wp-login', '/phpMyAdmin',
+    '/vendor', '/_ignition', '/actuator', '/solr', '/console',
+    '/manager', '/admin.php', '/xmlrpc.php', '/eval-stdin.php'
+  ];
+
+  if (blockedPaths.some(path => req.path.toLowerCase().includes(path.toLowerCase()))) {
+    console.warn(`[SECURITY] Blocked suspicious request: ${req.path} from ${req.ip}`);
+    return res.status(403).json({
+      status: 'error',
+      message: 'Forbidden'
+    });
+  }
+  next();
 });
 // 1. Parse JSON (tăng giới hạn nếu cần)
 app.use(express.json({ limit: '10mb' }));
@@ -148,7 +230,8 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // ✅ API Routes
-app.use('/api/auth', authSlowDown, authRoutes);
+// [SỬA] Auth routes: authLimiter (block) + authSlowDown (delay)
+app.use('/api/auth', authLimiter, authSlowDown, authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/items', itemRoutes);
