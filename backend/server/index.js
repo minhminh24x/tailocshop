@@ -51,25 +51,6 @@ try {
   console.error('[Socket.io] Failed to initialize:', e.message);
 }
 
-app.use(helmet({
-  contentSecurityPolicy: false, // Disable CSP for now
-}));
-
-// [NÂNG CẤP] 2. Compression
-app.use(compression());
-
-// [NÂNG CẤP] 3. Logging
-app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
-
-// Cấu hình slowDown (Chống spam request)
-const authSlowDown = slowDown({
-  windowMs: 15 * 60 * 1000,
-  delayAfter: 5,
-  delayMs: () => 500,
-  maxDelayMs: 3000,
-  validate: { delayMs: false }
-});
-
 // Danh sách origin cho phép
 const allowedOrigins = [
   'http://localhost:3000',
@@ -87,32 +68,58 @@ const allowedOrigins = [
 // Regex for Vercel preview URLs
 const vercelPreviewRegex = /^https:\/\/tailocshop(-[a-z0-9]+)?(-[a-z0-9]+)?\.vercel\.app$/;
 
-// Cấu hình CORS
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, Postman, etc.)
-      if (!origin) return callback(null, true);
+// [FIX] CORS phải được đặt TRƯỚC các middleware khác để đảm bảo headers luôn được gửi
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
 
-      // Check exact match
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
+    // Check exact match
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
 
-      // Check Vercel preview URLs pattern
-      if (vercelPreviewRegex.test(origin)) {
-        return callback(null, true);
-      }
+    // Check Vercel preview URLs pattern
+    if (vercelPreviewRegex.test(origin)) {
+      return callback(null, true);
+    }
 
-      // Reject other origins
-      console.warn(`[CORS] Blocked origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  })
-);
+    // Reject other origins
+    console.warn(`[CORS] Blocked origin: ${origin}`);
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200, // [FIX] Cho legacy browsers
+};
+
+// [FIX] Đặt CORS đầu tiên, trước tất cả middleware khác
+app.use(cors(corsOptions));
+
+// [FIX] Xử lý preflight OPTIONS cho tất cả routes
+app.options('*', cors(corsOptions));
+
+// [SECURITY] Helmet - đặt sau CORS
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP for now
+  crossOriginResourcePolicy: { policy: 'cross-origin' }, // [FIX] Cho phép cross-origin
+}));
+
+// [NÂNG CẤP] 2. Compression
+app.use(compression());
+
+// [NÂNG CẤP] 3. Logging
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// Cấu hình slowDown (Chống spam request)
+const authSlowDown = slowDown({
+  windowMs: 15 * 60 * 1000,
+  delayAfter: 5,
+  delayMs: () => 500,
+  maxDelayMs: 3000,
+  validate: { delayMs: false }
+});
 // 1. Parse JSON (tăng giới hạn nếu cần)
 app.use(express.json({ limit: '10mb' }));
 
