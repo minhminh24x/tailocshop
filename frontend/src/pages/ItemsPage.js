@@ -1,72 +1,57 @@
-import React, { useEffect, useState, useMemo } from 'react';
+// File: frontend/src/pages/ItemsPage.js
+// [NÂNG CẤP] Dùng React Query để cache items, giảm API calls
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { getAllItems } from '../services/itemService';
-import { getAllCategoriesAdmin } from '../services/adminCategoryService';
+import { useItems } from '../hooks/useItems.js';
+import { useCategories } from '../hooks/useCategories.js';
 import ItemCard from '../components/items/ItemCard';
-import { Search, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Sparkles, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 
-const ITEMS_PER_PAGE = 12; // Số items mỗi trang
+const ITEMS_PER_PAGE = 12;
 
 export default function ItemsPage() {
-  const [items, setItems] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [sortOrder, setSortOrder] = useState('newest');
-
-  // [MỚI] Pagination state
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // [MỚI] React Query hooks - tự động cache!
+  const {
+    data: itemsData,
+    isLoading: itemsLoading,
+    isFetching: itemsFetching,
+    refetch: refetchItems
+  } = useItems({ limit: 1000 }); // Fetch 1 lần, cache 5 phút
+
+  const {
+    data: categories = [],
+    isLoading: catsLoading
+  } = useCategories(); // Cache 10 phút
+
+  const loading = itemsLoading || catsLoading;
+  const items = itemsData?.data || itemsData || [];
 
   // Reset về trang 1 khi filter thay đổi
-  useEffect(() => {
+  const handleFilterChange = (setter) => (value) => {
+    setter(value);
     setCurrentPage(1);
-  }, [searchTerm, selectedCategory, sortOrder]);
-
-  const fetchData = async () => {
-    try {
-      const [itemsRes, catsRes] = await Promise.all([
-        getAllItems({ limit: 1000 }), // Lấy nhiều items, frontend sẽ phân trang
-        getAllCategoriesAdmin()
-      ]);
-
-      // [SỬA] Xử lý response mới có pagination
-      const rawItems = itemsRes.data;
-      // Hỗ trợ cả format cũ (array) và mới (object với data)
-      const validItems = Array.isArray(rawItems)
-        ? rawItems
-        : (rawItems.data || rawItems.items || []);
-
-      setItems(validItems);
-      setCategories(catsRes.data || []);
-
-    } catch (error) {
-      console.error("Failed to fetch items:", error);
-    } finally {
-      setLoading(false);
-    }
   };
 
-  // Logic lọc và sắp xếp
+  // Logic lọc và sắp xếp (client-side vì đã cache)
   const filteredItems = useMemo(() => {
     return (items || []).filter(item => {
       const matchSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchCat = selectedCategory === 'ALL' || String(item.categoryId) === String(selectedCategory);
       return matchSearch && matchCat;
     }).sort((a, b) => {
-      if (sortOrder === 'price-asc') return parseFloat(a.priceCoin) - parseFloat(b.priceCoin);
-      if (sortOrder === 'price-desc') return parseFloat(b.priceCoin) - parseFloat(a.priceCoin);
+      if (sortOrder === 'price-asc') return parseFloat(a.basePriceCoin || a.priceCoin) - parseFloat(b.basePriceCoin || b.priceCoin);
+      if (sortOrder === 'price-desc') return parseFloat(b.basePriceCoin || b.priceCoin) - parseFloat(a.basePriceCoin || a.priceCoin);
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
   }, [items, searchTerm, selectedCategory, sortOrder]);
 
-  // [MỚI] Pagination logic
+  // Pagination logic
   const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
   const paginatedItems = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -104,7 +89,7 @@ export default function ItemsPage() {
         </p>
       </div>
 
-      {/* CONTROL BAR (FILTER & SEARCH) */}
+      {/* CONTROL BAR */}
       <div className="glass-panel p-4 rounded-xl border border-white/10">
         <div className="flex flex-wrap gap-4 items-center justify-between">
           {/* Search */}
@@ -113,45 +98,52 @@ export default function ItemsPage() {
             <input
               type="text"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleFilterChange(setSearchTerm)(e.target.value)}
               placeholder="Tìm kiếm vật phẩm..."
               className="w-full bg-slate-800 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
             />
           </div>
 
           {/* Category Filter */}
-          <div>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-slate-800 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
-            >
-              <option value="ALL">Tất cả danh mục</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-          </div>
+          <select
+            value={selectedCategory}
+            onChange={(e) => handleFilterChange(setSelectedCategory)(e.target.value)}
+            className="bg-slate-800 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
+          >
+            <option value="ALL">Tất cả danh mục</option>
+            {categories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
 
           {/* Sort */}
-          <div>
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              className="bg-slate-800 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
-            >
-              <option value="newest">Mới nhất</option>
-              <option value="price-asc">Giá thấp - cao</option>
-              <option value="price-desc">Giá cao - thấp</option>
-            </select>
-          </div>
+          <select
+            value={sortOrder}
+            onChange={(e) => handleFilterChange(setSortOrder)(e.target.value)}
+            className="bg-slate-800 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
+          >
+            <option value="newest">Mới nhất</option>
+            <option value="price-asc">Giá thấp - cao</option>
+            <option value="price-desc">Giá cao - thấp</option>
+          </select>
+
+          {/* [MỚI] Refresh button - manual refetch */}
+          <button
+            onClick={() => refetchItems()}
+            disabled={itemsFetching}
+            className="p-2 rounded-lg bg-slate-800 border border-white/10 text-white hover:bg-slate-700 disabled:opacity-50 transition"
+            title="Làm mới"
+          >
+            <RefreshCw size={18} className={itemsFetching ? 'animate-spin' : ''} />
+          </button>
         </div>
       </div>
 
-      {/* [MỚI] Thông tin số lượng & trang */}
+      {/* Info row */}
       <div className="flex justify-between items-center text-sm text-gray-400">
         <p>
           Hiển thị <span className="text-yellow-400 font-bold">{paginatedItems.length}</span> / {filteredItems.length} vật phẩm
+          {itemsFetching && <span className="ml-2 text-blue-400">(đang cập nhật...)</span>}
         </p>
         {totalPages > 1 && (
           <p>Trang <span className="text-yellow-400 font-bold">{currentPage}</span> / {totalPages}</p>
@@ -168,14 +160,14 @@ export default function ItemsPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {paginatedItems.map((item) => (
-            <Link key={item.id} to={`/items/${item.slug}/${item.unit}`} className="block h-full">
+            <Link key={item.id} to={`/items/${item.slug}`} className="block h-full">
               <ItemCard item={item} />
             </Link>
           ))}
         </div>
       )}
 
-      {/* [MỚI] Pagination Controls */}
+      {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-2 mt-8">
           <button
@@ -186,15 +178,10 @@ export default function ItemsPage() {
             <ChevronLeft size={20} />
           </button>
 
-          {/* Page numbers */}
           <div className="flex gap-1">
             {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter(page => {
-                // Hiển thị: 1, currentPage-1, currentPage, currentPage+1, lastPage
-                return page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1;
-              })
+              .filter(page => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1)
               .map((page, index, arr) => {
-                // Thêm dấu ... giữa các số không liền nhau
                 const prevPage = arr[index - 1];
                 const showDots = prevPage && page - prevPage > 1;
 

@@ -17,9 +17,12 @@ const getMyWishlist = async (userId) => {
                     id: true,
                     name: true,
                     slug: true,
-                    unit: true,
+                    allowedUnits: true,    // [SỬA] Từ unit
+                    baseUnit: true,        // [MỚI]
                     thumbnailImageUrl: true,
-                    priceCoin: true,
+                    basePriceCoin: true,   // [SỬA] Từ priceCoin
+                    basePriceUsd: true,    // [SỬA] Từ priceUsd
+                    priceCoin: true,       // Giữ lại cho backward compat
                     priceUsd: true,
                     stockQuantity: true,
                     isActive: true,
@@ -66,7 +69,8 @@ const addToWishlist = async (userId, itemId) => {
                     id: true,
                     name: true,
                     slug: true,
-                    unit: true,
+                    allowedUnits: true,  // [SỬA]
+                    baseUnit: true,      // [MỚI]
                     thumbnailImageUrl: true,
                 }
             }

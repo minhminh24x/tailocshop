@@ -216,7 +216,7 @@ const getAllReviewsAdmin = async (query = {}) => {
                     select: { inGameName: true, email: true }
                 },
                 item: {
-                    select: { name: true, slug: true, unit: true }
+                    select: { name: true, slug: true, allowedUnits: true, baseUnit: true }
                 }
             }
         }),

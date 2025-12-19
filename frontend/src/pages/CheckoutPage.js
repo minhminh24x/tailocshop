@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import apiClient from '../services/apiClient.js';
 import { FaCoins, FaDollarSign, FaTicketAlt } from 'react-icons/fa';
 import { formatNumber } from '../utils/formatNumber.js';
+import { UNIT_MULTIPLIER } from '../utils/unitUtils.js';
 
 export default function CheckoutPage() {
   const { items, totalItems, clearCart } = useCartStore();
@@ -50,25 +51,45 @@ export default function CheckoutPage() {
       });
   }, []);
 
-  // === Logic tính toán (Làm tròn Xu & Hiển thị giảm giá) ===
+  // === [SỬA] Logic tính toán với unit support ===
   const orderSummary = useMemo(() => {
-    const coinOnlyItems = items.filter(
-      (entry) => !entry.itemData.priceUsd || entry.itemData.priceUsd <= 0
-    );
-    const usdPayableItems = items.filter(
-      (entry) => entry.itemData.priceUsd && entry.itemData.priceUsd > 0
-    );
+    // Tính giá cho từng item theo unit đã chọn
+    const itemsWithPrices = items.map(entry => {
+      const entryUnit = entry.unit || entry.itemData.baseUnit || 'PIECE';
+      const baseUnit = entry.itemData.baseUnit || 'PIECE';
+
+      const basePriceCoin = parseFloat(entry.itemData.basePriceCoin) || parseFloat(entry.itemData.priceCoin) || 0;
+      const basePriceUsd = parseFloat(entry.itemData.basePriceUsd) || parseFloat(entry.itemData.priceUsd) || 0;
+
+      const baseMultiplier = UNIT_MULTIPLIER[baseUnit] || 1;
+      const entryMultiplier = UNIT_MULTIPLIER[entryUnit] || 1;
+      const ratio = entryMultiplier / baseMultiplier;
+
+      const priceCoin = basePriceCoin * ratio;
+      const priceUsd = basePriceUsd * ratio;
+
+      return {
+        ...entry,
+        entryUnit,
+        priceCoin,
+        priceUsd,
+        isUsdPayable: priceUsd > 0
+      };
+    });
+
+    const coinOnlyItems = itemsWithPrices.filter(item => !item.isUsdPayable);
+    const usdPayableItems = itemsWithPrices.filter(item => item.isUsdPayable);
 
     const coinOnlySubtotalXu = coinOnlyItems.reduce(
-      (acc, entry) => acc + entry.itemData.priceCoin * entry.quantity,
+      (acc, item) => acc + item.priceCoin * item.quantity,
       0
     );
     const payableSubtotalXu = usdPayableItems.reduce(
-      (acc, entry) => acc + entry.itemData.priceCoin * entry.quantity,
+      (acc, item) => acc + item.priceCoin * item.quantity,
       0
     );
     const payableSubtotalUsd = usdPayableItems.reduce(
-      (acc, entry) => acc + entry.itemData.priceUsd * entry.quantity,
+      (acc, item) => acc + item.priceUsd * item.quantity,
       0
     );
 
@@ -76,8 +97,11 @@ export default function CheckoutPage() {
     const totalXuEquivalent = coinOnlySubtotalXu + payableSubtotalXu;
     const discountPercent = vipLevel?.discountPercent || 0;
 
-    // Luôn tính số Xu giảm giá (để hiển thị)
+    // Luôn tính số Xu giảm giá VIP (để hiển thị)
     const discountAmountXu = totalXuEquivalent * (discountPercent / 100);
+
+    // [SỬA] Tính thêm voucher discount
+    const voucherDiscountXu = voucherData?.discountAmount || 0;
 
     let finalTotalXu = 0;
     let finalTotalUsd = 0;
@@ -85,8 +109,10 @@ export default function CheckoutPage() {
     let originalCoinTotal = 0;
 
     if (paymentMethod === 'COIN') {
-      // Thanh toán = COIN: Giảm giá trên TỔNG XU
-      originalCoinTotal = totalXuEquivalent - discountAmountXu;
+      // Thanh toán = COIN: Giảm giá VIP + Voucher trên TỔNG XU
+      originalCoinTotal = totalXuEquivalent - discountAmountXu - voucherDiscountXu;
+      // Đảm bảo không âm
+      originalCoinTotal = Math.max(0, originalCoinTotal);
 
       const roundedXu = Math.ceil(originalCoinTotal);
       appliedCoinRounding = roundedXu !== originalCoinTotal;
@@ -108,6 +134,7 @@ export default function CheckoutPage() {
     }
 
     return {
+      itemsWithPrices,
       coinOnlyItems,
       usdPayableItems,
       coinOnlySubtotalXu,
@@ -115,6 +142,7 @@ export default function CheckoutPage() {
       totalXuEquivalent,
       discountPercent,
       discountAmountXu,
+      voucherDiscountXu,
       finalTotalXu,
       finalTotalUsd,
       showCoinOnlyWarning: paymentMethod === 'USD' && coinOnlyItems.length > 0,
@@ -122,7 +150,7 @@ export default function CheckoutPage() {
       appliedCoinRounding: appliedCoinRounding,
       originalCoinTotal: originalCoinTotal
     };
-  }, [items, paymentMethod, vipLevel]);
+  }, [items, paymentMethod, vipLevel, voucherData]);
 
   // [THÊM] Handler áp dụng voucher
   const handleApplyVoucher = async () => {
@@ -178,16 +206,16 @@ export default function CheckoutPage() {
         deliveryTimeSlotId: selectedTimeSlot,
         preferredCurrency: currency,
         // [BỎ] Không gửi currencyUsed ở cấp cao nhất
+        // [SỬA] Gửi unit trong order items
         items: items.map(item => {
-          // [THÊM] Kiểm tra ID hợp lệ
           if (!item.itemData?.id) {
-            // Lỗi này sẽ được bắt ở khối catch bên ngoài
             throw new Error('Một vật phẩm trong giỏ hàng không có ID hợp lệ.');
           }
           return {
             itemId: item.itemData.id,
             quantity: item.quantity,
-            currencyAtPurchase: paymentMethod.toUpperCase() // [SỬA] Viết hoa
+            unit: item.unit || item.itemData.baseUnit || 'PIECE', // [THÊM] Gửi unit
+            currencyAtPurchase: paymentMethod.toUpperCase()
           };
         }),
       };
@@ -388,20 +416,21 @@ export default function CheckoutPage() {
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg h-fit">
             <h2 className="text-2xl font-semibold mb-6">Tóm tắt Đơn hàng</h2>
 
-            {/* Danh sách vật phẩm */}
+            {/* Danh sách vật phẩm [SỬA] Hiển thị unit */}
             <div className="space-y-3 mb-4 max-h-60 overflow-y-auto pr-2">
-              {items.map(entry => (
-                <div key={entry.itemData.id} className="flex justify-between items-center text-sm">
+              {orderSummary.itemsWithPrices.map(entry => (
+                <div key={`${entry.itemData.id}-${entry.entryUnit}`} className="flex justify-between items-center text-sm">
                   <div className="text-gray-300">
                     <p className="font-medium text-white">{entry.itemData.name}</p>
-                    <p>SL: {formatNumber(entry.quantity)} x {formatNumber(entry.itemData.priceCoin)} Xu
-                      {entry.itemData.priceUsd && (
-                        <span className="text-gray-400"> / ${formatNumber(entry.itemData.priceUsd)}</span>
+                    <p>
+                      SL: {formatNumber(entry.quantity)} {entry.entryUnit} x {formatNumber(entry.priceCoin)} Xu
+                      {entry.priceUsd > 0 && (
+                        <span className="text-gray-400"> / ${formatNumber(entry.priceUsd)}</span>
                       )}
                     </p>
                   </div>
                   <p className="font-semibold text-white">
-                    {formatNumber(entry.quantity * entry.itemData.priceCoin)} Xu
+                    {formatNumber(entry.quantity * entry.priceCoin)} Xu
                   </p>
                 </div>
               ))}
@@ -441,11 +470,20 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {/* Hiển thị giảm giá */}
+              {/* Hiển thị giảm giá VIP */}
               <div className="flex justify-between">
                 <span className="text-gray-300">Giảm giá VIP ({orderSummary.discountPercent}%):</span>
                 <span className="text-pink-400">-{formatNumber(orderSummary.discountAmountXu)} Xu</span>
               </div>
+
+              {/* [MỚI] Hiển thị giảm giá Voucher */}
+              {orderSummary.voucherDiscountXu > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-300">Giảm giá Voucher:</span>
+                  <span className="text-green-400">-{formatNumber(orderSummary.voucherDiscountXu)} Xu</span>
+                </div>
+              )}
+
               {paymentMethod === 'USD' && orderSummary.discountAmountXu > 0 && (
                 <p className="text-right text-xs text-pink-400 -mt-2">
                   (Giảm giá không hỗ trợ cho trả bằng Tiền ($))

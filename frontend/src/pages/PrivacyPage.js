@@ -4,7 +4,7 @@ import { Shield, Lock, Eye, FileText, AlertTriangle } from 'lucide-react';
 
 export default function PrivacyPage() {
     return (
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto px-4 py-8">
             <div className="text-center mb-12">
                 <h1 className="text-4xl md:text-5xl font-black text-white mb-4 flex items-center justify-center gap-3">
                     <Shield className="text-yellow-400" />
@@ -48,20 +48,49 @@ export default function PrivacyPage() {
                     </div>
                 </section>
 
-                {/* Section 2 */}
                 <section className="glass-panel rounded-2xl p-6 border border-white/10">
                     <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                         <Eye className="text-green-400" />
                         2. Thông tin chúng tôi thu thập
                     </h2>
-                    <div className="text-gray-300 space-y-3">
+                    <div className="text-gray-300 space-y-4">
                         <p>Chúng tôi có thể thu thập các loại thông tin sau:</p>
-                        <ul className="list-disc list-inside space-y-2 ml-4">
-                            <li><strong>Thông tin tài khoản:</strong> Email, tên trong game (In-Game Name), mật khẩu đã mã hóa</li>
-                            <li><strong>Thông tin giao dịch:</strong> Lịch sử đơn hàng, số tiền đã chi tiêu, cấp độ VIP</li>
-                            <li><strong>Thông tin kỹ thuật:</strong> Địa chỉ IP, loại trình duyệt, thời gian truy cập</li>
-                            <li><strong>Cookie:</strong> Dữ liệu phiên đăng nhập để duy trì trạng thái xác thực</li>
-                        </ul>
+
+                        <div className="p-4 bg-slate-800/50 rounded-xl">
+                            <h4 className="font-bold text-green-400 mb-2">👤 Thông tin tài khoản</h4>
+                            <ul className="list-disc list-inside space-y-1 text-sm">
+                                <li><strong>Email:</strong> Dùng để đăng nhập, khôi phục mật khẩu và gửi thông báo quan trọng (ví dụ: xác nhận đơn hàng)</li>
+                                <li><strong>Tên trong game (IGN):</strong> Hiển thị trong hệ thống, dùng để Staff liên hệ giao hàng trong Minecraft</li>
+                                <li><strong>Mật khẩu:</strong> Được mã hóa bcrypt, chúng tôi KHÔNG lưu mật khẩu gốc</li>
+                            </ul>
+                        </div>
+
+                        <div className="p-4 bg-slate-800/50 rounded-xl">
+                            <h4 className="font-bold text-blue-400 mb-2">📊 Thông tin giao dịch</h4>
+                            <ul className="list-disc list-inside space-y-1 text-sm">
+                                <li><strong>Lịch sử đơn hàng:</strong> Các vật phẩm đã mua, số lượng, giá tiền, thời gian đặt hàng</li>
+                                <li><strong>Số Xu đã chi tiêu:</strong> Tổng số Xu tích lũy để tính cấp độ VIP</li>
+                                <li><strong>Cấp độ VIP:</strong> Tự động tính toán dựa trên tổng chi tiêu</li>
+                            </ul>
+                        </div>
+
+                        <div className="p-4 bg-slate-800/50 rounded-xl">
+                            <h4 className="font-bold text-purple-400 mb-2">💻 Thông tin kỹ thuật</h4>
+                            <ul className="list-disc list-inside space-y-1 text-sm">
+                                <li><strong>Địa chỉ IP:</strong> Dùng để bảo vệ tài khoản, phát hiện truy cập bất thường và rate limiting</li>
+                                <li><strong>Trình duyệt & thiết bị:</strong> Để tối ưu hiển thị website cho đúng thiết bị của bạn</li>
+                                <li><strong>Thời gian truy cập:</strong> Để thống kê hoạt động và cải thiện dịch vụ</li>
+                            </ul>
+                        </div>
+
+                        <div className="p-4 bg-slate-800/50 rounded-xl">
+                            <h4 className="font-bold text-orange-400 mb-2">🍪 Cookie</h4>
+                            <ul className="list-disc list-inside space-y-1 text-sm">
+                                <li><strong>Session cookie:</strong> Duy trì trạng thái đăng nhập trong phiên làm việc</li>
+                                <li><strong>JWT token:</strong> Lưu trong localStorage để xác thực API requests</li>
+                                <li><strong>Cart data:</strong> Lưu giỏ hàng tạm thời trong trình duyệt</li>
+                            </ul>
+                        </div>
                     </div>
                 </section>
 
@@ -84,20 +113,38 @@ export default function PrivacyPage() {
                     </div>
                 </section>
 
-                {/* Section 4 */}
                 <section className="glass-panel rounded-2xl p-6 border border-white/10">
                     <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                         <Shield className="text-yellow-400" />
                         4. Bảo mật dữ liệu
                     </h2>
-                    <div className="text-gray-300 space-y-3">
+                    <div className="text-gray-300 space-y-4">
                         <p>Chúng tôi áp dụng các biện pháp bảo mật sau:</p>
-                        <ul className="list-disc list-inside space-y-2 ml-4">
-                            <li><strong>Mã hóa mật khẩu:</strong> Tất cả mật khẩu được mã hóa bằng bcrypt trước khi lưu trữ</li>
-                            <li><strong>HTTPS:</strong> Tất cả kết nối được mã hóa SSL/TLS</li>
-                            <li><strong>JWT Token:</strong> Sử dụng token bảo mật cho xác thực</li>
-                            <li><strong>Giới hạn quyền truy cập:</strong> Chỉ nhân viên được ủy quyền mới có quyền truy cập dữ liệu</li>
-                        </ul>
+
+                        <div className="p-4 bg-green-900/20 border border-green-500/30 rounded-xl">
+                            <h4 className="font-bold text-green-400 mb-2">🔐 Mã hóa mật khẩu (bcrypt)</h4>
+                            <p className="text-sm">Mật khẩu của bạn được mã hóa bằng thuật toán bcrypt với salt rounds = 10. Ngay cả Admin cũng KHÔNG thể biết mật khẩu gốc của bạn. Nếu bạn quên mật khẩu, chỉ có cách tạo mới.</p>
+                        </div>
+
+                        <div className="p-4 bg-blue-900/20 border border-blue-500/30 rounded-xl">
+                            <h4 className="font-bold text-blue-400 mb-2">🔒 HTTPS (SSL/TLS)</h4>
+                            <p className="text-sm">Toàn bộ kết nối được mã hóa TLS 1.3. Dữ liệu truyền giữa trình duyệt và server không thể bị đọc bởi người thứ ba. Cloudflare cung cấp chứng chỉ SSL.</p>
+                        </div>
+
+                        <div className="p-4 bg-purple-900/20 border border-purple-500/30 rounded-xl">
+                            <h4 className="font-bold text-purple-400 mb-2">🎫 JWT Token</h4>
+                            <p className="text-sm">Xác thực bằng JSON Web Token có thời hạn 7 ngày. Token được ký bằng secret key bí mật. Token không chứa mật khẩu, chỉ chứa userId và role.</p>
+                        </div>
+
+                        <div className="p-4 bg-orange-900/20 border border-orange-500/30 rounded-xl">
+                            <h4 className="font-bold text-orange-400 mb-2">⛔ Rate Limiting</h4>
+                            <p className="text-sm">Giới hạn số lượng request để chống tấn công DDoS và brute force. Đăng nhập sai nhiều lần sẽ bị tạm khóa IP trong 15 phút.</p>
+                        </div>
+
+                        <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-xl">
+                            <h4 className="font-bold text-red-400 mb-2">🚨 KHÔNG chia sẻ với bên thứ 3</h4>
+                            <p className="text-sm">Chúng tôi <strong>TUYỆT ĐỐI KHÔNG</strong> bán, cho thuê hoặc chia sẻ email, tên trong game hay bất kỳ dữ liệu nào của bạn cho bên thứ 3 vì mục đích thương mại.</p>
+                        </div>
                     </div>
                 </section>
 

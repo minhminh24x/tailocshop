@@ -70,7 +70,7 @@ export default function RegisterPartnerPage() {
                         Chúng tôi đã nhận được thông tin của bạn. Admin sẽ liên hệ qua <strong className="text-blue-400">Discord</strong> trong vòng 24-48 giờ để trao đổi chi tiết.
                     </p>
                     <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-center">
-                        <p className="text-yellow-400 font-bold text-lg">🎉 Luôn chào đón shop PIN =]] 🎉</p>
+                        <p className="text-yellow-400 font-bold text-lg">🎉 Luôn chào đón mọi Đối tác tiềm năng 🎉</p>
                     </div>
                 </div>
                 <Link
@@ -84,7 +84,7 @@ export default function RegisterPartnerPage() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
             <Link to="/about" className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors">
                 <ArrowLeft className="w-4 h-4" />
                 Quay lại
@@ -100,7 +100,7 @@ export default function RegisterPartnerPage() {
 
                     {/* Note đặc biệt */}
                     <div className="mt-4 inline-block px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/50 rounded-full">
-                        <span className="text-yellow-400 font-bold">🌟 Luôn chào đón shop PIN =]] 🌟</span>
+                        <span className="text-yellow-400 font-bold">🌟 Luôn chào đón mọi Đối tác tiềm năng 🌟</span>
                     </div>
                 </div>
 

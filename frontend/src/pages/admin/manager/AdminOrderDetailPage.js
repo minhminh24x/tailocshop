@@ -13,6 +13,7 @@ import {
 import { formatNumber } from '../../../utils/formatNumber.js';
 import { FaCoins, FaDollarSign, FaCheck, FaTimes, FaArrowRight, FaClock, FaCreditCard } from 'react-icons/fa';
 import OrderStatusStepper from '../../../components/order/OrderStatusStepper.js';
+import CancelOrderModal from '../../../components/staff/CancelOrderModal.js';
 
 export default function AdminOrderDetailPage() {
   const { orderId: id } = useParams();
@@ -22,6 +23,7 @@ export default function AdminOrderDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const fetchOrderDetails = useCallback(async () => {
     try {
@@ -72,14 +74,13 @@ export default function AdminOrderDetailPage() {
     }
   };
 
-  // [MỚI] Hủy đơn hàng
-  const handleCancelOrder = async () => {
-    if (!window.confirm('Bạn có chắc chắn muốn HỦY đơn hàng này? Hàng sẽ được hoàn kho.')) return;
-
+  // [SỬa] Hủy đơn hàng với lý do
+  const handleCancelOrder = async (reason) => {
     setIsUpdating(true);
     try {
-      await updateOrderAdmin(id, { status: 'CANCELLED' });
+      await updateOrderAdmin(id, { status: 'CANCELLED', cancelReason: reason });
       toast.success('Đã hủy đơn hàng!');
+      setShowCancelModal(false);
       fetchOrderDetails();
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'Hủy đơn thất bại';
@@ -284,7 +285,7 @@ export default function AdminOrderDetailPage() {
 
                 {/* Nút hủy */}
                 <button
-                  onClick={handleCancelOrder}
+                  onClick={() => setShowCancelModal(true)}
                   disabled={isUpdating}
                   className="w-full bg-red-600/80 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
@@ -306,6 +307,15 @@ export default function AdminOrderDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* [MỚI] Modal hủy đơn hàng */}
+      <CancelOrderModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleCancelOrder}
+        orderNumber={order?.orderNumber}
+        isLoading={isUpdating}
+      />
     </div>
   );
 }

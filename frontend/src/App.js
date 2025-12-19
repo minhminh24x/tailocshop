@@ -107,8 +107,10 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/items" element={<ItemsPage />} />
 
-          {/* [ĐÃ SỬA] Route này phải khớp với ItemDetailPage (slug + unit) */}
+          {/* [SỬA] Route với unit parameter */}
           <Route path="/items/:slug/:unit" element={<ItemDetailPage />} />
+          {/* [THÊM] Route fallback không có unit - sẽ dùng baseUnit */}
+          <Route path="/items/:slug" element={<ItemDetailPage />} />
 
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />

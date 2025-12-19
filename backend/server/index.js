@@ -116,60 +116,69 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 // 🛡️ RATE LIMITING & SECURITY CONFIG
 // ======================================
 
-// [MỚI] Rate Limit chung cho tất cả API (100 requests per 15 phút per IP)
+// [MỚI] IP Whitelist - các IP này KHÔNG bị rate limit
+const WHITELISTED_IPS = [
+  '127.0.0.1',      // localhost IPv4
+  '::1',            // localhost IPv6
+  '::ffff:127.0.0.1', // localhost IPv6-mapped
+  // Thêm IP admin/VPS của bạn vào đây:
+  process.env.ADMIN_IP,
+].filter(Boolean);
+
+// [MỚI] Hàm lấy IP thật từ request
+const getClientIP = (req) => {
+  return req.headers['cf-connecting-ip'] ||
+    req.headers['x-real-ip'] ||
+    req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+    req.ip;
+};
+
+// [MỚI] Hàm kiểm tra IP có trong whitelist không
+const isWhitelisted = (req) => {
+  const clientIP = getClientIP(req);
+  return WHITELISTED_IPS.some(ip => clientIP === ip || clientIP?.includes(ip));
+};
+
+// [SỬA] Rate Limit chung - TĂNG lên 500 requests per 15 phút
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 phút
-  max: 100, // Giới hạn 100 requests per IP
+  max: 500, // [TĂNG] 100 → 500 requests per IP
   message: {
     status: 'error',
     message: 'Quá nhiều yêu cầu từ IP này, vui lòng thử lại sau 15 phút.'
   },
-  standardHeaders: true, // Return rate limit info in headers
+  standardHeaders: true,
   legacyHeaders: false,
-  // [QUAN TRỌNG] Skip khi chạy sau Cloudflare/Nginx proxy
-  // Cloudflare sẽ gửi IP thật trong header CF-Connecting-IP
-  keyGenerator: (req) => {
-    return req.headers['cf-connecting-ip'] ||
-      req.headers['x-real-ip'] ||
-      req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-      req.ip;
-  },
+  keyGenerator: getClientIP,
+  skip: isWhitelisted, // [MỚI] Bỏ qua whitelist IPs
 });
 
-// [MỚI] Rate Limit nghiêm ngặt hơn cho Auth routes (10 requests per 15 phút)
+// [SỬA] Rate Limit cho Auth routes - dùng chung functions
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10, // Chỉ 10 lần đăng nhập/đăng ký per IP per 15 phút
+  max: 20, // [TĂNG] 10 → 20 lần per IP per 15 phút
   message: {
     status: 'error',
     message: 'Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau 15 phút.'
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.headers['cf-connecting-ip'] ||
-      req.headers['x-real-ip'] ||
-      req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-      req.ip;
-  },
+  keyGenerator: getClientIP,
+  skip: isWhitelisted, // [MỚI] Bỏ qua whitelist IPs
 });
 
-// [MỚI] Rate Limit nhẹ hơn cho Public routes (200 requests per 15 phút)
+// [SỬA] Rate Limit cho Public routes - TĂNG lên 1000 requests
 const publicLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200, // Cho phép nhiều hơn vì đây là public data
+  max: 1000, // [TĂNG] 200 → 1000 requests (public data cần nhiều)
   message: {
     status: 'error',
     message: 'Quá nhiều yêu cầu, vui lòng thử lại sau.'
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.headers['cf-connecting-ip'] ||
-      req.headers['x-real-ip'] ||
-      req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-      req.ip;
-  },
+  keyGenerator: getClientIP,
+  skip: isWhitelisted, // [MỚI] Bỏ qua whitelist IPs
 });
 
 // Cấu hình slowDown (Thêm delay nếu spam - kết hợp với rate limit)

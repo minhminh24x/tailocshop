@@ -32,7 +32,7 @@ const createSubmission = async (supplierUserId, submissionData) => {
   if (items.length !== itemIds.length) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Một hoặc nhiều Item ID không tồn tại');
   }
-  
+
   // 3. Tính tổng giá trị (tạm tính)
   let totalValue = new Decimal(0);
   for (const detail of details) {
@@ -96,9 +96,9 @@ const approveSubmission = async (submissionId, adminUserId, approvalData) => {
       throw new ApiError(httpStatus.BAD_REQUEST, `Không thể duyệt phiếu ở trạng thái ${submission.status}`);
     }
     if (submission.supplierSubmissionDetails.length !== finalPrices.length) {
-       throw new ApiError(httpStatus.BAD_REQUEST, 'Số lượng giá chốt không khớp với số lượng chi tiết phiếu');
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Số lượng giá chốt không khớp với số lượng chi tiết phiếu');
     }
-    
+
     let totalFinalValue = new Decimal(0);
     const detailUpdateOps = [];
     const inventoryLogOps = [];
@@ -146,7 +146,7 @@ const approveSubmission = async (submissionId, adminUserId, approvalData) => {
         })
       );
     }
-    
+
     // 4. Thực thi
     await Promise.all(detailUpdateOps);
     await Promise.all(inventoryLogOps);
@@ -211,7 +211,7 @@ const getSubmissions = async (user, filters) => {
     where.supplierUserId = user.id;
   }
   // Admin/Staff thấy tất cả
-  
+
   return prisma.supplierSubmission.findMany({
     where,
     include: {
@@ -236,7 +236,7 @@ const getSubmissionById = async (submissionId, user) => {
       approvedBy: { select: { inGameName: true, id: true } },
       supplierSubmissionDetails: {
         include: {
-          item: { select: { name: true, image: true, unit: true } },
+          item: { select: { name: true, thumbnailImageUrl: true, allowedUnits: true, baseUnit: true } },
         },
       },
     },

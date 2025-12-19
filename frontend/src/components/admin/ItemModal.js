@@ -5,7 +5,7 @@ import { getAllCategoriesAdmin } from '../../services/adminCategoryService.js';
 import toast from 'react-hot-toast';
 import { formatNumber } from '../../utils/formatNumber.js';
 import { useCurrencyStore } from '../../store/currencyStore.js';
-import { UNIT_MULTIPLIER, UNIT_LABELS } from '../../utils/unitUtils.js';
+import { UNIT_LABELS } from '../../utils/unitUtils.js';
 
 const ITEM_UNITS = ['PIECE', 'STACK', 'SHULKER'];
 
@@ -264,8 +264,8 @@ export default function ItemModal({ isOpen, onClose, onSave, itemToEdit }) {
                       onClick={() => handleUnitToggle(unit)}
                       disabled={isLoading || isRateLoading}
                       className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all border-2 ${isChecked
-                          ? `${colors.bg} text-white border-transparent`
-                          : `bg-gray-700 ${colors.text} ${colors.border}`
+                        ? `${colors.bg} text-white border-transparent`
+                        : `bg-gray-700 ${colors.text} ${colors.border}`
                         } disabled:opacity-50`}
                     >
                       {UNIT_LABELS[unit] || unit}

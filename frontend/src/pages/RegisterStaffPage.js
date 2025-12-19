@@ -112,7 +112,7 @@ export default function RegisterStaffPage() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
             <Link to="/about" className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors">
                 <ArrowLeft className="w-4 h-4" />
                 Quay lại
@@ -395,9 +395,9 @@ export default function RegisterStaffPage() {
                     <p>
                         Hoặc{' '}
                         <Link to="/register/partner" className="text-yellow-400 hover:underline font-medium">
-                            🤝 Đăng ký làm Đối tác
+                            Đăng ký làm Đối tác
                         </Link>
-                        {' '}- Luôn chào đón shop PIN =]]
+                        {' '}- Luôn chào đón mọi Đối tác tiềm năng
                     </p>
                 </div>
             </div>

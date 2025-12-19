@@ -1,7 +1,8 @@
 // File: frontend/src/pages/ItemDetailPage.js
-import React, { useState, useEffect, useMemo } from 'react';
+// [NÂNG CẤP] Dùng React Query để cache item data
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { getSingleItem } from '../services/itemService.js';
+import { useItem } from '../hooks/useItems.js';
 import { useCartStore } from '../store/cartStore.js';
 import { formatNumber } from '../utils/formatNumber.js';
 import {
@@ -17,39 +18,24 @@ const MIN_USD_DISPLAY_THRESHOLD = 1.00;
 
 export default function ItemDetailPage() {
   const { slug } = useParams();
-  const [item, setItem] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
-  const [selectedUnit, setSelectedUnit] = useState(null); // Unit được chọn
+  const [selectedUnit, setSelectedUnit] = useState(null);
   const addItemToCart = useCartStore((state) => state.addItem);
 
-  // Fetch item data
-  useEffect(() => {
-    const fetchItem = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await getSingleItem(slug);
-        const itemData = response.data;
-        setItem(itemData);
+  // [MỚI] React Query hook - cache 5 phút
+  const { data: item, isLoading, error: queryError } = useItem(slug);
+  const error = queryError?.response?.data?.message || (queryError ? 'Không tìm thấy vật phẩm' : null);
 
-        // Set default unit là đơn vị đầu tiên trong allowedUnits
-        if (itemData?.allowedUnits?.length > 0) {
-          setSelectedUnit(itemData.allowedUnits[0]);
-        } else {
-          setSelectedUnit(itemData?.baseUnit || 'PIECE');
-        }
-      } catch (err) {
-        setError(err.response?.data?.message || 'Không tìm thấy vật phẩm');
-      } finally {
-        setIsLoading(false);
+  // Set default unit khi item load xong
+  useEffect(() => {
+    if (item && !selectedUnit) {
+      if (item.allowedUnits?.length > 0) {
+        setSelectedUnit(item.allowedUnits[0]);
+      } else {
+        setSelectedUnit(item.baseUnit || 'PIECE');
       }
-    };
-    if (slug) {
-      fetchItem();
     }
-  }, [slug]);
+  }, [item, selectedUnit]);
 
   // Tính giá và stock cho unit đã chọn
   const { currentPriceCoin, currentPriceUsd, currentStock } = useMemo(() => {
@@ -151,8 +137,8 @@ export default function ItemDetailPage() {
                 key={unit}
                 onClick={() => setSelectedUnit(unit)}
                 className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${selectedUnit === unit
-                    ? 'bg-yellow-500 text-black shadow-lg'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  ? 'bg-yellow-500 text-black shadow-lg'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   }`}
               >
                 {UNIT_LABELS[unit] || unit}

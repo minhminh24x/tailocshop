@@ -5,6 +5,7 @@ import { getMyOrderById } from '../services/orderService.js';
 import { formatNumber } from '../utils/formatNumber.js';
 import { FaCoins, FaDollarSign } from 'react-icons/fa';
 import OrderTimeline from '../components/order/OrderTimeline.js';
+import { UNIT_LABELS } from '../utils/unitUtils.js';
 
 const formatStatus = (status) => {
   const styles = {
@@ -105,32 +106,39 @@ export default function MyOrderDetailPage() {
           </div>
         </div>
 
-        {/* ... (Phần Chi tiết vật phẩm và Tổng kết giữ nguyên) ... */}
+        {/* [SỬA] Chi tiết vật phẩm - hiển thị unitAtPurchase */}
         <h2 className="text-2xl font-semibold text-white mb-4">Các vật phẩm</h2>
         <div className="space-y-4 border-t border-b border-gray-700 py-4">
-          {order.orderDetails.map(detail => (
-            <div key={detail.id} className="flex justify-between items-center bg-gray-800 p-3 rounded-lg">
-              <div className="flex items-center space-x-4">
-                <img
-                  src={detail.item?.thumbnailImageUrl || 'https://placehold.co/64x64/2D3748/FFFFFF?text=Item'}
-                  alt={detail.item?.name || 'Vật phẩm'}
-                  className="w-12 h-12 rounded-md object-cover flex-shrink-0"
-                />
-                <div>
-                  <p className="text-white font-semibold">{detail.item?.name || '(Vật phẩm đã bị xóa)'} (x{formatNumber(detail.quantity)})</p>
-                  <p className="text-sm text-gray-400">
-                    Đơn giá: {formatNumber(detail.priceAtPurchase)}
-                    <span className={detail.currencyAtPurchase === 'USD' ? 'text-green-400' : 'text-yellow-400'}>
-                      {' '}{detail.currencyAtPurchase}
-                    </span>
-                  </p>
+          {order.orderDetails.map(detail => {
+            const unitLabel = UNIT_LABELS[detail.unitAtPurchase] || detail.unitAtPurchase || 'PIECE';
+            return (
+              <div key={detail.id} className="flex justify-between items-center bg-gray-800 p-3 rounded-lg">
+                <div className="flex items-center space-x-4">
+                  <img
+                    src={detail.item?.thumbnailImageUrl || 'https://placehold.co/64x64/2D3748/FFFFFF?text=Item'}
+                    alt={detail.item?.name || 'Vật phẩm'}
+                    className="w-12 h-12 rounded-md object-cover flex-shrink-0"
+                  />
+                  <div>
+                    <p className="text-white font-semibold">
+                      {detail.item?.name || '(Vật phẩm đã bị xóa)'}
+                      <span className="text-gray-400 font-normal ml-1">(x{formatNumber(detail.quantity)} {detail.unitAtPurchase || 'pcs'})</span>
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      Đơn giá: {formatNumber(detail.priceAtPurchase)}
+                      <span className={detail.currencyAtPurchase === 'USD' ? 'text-green-400' : 'text-yellow-400'}>
+                        {' '}{detail.currencyAtPurchase}
+                      </span>
+                      <span className="text-gray-500"> / {detail.unitAtPurchase || 'PIECE'}</span>
+                    </p>
+                  </div>
                 </div>
+                <p className={`text-lg font-semibold ${detail.currencyAtPurchase === 'USD' ? 'text-green-400' : 'text-yellow-400'}`}>
+                  {formatNumber(detail.totalLineAmount)} {detail.currencyAtPurchase}
+                </p>
               </div>
-              <p className={`text-lg font-semibold ${detail.currencyAtPurchase === 'USD' ? 'text-green-400' : 'text-yellow-400'}`}>
-                {formatNumber(detail.totalLineAmount)} {detail.currencyAtPurchase}
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="mt-6 space-y-3 text-right">
